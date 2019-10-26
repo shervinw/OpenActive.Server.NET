@@ -1,0 +1,31 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFrameworks>netstandard2.0;net45</TargetFrameworks>
+    <Authors>OpenActive Community</Authors>
+    <Company>OpenActive</Company>
+    <Copyright>OpenActive</Copyright>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <PackageProjectUrl>https://www.openactive.io/OpenActive.Server.NET</PackageProjectUrl>
+    <PackageIconUrl>https://www.openactive.io/assets/openactive-icon-64x64.png</PackageIconUrl>
+    <RepositoryUrl>https://github.com/openactive/OpenActive.Server.NET</RepositoryUrl>
+    <PackageTags>OpenActive schema rpde</PackageTags>
+    <PackageRequireLicenseAcceptance>true</PackageRequireLicenseAcceptance>
+    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Folder Include="Engine\" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.CodeAnalysis.FxCopAnalyzers" Version="2.9.6">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+    <PackageReference Include="OpenActive.NET" Version="2.0.3" />
+    <PackageReference Include="Stubble.Core" Version="1.4.12" />
+    <PackageReference Include="Stubble.Extensions.JsonNet.Net45" Version="1.3.3" />
+  </ItemGroup>
+
+</Project>
