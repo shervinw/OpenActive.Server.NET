@@ -19,20 +19,13 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <Folder Include="Engine\" />
-    <Folder Include="Helpers\" />
-  </ItemGroup>
-
-  <ItemGroup>
     <PackageReference Include="Microsoft.CodeAnalysis.FxCopAnalyzers" Version="2.9.6">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
     <PackageReference Include="OpenActive.NET" Version="2.0.3" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <ProjectReference Include="..\OpenActive.DatasetSite.NET\OpenActive.DatasetSite.NET.csproj" />
+    <PackageReference Include="Stubble.Core" Version="1.4.12" />
+    <PackageReference Include="Stubble.Extensions.JsonNet.Net45" Version="1.3.3" />
   </ItemGroup>
 
 </Project>

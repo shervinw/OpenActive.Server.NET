@@ -1,8 +1,9 @@
-﻿namespace OpenActive.Server.NET.Helpers
+
+namespace OpenActive.DataSetSite.NET
 {
-    public static partial class DatasetSiteGenerator
+    public static class DatasetSiteMustacheTemplate
     {
-        private const string MustacheContent = @"
+        public const string Content = @"
 <!DOCTYPE HTML>
 <!--
   Design: Identity by HTML5 UP
@@ -1025,6 +1026,7 @@
     <script>if ('addEventListener' in window) { window.addEventListener('load', function () { document.body.className = document.body.className.replace(/\bis-loading\b/, ''); }); document.body.className += (navigator.userAgent.match(/(MSIE|rv:11\.0)/) ? ' is-ie' : ''); }</script>
 </body>
 </html>
+
 ";
     }
 }
