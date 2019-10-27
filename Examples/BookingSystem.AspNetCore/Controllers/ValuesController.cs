@@ -4,6 +4,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using OpenActive.Server.NET;
 
 namespace BookingSystem.AspNetCore.Controllers
 {
@@ -36,6 +37,14 @@ namespace BookingSystem.AspNetCore.Controllers
         [HttpPut("{id}")]
         public void Put(int id, [FromBody] string value)
         {
+            /*
+            var settings = new BookingEngineSettings
+            {
+                SupportedOpportunityTypes = new  {
+                    ScheduledSession, new IdTemplate<SellerIdComponents>("<scheduled_session_url>,</scheduled_session_url>")
+                }
+            }
+            */
         }
 
         // DELETE api/values/5
