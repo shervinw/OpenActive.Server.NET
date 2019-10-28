@@ -4,7 +4,7 @@ using System.Text;
 
 namespace OpenActive.Server.NET
 {
-    public enum BookableOpportunityClass { Event, ScheduledSession, HeadlineEvent, Slot, CourseInstance }
+    
 
     public class BookingEngineSettings
     {
