@@ -6,9 +6,9 @@ namespace OpenActive.Server.NET.Tests
 {
     public class IdTemplateTest
     {
-        public class SessionSeriesComponents
+        public class SessionSeriesComponents : IBookableIdComponents
         {
-            public string BaseUrl { get; set; }
+            public Uri BaseUrl { get; set; }
             public string EventType { get; set; }
             public string SessionSeriesId { get; set; }
             public long? ScheduledSessionId { get; set; }
@@ -24,7 +24,7 @@ namespace OpenActive.Server.NET.Tests
 
             var components = template.GetIdComponents(new Uri("https://example.com/api/session-series/asdf/events/123"));
 
-            Assert.Equal("https://example.com/", components.BaseUrl);
+            Assert.Equal("https://example.com/", components.BaseUrl.ToString());
             Assert.Equal("session-series", components.EventType);
             Assert.Equal("asdf", components.SessionSeriesId);
             Assert.Equal(123, components.ScheduledSessionId);
@@ -59,7 +59,7 @@ namespace OpenActive.Server.NET.Tests
                 new Uri("https://example.com/api/session-series/asdf/events/123#/offers/456")
                 );
 
-            Assert.Equal("https://example.com/", components.BaseUrl);
+            Assert.Equal("https://example.com/", components.BaseUrl.ToString());
             Assert.Equal("session-series", components.EventType);
             Assert.Equal("asdf", components.SessionSeriesId);
             Assert.Equal(123, components.ScheduledSessionId);

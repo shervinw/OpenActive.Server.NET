@@ -4,7 +4,7 @@ using System.Text;
 
 namespace OpenActive.Server.NET
 {
-    class AbstractBookingEngine
+    public class AbstractBookingEngine
     {
         // TODO: Move to engine settings
         Dictionary<BookableOpportunityClass, IBookablePairIdTemplate> IdConfiguration { get; set; }

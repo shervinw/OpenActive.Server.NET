@@ -4,6 +4,7 @@ using System.Linq;
 using System.Reflection;
 using System.Text;
 using UriTemplate.Core;
+using OpenActive.NET;
 
 namespace OpenActive.Server.NET
 {
@@ -132,9 +133,20 @@ namespace OpenActive.Server.NET
                             throw new BookableOpportunityAndOfferMismatchException($"Supplied Ids do not match on component '{binding.Value.Key}'");
                         }
                         componentsType.GetProperty(binding.Key).SetValue(components, newValue);
-                    } else
+                    }
+                    else if (componentsType.GetProperty(binding.Key).PropertyType == typeof(Uri))
                     {
-                        throw new ArgumentException("Only types long? and string are supported within the component class used for IdTemplate.");
+                        var newValue = (binding.Value.Value as string).ParseUrlOrNull();
+                        var existingValue = componentsType.GetProperty(binding.Key).GetValue(components) as Uri;
+                        if (existingValue != newValue && existingValue != null)
+                        {
+                            throw new BookableOpportunityAndOfferMismatchException($"Supplied Ids do not match on component '{binding.Value.Key}'");
+                        }
+                        componentsType.GetProperty(binding.Key).SetValue(components, newValue);
+                    }
+                    else
+                    {
+                        throw new ArgumentException("Only types long?, Uri and string are supported within the component class used for IdTemplate.");
                     }
                 }
             }

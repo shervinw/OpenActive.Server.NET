@@ -7,13 +7,11 @@ namespace OpenActive.Server.NET.Tests
 {
     public class StoreBookingEngineTest
     {
-
-
         [Fact]
         public void StoreBookingEngine_ProcessOrderQuoteCheckpoint()
         {
             // Set up engine with engine settings (outside of this test)
-            var openActiveEngine = new StoreBookingEngine<FakeStore>
+            var openActiveEngine = new StoreBookingEngine();
 
             // Reset fake data
             // Push fake data in via openActiveEngine.processTestCommand
@@ -58,9 +56,9 @@ namespace OpenActive.Server.NET.Tests
     }
   ]
 }";
-            var orderQuoteRequest = OpenActiveSerializer.Deserialize<OrderQuote>(@requestJson);
+            //var orderQuoteRequest = OpenActiveSerializer.Deserialize<OrderQuote>(@requestJson);
 
-            string orderQuoteResponse = openActiveEngine.ProcessOrderQuoteCheckpoint(orderQuote, id);
+           // string orderQuoteResponse = openActiveEngine.ProcessOrderQuoteCheckpoint(orderQuote, id);
         }
     }
 }
