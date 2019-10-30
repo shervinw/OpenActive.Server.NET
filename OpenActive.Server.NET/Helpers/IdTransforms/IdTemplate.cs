@@ -7,6 +7,10 @@ using UriTemplate.Core;
 
 namespace OpenActive.Server.NET
 {
+    public interface IBookableIdComponents {
+        Uri BaseUrl { get; set; }
+    }
+
     public class BookableOpportunityAndOfferMismatchException : Exception
     {
         public BookableOpportunityAndOfferMismatchException()
@@ -24,10 +28,20 @@ namespace OpenActive.Server.NET
         }
     }
 
-    public class BookablePairIdTemplate<T> : IdTemplate<T> where T : new()
+    public interface IBookablePairIdTemplate
+    {
+        IBookableIdComponents GetOpportunityReference(Uri opportunityId, Uri offerId);
+    }
+
+    public class BookablePairIdTemplate<T> : IdTemplate<T>, IBookablePairIdTemplate where T : IBookableIdComponents, new()
     {
         public BookablePairIdTemplate(string opportunityUriTemplate, string offerUriTemplate) : base(opportunityUriTemplate, offerUriTemplate)
         {
+        }
+
+        public IBookableIdComponents GetOpportunityReference(Uri opportunityId, Uri offerId)
+        {
+            return base.GetIdComponents(opportunityId, offerId);
         }
 
         public T GetIdComponents(Uri opportunityId, Uri offerId)

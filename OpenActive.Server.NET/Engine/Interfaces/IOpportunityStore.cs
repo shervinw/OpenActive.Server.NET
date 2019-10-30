@@ -1,10 +1,12 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Text;
+using OpenActive.NET;
 
-namespace OpenActive.Server.NET.Engine.Interfaces
+namespace OpenActive.Server.NET
 {
-    interface IOpportunityStore
+    public interface IOpportunityStore<S>
     {
+    
     }
 }

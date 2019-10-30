@@ -4,7 +4,7 @@ using OpenActive.Server.NET;
 
 namespace OpenActive.Server.NET.Tests
 {
-    public class IdTemplate
+    public class IdTemplateTest
     {
         public class SessionSeriesComponents
         {
