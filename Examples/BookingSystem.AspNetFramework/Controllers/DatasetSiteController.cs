@@ -1,4 +1,6 @@
 ﻿
+using OpenActive.DatasetSite.NET;
+using OpenActive.NET;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -41,7 +43,7 @@ namespace BookingSystem.AspNetFramework.Controllers
                 FeedType.CourseInstance
             };
 
-            return Content(DatasetSiteGenerator.RenderSimpleDatasetSite(settings), "text/html");
+            return Content(DatasetSiteGenerator.RenderSimpleDatasetSite(settings, supportedFeeds), "text/html");
         }
     }
 }
