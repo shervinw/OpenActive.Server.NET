@@ -24,9 +24,9 @@ Helper methods are designed to be used independently, for those who prefer flexi
 
 The helper methods within these are isolated from each other and provide a useful toolbox for any implementation.
 
-## Reference implementation
+## Examples
 
-This provides an example use of the library with a fully standards compliant implementation of the OpenActive Open Booking API.
+This provides an example use of the library with a fully standards compliant reference implementation of the OpenActive Open Booking API.
 
 ### BookingSystem.AspNetCore
 A reference implementation is provided `BookingSystem.AspNetCore` that is designed to have its code copied-and-pasted to provide a quick working starting point for any implementation.
