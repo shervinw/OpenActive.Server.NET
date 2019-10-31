@@ -9,31 +9,15 @@ using System.Linq;
 
 namespace OpenActive.Server.NET
 {
-    public class ScheduledSessionOpportunity : IBookableIdComponents
-    {
-        public Uri BaseUrl { get; set; }
-        public string SessionSeriesId { get; set; }
-        public long? ScheduledSessionId { get; set; }
-        public long? OfferId { get; set; }
-    }
 
-    public class SlotOpportunity : IBookableIdComponents
+    /// <summary>
+    /// TODO: Move to BookingSystem.AspNetCore
+    /// </summary>
+    class AcmeStore : IOpenBookingStore
     {
-        public Uri BaseUrl { get; set; }
-        public string FacilityUseId { get; set; }
-        public long? SlotId { get; set; }
 
-        public long? OfferId { get; set; }
-    }
 
-    public class DefaultSellerIdComponents
-    {
-        public long? SellerId { get; set; }
-    }
-
-    class FakeStore : IOpportunityStore<DefaultSellerIdComponents>
-    {
-           //public void CreateFakeEvent()
+        //public void CreateFakeEvent()
         public OrderItem GetOrderItem(IBookableIdComponents opportunityOfferId, DefaultSellerIdComponents sellerId)
         {
             // Note switch statement exists here as we need to handle booking for a single Order that contains different types of opportunity
