@@ -1,5 +1,6 @@
 ﻿using Newtonsoft.Json;
 using OpenActive.NET;
+using OpenActive.Server.NET;
 using System;
 using System.Collections.Generic;
 using System.Data;
@@ -7,7 +8,7 @@ using System.IO;
 using System.Text;
 using System.Linq;
 
-namespace OpenActive.Server.NET
+namespace BookingSystem.AspNetCore
 {
 
     /// <summary>

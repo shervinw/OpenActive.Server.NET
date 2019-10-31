@@ -28,13 +28,13 @@ namespace OpenActive.Server.NET
 
         private OrderQuote ProcessCheckpoint(OrderQuote orderQuote, string orderQuoteUUID)
         {
-
+            return null;
         }
 
         private Order processFlowRequest(FlowStage stage, OrderQuote orderQuote, string orderQuoteUUID)
         {
-            var checkpointStage
-
+            //var checkpointStage
+            return null;
 
             /*
              * 

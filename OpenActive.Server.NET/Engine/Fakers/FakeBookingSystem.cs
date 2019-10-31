@@ -7,7 +7,7 @@ using System.IO;
 using System.Text;
 using System.Linq;
 
-namespace OpenActive.Server.NET.FakeBookingSystem
+namespace OpenActive.Server.NET
 {
     /// <summary>
     /// This class models the database schema within an actual booking system.

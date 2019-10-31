@@ -11,7 +11,7 @@ namespace OpenActive.Server.NET.Tests
         public void StoreBookingEngine_ProcessOrderQuoteCheckpoint()
         {
             // Set up engine with engine settings (outside of this test)
-            var openActiveEngine = new StoreBookingEngine();
+            //var openActiveEngine = new StoreBookingEngine();
 
             // Reset fake data
             // Push fake data in via openActiveEngine.processTestCommand
