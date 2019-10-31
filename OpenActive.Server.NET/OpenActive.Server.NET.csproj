@@ -23,12 +23,9 @@
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
-    <PackageReference Include="OpenActive.NET" Version="2.0.3" />
+    <PackageReference Include="OpenActive.DatasetSite.NET" Version="1.0.3" />
+    <PackageReference Include="OpenActive.NET" Version="2.0.6" />
     <PackageReference Include="UriTemplate.Core" Version="1.0.2" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <ProjectReference Include="..\OpenActive.DatasetSite.NET\OpenActive.DatasetSite.NET.csproj" />
   </ItemGroup>
 
 </Project>

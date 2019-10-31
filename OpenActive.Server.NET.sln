@@ -15,10 +15,6 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BookingSystem.AspNetFramewo
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "OpenActive.Server.NET.Tests", "OpenActive.Server.NET.Tests\OpenActive.Server.NET.Tests.csproj", "{28577B26-CC31-4BC7-A3C0-AF77711A046A}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "OpenActive.DatasetSite.NET", "OpenActive.DatasetSite.NET\OpenActive.DatasetSite.NET.csproj", "{675D384A-6313-4E0F-82F2-535EF55187B2}"
-EndProject
-Project("{9092AA53-FB77-4645-B42D-1CCCA6BD08BD}") = "OpenActive.DatasetSite.NET.Generator", "OpenActive.DatasetSite.NET.Generator\OpenActive.DatasetSite.NET.Generator.njsproj", "{74756AC9-D78C-4022-AECF-91FC3E2B45D6}"
-EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -45,14 +41,6 @@ Global
 		{28577B26-CC31-4BC7-A3C0-AF77711A046A}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{28577B26-CC31-4BC7-A3C0-AF77711A046A}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{28577B26-CC31-4BC7-A3C0-AF77711A046A}.Release|Any CPU.Build.0 = Release|Any CPU
-		{675D384A-6313-4E0F-82F2-535EF55187B2}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{675D384A-6313-4E0F-82F2-535EF55187B2}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{675D384A-6313-4E0F-82F2-535EF55187B2}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{675D384A-6313-4E0F-82F2-535EF55187B2}.Release|Any CPU.Build.0 = Release|Any CPU
-		{74756AC9-D78C-4022-AECF-91FC3E2B45D6}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{74756AC9-D78C-4022-AECF-91FC3E2B45D6}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{74756AC9-D78C-4022-AECF-91FC3E2B45D6}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{74756AC9-D78C-4022-AECF-91FC3E2B45D6}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
