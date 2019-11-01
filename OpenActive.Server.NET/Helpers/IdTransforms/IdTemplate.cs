@@ -12,6 +12,12 @@ namespace OpenActive.Server.NET
         Uri BaseUrl { get; set; }
     }
 
+    public class OrderId
+    {
+        public Uri BaseUrl { get; set; }
+        public string uuid { get; set; }
+    }
+
     public class BookableOpportunityAndOfferMismatchException : Exception
     {
         public BookableOpportunityAndOfferMismatchException()

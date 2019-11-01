@@ -35,7 +35,12 @@ namespace OpenActive.Server.NET
                         "{+BaseUrl}api/facility-uses/{FacilityUseId}/slots/{SlotId}#/offers/{OfferId}"
                         )
                 }
-    };
+        };
+
+        public Uri OrderBaseUrl { get; set; } = new Uri("https://example.com/api/orders/");
+        public SingleIdTemplate<OrderId> OrderIdTemplate = new SingleIdTemplate<OrderId>(
+                        "{+BaseUrl}api/scheduled-sessions/{SessionSeriesId}/events/{ScheduledSessionId}"
+                        );
     }
 
 

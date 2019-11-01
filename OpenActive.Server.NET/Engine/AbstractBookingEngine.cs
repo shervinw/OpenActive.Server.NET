@@ -21,33 +21,35 @@ namespace OpenActive.Server.NET
         private readonly BookingEngineSettings settings;
 
         // Note this is not a helper as it relies on engine settings state
-        public IBookableIdComponents ResolveOpportunityID(BookableOpportunityClass opportunityClass, Uri opportunityId, Uri offerId)
+        private IBookableIdComponents ResolveOpportunityID(BookableOpportunityClass opportunityClass, Uri opportunityId, Uri offerId)
         {
             return settings.IdConfiguration[opportunityClass].GetOpportunityReference(opportunityId, offerId);
         }
 
-        private OrderQuote ProcessCheckpoint(OrderQuote orderQuote, string orderQuoteUUID)
+        public OrderQuote ProcessCheckpoint1(OrderQuote orderQuote, string uuid)
         {
-            return null;
+            return ProcessFlowRequest(FlowStage.C1, orderQuote, uuid);
+        }
+        public OrderQuote ProcessCheckpoint2(OrderQuote orderQuote, string uuid)
+        {
+            return ProcessFlowRequest(FlowStage.C2, orderQuote, uuid);
+        }
+        public Order ProcessBooking(Order order, string uuid)
+        {
+            return ProcessFlowRequest(FlowStage.B, order, uuid);
         }
 
-        private Order processFlowRequest(FlowStage stage, OrderQuote orderQuote, string orderQuoteUUID)
+        private O ProcessFlowRequest<O>(FlowStage stage, O orderQuote, string uuid) where O : Order
         {
-            //var checkpointStage
-            return null;
+            var orderId = new OrderId
+            {
+                uuid = uuid,
+                BaseUrl = settings.OrderBaseUrl
+            };
+
+            
 
             /*
-             * 
-function processCheckpoint (orderQuote, orderQuoteId, authKey) {
-
-  var checkpointStage = orderQuote.customer ? "C2" : "C1";
-
-  // Get authkey being used the access the Open Booking API 
-  var authKey = getAuthKey();
-
-  // Get data for checkpoint (optional optimisation to load the data in one place)
-  var data = fetchCheckpointData(orderId,  authKey, orderQuote);
-
   // Check that taxMode is set in Seller
   if (!seller.id)
   {

@@ -12,7 +12,8 @@ namespace OpenActive.Server.NET
     /// </summary>
     public interface IOpenBookingStore
     {
-        
-        
+        OrderItem GetOrderItem(IBookableIdComponents opportunityOfferId, DefaultSellerIdComponents sellerId);
+
+
     }
 }
