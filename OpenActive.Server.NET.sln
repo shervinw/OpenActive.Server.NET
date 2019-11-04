@@ -15,6 +15,16 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BookingSystem.AspNetFramewo
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "OpenActive.Server.NET.Tests", "OpenActive.Server.NET.Tests\OpenActive.Server.NET.Tests.csproj", "{28577B26-CC31-4BC7-A3C0-AF77711A046A}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Test Suite", "Test Suite", "{E63124B9-4DD4-4B0F-A7B4-8D233C42155F}"
+EndProject
+Project("{9092AA53-FB77-4645-B42D-1CCCA6BD08BD}") = "openactive-integration-tests", "Test Suite\openactive-integration-tests\openactive-integration-tests.njsproj", "{74756AC9-D78C-4022-AECF-91FC3E2B45D6}"
+EndProject
+Project("{9092AA53-FB77-4645-B42D-1CCCA6BD08BD}") = "openactive-broker-microservice", "Test Suite\openactive-broker-microservice\openactive-broker-microservice.njsproj", "{9C079C35-C77A-4A46-AA0E-4D2800B65EA3}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Fakes", "Fakes", "{1AA583F8-863F-47D4-9FDF-C43664DAAF6E}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "OpenActive.Faker.NET", "Fakes\BookingSystem.FakeDatabase\OpenActive.Faker.NET.csproj", "{2956659B-7F1F-4405-B34F-16C361BF0393}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -41,6 +51,18 @@ Global
 		{28577B26-CC31-4BC7-A3C0-AF77711A046A}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{28577B26-CC31-4BC7-A3C0-AF77711A046A}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{28577B26-CC31-4BC7-A3C0-AF77711A046A}.Release|Any CPU.Build.0 = Release|Any CPU
+		{74756AC9-D78C-4022-AECF-91FC3E2B45D6}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{74756AC9-D78C-4022-AECF-91FC3E2B45D6}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{74756AC9-D78C-4022-AECF-91FC3E2B45D6}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{74756AC9-D78C-4022-AECF-91FC3E2B45D6}.Release|Any CPU.Build.0 = Release|Any CPU
+		{9C079C35-C77A-4A46-AA0E-4D2800B65EA3}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{9C079C35-C77A-4A46-AA0E-4D2800B65EA3}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{9C079C35-C77A-4A46-AA0E-4D2800B65EA3}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{9C079C35-C77A-4A46-AA0E-4D2800B65EA3}.Release|Any CPU.Build.0 = Release|Any CPU
+		{2956659B-7F1F-4405-B34F-16C361BF0393}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{2956659B-7F1F-4405-B34F-16C361BF0393}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{2956659B-7F1F-4405-B34F-16C361BF0393}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{2956659B-7F1F-4405-B34F-16C361BF0393}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -49,6 +71,9 @@ Global
 		{29A8AF39-ED3C-4433-8103-3535CE8C32EC} = {10E2B727-375B-4DAF-9341-96516A00B5E1}
 		{CF04DB83-3371-4F14-B05B-86C0F7EADF30} = {10E2B727-375B-4DAF-9341-96516A00B5E1}
 		{6D779718-C02A-4EF1-8E16-229F52A416C7} = {10E2B727-375B-4DAF-9341-96516A00B5E1}
+		{74756AC9-D78C-4022-AECF-91FC3E2B45D6} = {E63124B9-4DD4-4B0F-A7B4-8D233C42155F}
+		{9C079C35-C77A-4A46-AA0E-4D2800B65EA3} = {E63124B9-4DD4-4B0F-A7B4-8D233C42155F}
+		{2956659B-7F1F-4405-B34F-16C361BF0393} = {1AA583F8-863F-47D4-9FDF-C43664DAAF6E}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {7CBBF4D4-3F0D-47FE-95D2-5BE1D604F9F3}

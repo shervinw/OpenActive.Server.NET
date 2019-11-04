@@ -7,6 +7,8 @@ namespace OpenActive.Server.NET.Tests
 {
     public class StoreBookingEngineTest
     {
+
+
         [Fact]
         public void StoreBookingEngine_ProcessOrderQuoteCheckpoint()
         {

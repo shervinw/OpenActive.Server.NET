@@ -1,13 +1,14 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Text;
+using OpenActive.DatasetSite.NET;
+using OpenActive.NET;
+using OpenActive.NET.Rpde.Version1;
 
 namespace OpenActive.Server.NET
 {
     /// <summary>
-    /// Use the Settings pattern
-    /// 
-    /// TODO: Remove defaults here and set up a way of passing settings into the BookingEngine
+    /// QUESTION: Should this be an interface? How do we use the settings pattern?
     /// </summary>
     public class BookingEngineSettings
     {
@@ -19,28 +20,12 @@ namespace OpenActive.Server.NET
         /// 
         /// The first ID is for the opportunity, the second ID is for the offer.
         /// </summary>
-        public Dictionary<BookableOpportunityClass, IBookablePairIdTemplate> IdConfiguration { get; }
-            = new Dictionary<BookableOpportunityClass, IBookablePairIdTemplate> {
-                {
-                    BookableOpportunityClass.ScheduledSession,
-                    new BookablePairIdTemplate<ScheduledSessionOpportunity>(
-                        "{+BaseUrl}api/scheduled-sessions/{SessionSeriesId}/events/{ScheduledSessionId}",
-                        "{+BaseUrl}api/scheduled-sessions/{SessionSeriesId}/events/{ScheduledSessionId}#/offers/{OfferId}"
-                        )
-                },
-                {
-                    BookableOpportunityClass.Slot,
-                    new BookablePairIdTemplate<SlotOpportunity>(
-                        "{+BaseUrl}api/facility-uses/{FacilityUseId}/slots/{SlotId}",
-                        "{+BaseUrl}api/facility-uses/{FacilityUseId}/slots/{SlotId}#/offers/{OfferId}"
-                        )
-                }
-        };
-
-        public Uri OrderBaseUrl { get; set; } = new Uri("https://example.com/api/orders/");
-        public SingleIdTemplate<OrderId> OrderIdTemplate = new SingleIdTemplate<OrderId>(
-                        "{+BaseUrl}api/scheduled-sessions/{SessionSeriesId}/events/{ScheduledSessionId}"
-                        );
+        public Dictionary<BookableOpportunityClass, IBookablePairIdTemplate> IdConfiguration { get; set;  }
+        public Uri OrderBaseUrl { get; set; }
+        public SingleIdTemplate<OrderId> OrderIdTemplate { get; set; }
+        public Dictionary<FeedType, RPDEFeedGenerator> OpenDataFeeds { get; set; }
+        public int RPDEPageSize { get; set; } = 500;
+        public Uri JsonLdIdBaseUrl { get; internal set; }
     }
 
 
@@ -53,10 +38,17 @@ namespace OpenActive.Server.NET
     /// There is a choice of `string` or `long?` available for each component of the ID
     /// </summary>
 
+    public class SessionSeriesOpportunity : IBookableIdComponents
+    {
+        public Uri BaseUrl { get; set; }
+        public long? SessionSeriesId { get; set; }
+        public long? OfferId { get; set; }
+    }
+
     public class ScheduledSessionOpportunity : IBookableIdComponents
     {
         public Uri BaseUrl { get; set; }
-        public string SessionSeriesId { get; set; }
+        public long? SessionSeriesId { get; set; }
         public long? ScheduledSessionId { get; set; }
         public long? OfferId { get; set; }
     }

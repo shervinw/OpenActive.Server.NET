@@ -38,6 +38,10 @@ namespace OpenActive.Server.NET
     public interface IBookablePairIdTemplate
     {
         IBookableIdComponents GetOpportunityReference(Uri opportunityId, Uri offerId);
+
+        Uri RenderOpportunityId(IBookableIdComponents components);
+
+        Uri RenderOfferId(IBookableIdComponents components);
     }
 
     public class BookablePairIdTemplate<T> : IdTemplate<T>, IBookablePairIdTemplate where T : IBookableIdComponents, new()
@@ -63,6 +67,16 @@ namespace OpenActive.Server.NET
         public Uri RenderOfferId(T components)
         {
             return RenderId(1, components);
+        }
+
+        public Uri RenderOpportunityId(IBookableIdComponents components)
+        {
+            return RenderOpportunityId((T)components);
+        }
+
+        public Uri RenderOfferId(IBookableIdComponents components)
+        {
+            return RenderOfferId((T)components);
         }
     }
 
