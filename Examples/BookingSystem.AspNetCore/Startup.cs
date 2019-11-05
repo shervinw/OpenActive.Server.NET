@@ -52,44 +52,106 @@ namespace BookingSystem.AspNetCore
             services.AddSingleton<IBookingEngine>(sp => new StoreBookingEngine(new BookingEngineSettings
             {
                 // This assigns the ID pattern used for each ID
-                IdConfiguration = new Dictionary<BookableOpportunityClass, IBookablePairIdTemplate> {
-                    {
-                        // Note that ScheduledSession is the only opportunity type that allows offer inheritance  
-                        BookableOpportunityClass.ScheduledSession,
-                        new BookablePairIdTemplateWithOfferInheritance<ScheduledSessionOpportunity>(
-                            "{+BaseUrl}api/scheduled-sessions/{SessionSeriesId}/events/{ScheduledSessionId}",
-                            "{+BaseUrl}api/scheduled-sessions/{SessionSeriesId}/events/{ScheduledSessionId}#/offers/{OfferId}",
-                            "{+BaseUrl}api/scheduled-sessions/{SessionSeriesId}",
-                            "{+BaseUrl}api/scheduled-sessions/{SessionSeriesId}#/offers/{OfferId}"
-                            )
-                    },
-                    {
-                        BookableOpportunityClass.Slot,
-                        new BookablePairIdTemplate<SlotOpportunity>(
-                            "{+BaseUrl}api/facility-uses/{FacilityUseId}/slots/{SlotId}",
-                            "{+BaseUrl}api/facility-uses/{FacilityUseId}/slots/{SlotId}#/offers/{OfferId}",
-                            "{+BaseUrl}api/facility-uses/{FacilityUseId}"
-                            )
-                    },
-                    {
-                        BookableOpportunityClass.Event,
-                        new BookablePairIdTemplate<SlotOpportunity>(
-                            "{+BaseUrl}api/facility-uses/{FacilityUseId}/slots/{SlotId}",
-                            "{+BaseUrl}api/facility-uses/{FacilityUseId}/slots/{SlotId}#/offers/{OfferId}",
-                            "{+BaseUrl}api/facility-uses/{FacilityUseId}"
-                            )
-                    }
+                IdConfiguration = new List<IBookablePairIdTemplate> {
+                    // Note that ScheduledSession is the only opportunity type that allows offer inheritance  
+                    new BookablePairIdTemplateWithOfferInheritance<ScheduledSessionOpportunity>(
+                        // Opportunity
+                        new OpportunityIdConfiguration
+                        {
+                            OpportunityType = OpportunityType.ScheduledSession,
+                            AssignedFeed = OpportunityType.ScheduledSession,
+                            OpportunityUriTemplate = "{+BaseUrl}api/scheduled-sessions/{SessionSeriesId}/events/{ScheduledSessionId}",
+                            OfferUriTemplate =       "{+BaseUrl}api/scheduled-sessions/{SessionSeriesId}/events/{ScheduledSessionId}#/offers/{OfferId}",
+                            Bookable = true
+                        },
+                        // Parent
+                        new OpportunityIdConfiguration
+                        {
+                            OpportunityType = OpportunityType.SessionSeries,
+                            AssignedFeed = OpportunityType.SessionSeries,
+                            OpportunityUriTemplate = "{+BaseUrl}api/scheduled-sessions/{SessionSeriesId}",
+                            OfferUriTemplate =       "{+BaseUrl}api/scheduled-sessions/{SessionSeriesId}#/offers/{OfferId}",
+                            Bookable = true
+                        }),
+
+                    new BookablePairIdTemplate<ScheduledSessionOpportunity>(
+                        // Opportunity
+                        new OpportunityIdConfiguration
+                        {
+                            OpportunityType = OpportunityType.FacilityUseSlot,
+                            AssignedFeed = OpportunityType.FacilityUseSlot,
+                            OpportunityUriTemplate = "{+BaseUrl}api/facility-uses/{FacilityUseId}/facility-use-slots/{SlotId}",
+                            OfferUriTemplate =       "{+BaseUrl}api/facility-uses/{FacilityUseId}/facility-use-slots/{SlotId}#/offers/{OfferId}",
+                            Bookable = true
+                        },
+                        // Parent
+                        new OpportunityIdConfiguration
+                        {
+                            OpportunityType = OpportunityType.FacilityUse,
+                            AssignedFeed = OpportunityType.FacilityUse,
+                            OpportunityUriTemplate = "{+BaseUrl}api/facility-uses/{FacilityUseId}"
+                        }),
+
+                    new BookablePairIdTemplate<ScheduledSessionOpportunity>(
+                        // Opportunity
+                        new OpportunityIdConfiguration
+                        {
+                            OpportunityType = OpportunityType.HeadlineEventSubEvent,
+                            AssignedFeed = OpportunityType.HeadlineEvent,
+                            OpportunityUriTemplate = "{+BaseUrl}api/headline-events/{HeadlineEventId}/events/{EventId}",
+                            OfferUriTemplate =       "{+BaseUrl}api/headline-events/{HeadlineEventId}/events/{EventId}#/offers/{OfferId}",
+                            Bookable = true
+                        },
+                        // Parent
+                        new OpportunityIdConfiguration
+                        {
+                            OpportunityType = OpportunityType.HeadlineEvent,
+                            AssignedFeed = OpportunityType.HeadlineEvent,
+                            OpportunityUriTemplate = "{+BaseUrl}api/headline-events/{HeadlineEventId}",
+                            OfferUriTemplate =       "{+BaseUrl}api/headline-events/{HeadlineEventId}#/offers/{OfferId}"
+                        }),
+
+                     new BookablePairIdTemplate<ScheduledSessionOpportunity>(
+                        // Opportunity
+                        new OpportunityIdConfiguration
+                        {
+                            OpportunityType = OpportunityType.CourseInstanceSubEvent,
+                            AssignedFeed = OpportunityType.CourseInstance,
+                            OpportunityUriTemplate = "{+BaseUrl}api/courses/{CourseId}/events/{EventId}",
+                            OfferUriTemplate =       "{+BaseUrl}api/courses/{CourseId}/events/{EventId}#/offers/{OfferId}"
+                        },
+                        // Parent
+                        new OpportunityIdConfiguration
+                        {
+                            OpportunityType = OpportunityType.CourseInstance,
+                            AssignedFeed = OpportunityType.CourseInstance,
+                            OpportunityUriTemplate = "{+BaseUrl}api/courses/{CourseId}",
+                            OfferUriTemplate =       "{+BaseUrl}api/courses/{CourseId}#/offers/{OfferId}",
+                            Bookable = true
+                        }),
+
+                    new BookablePairIdTemplate<ScheduledSessionOpportunity>(
+                        // Opportunity
+                        new OpportunityIdConfiguration
+                        {
+                            OpportunityType = OpportunityType.Event,
+                            AssignedFeed = OpportunityType.Event,
+                            OpportunityUriTemplate = "{+BaseUrl}api/events/{EventId}",
+                            OfferUriTemplate =       "{+BaseUrl}api/events/{EventId}#/offers/{OfferId}",
+                            Bookable = true
+                        })
+                    
                 },
         
                 OrderBaseUrl = new Uri("https://example.com/api/orders/"),
 
                 OrderIdTemplate = new SingleIdTemplate<OrderId>(
-                    "{+BaseUrl}api/scheduled-sessions/{SessionSeriesId}/events/{ScheduledSessionId}"
+                    "{+BaseUrl}api/{Mode}/{OrderId}"
                     ),
 
-                OpenDataFeeds = new Dictionary<FeedType, RPDEFeedGenerator> {
+                OpenDataFeeds = new Dictionary<OpportunityType, RPDEFeedGenerator> {
                     {
-                        FeedType.ScheduledSession, new AcmeScheduledSessionRPDEGenerator() // ID, ParentID
+                        OpportunityType.ScheduledSession, new AcmeScheduledSessionRPDEGenerator() // ID, ParentID
                     }
                 }
             },

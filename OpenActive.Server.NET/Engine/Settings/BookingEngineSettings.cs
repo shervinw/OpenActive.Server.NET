@@ -20,10 +20,10 @@ namespace OpenActive.Server.NET
         /// 
         /// The first ID is for the opportunity, the second ID is for the offer.
         /// </summary>
-        public Dictionary<BookableOpportunityClass, IBookablePairIdTemplate> IdConfiguration { get; set;  }
+        public List<IBookablePairIdTemplate> IdConfiguration { get; set;  }
         public Uri OrderBaseUrl { get; set; }
         public SingleIdTemplate<OrderId> OrderIdTemplate { get; set; }
-        public Dictionary<FeedType, RPDEFeedGenerator> OpenDataFeeds { get; set; }
+        public Dictionary<OpportunityType, RPDEFeedGenerator> OpenDataFeeds { get; set; }
         public int RPDEPageSize { get; set; } = 500;
         public Uri JsonLdIdBaseUrl { get; internal set; }
     }

@@ -27,7 +27,7 @@ namespace BookingSystem.AspNetCore.Feeds
                             State = occurances.Deleted ? RpdeState.Deleted : RpdeState.Updated,
                             Data = occurances.Deleted ? null : new ScheduledSession
                             {
-                                // QUESTION: Should the this.IdTemplate, this.ParentIdTemplate and this.BaseUrl be passed in each time rather than set on
+                                // QUESTION: Should the this.IdTemplate and this.BaseUrl be passed in each time rather than set on
                                 // the parent class? Current thinking is it's more extensible on parent class as function signature remains
                                 // constant as power of configuration through underlying class grows (i.e. as new properties are added)
                                 Id = this.IdTemplate.RenderOpportunityId(new ScheduledSessionOpportunity
@@ -36,7 +36,7 @@ namespace BookingSystem.AspNetCore.Feeds
                                     SessionSeriesId = occurances.ClassId,
                                     ScheduledSessionId = occurances.Id
                                 }),
-                                SuperEvent = this.ParentIdTemplate.RenderOpportunityId(new SessionSeriesOpportunity
+                                SuperEvent = this.IdTemplate.RenderParentOpportunityId(new SessionSeriesOpportunity
                                 {
                                     BaseUrl = this.JsonLdIdBaseUrl,
                                     SessionSeriesId = occurances.ClassId

@@ -50,6 +50,8 @@ namespace OpenActive.Server.NET.Tests
         public void BookablePairIdTemplate_GetIdComponents()
         {
             var template = new BookablePairIdTemplate<SessionSeriesComponents>(
+                OpportunityType.Event,
+                DatasetSite.NET.FeedType.Event,
                 "{+BaseUrl}api/{EventType}/{SessionSeriesId}/events/{ScheduledSessionId}",
                 "{+BaseUrl}api/{EventType}/{SessionSeriesId}/events/{ScheduledSessionId}#/offers/{OfferId}"
                 );

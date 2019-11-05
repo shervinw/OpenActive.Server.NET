@@ -35,12 +35,12 @@ namespace BookingSystem.AspNetFramework.Controllers
                 DateFirstPublished = new DateTimeOffset(new DateTime(2019, 01, 14))
             };
 
-            var supportedFeeds = new List<FeedType> {
-                FeedType.SessionSeries,
-                FeedType.ScheduledSession,
-                FeedType.FacilityUse,
-                FeedType.Slot,
-                FeedType.CourseInstance
+            var supportedFeeds = new List<OpportunityType> {
+                OpportunityType.SessionSeries,
+                OpportunityType.ScheduledSession,
+                OpportunityType.FacilityUse,
+                OpportunityType.FacilityUseSlot,
+                OpportunityType.CourseInstance
             };
 
             return Content(DatasetSiteGenerator.RenderSimpleDatasetSite(settings, supportedFeeds), "text/html");
