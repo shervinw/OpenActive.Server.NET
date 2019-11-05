@@ -103,8 +103,8 @@ namespace OpenActive.Server.NET
     {
         public OpportunityType OpportunityType { get; set; }
         public OpportunityType AssignedFeed { get; set; }
-        public string OpportunityUriTemplate { get; set; }
-        public string OfferUriTemplate { get; set; }
+        public string OpportunityIdTemplate { get; set; }
+        public string OfferIdTemplate { get; set; }
         public bool Bookable { get; set; } 
     }
 
@@ -130,9 +130,9 @@ namespace OpenActive.Server.NET
             OpportunityIdConfiguration opportunityIdConfiguration,
             OpportunityIdConfiguration? parentIdConfiguration,
             OpportunityIdConfiguration? grandparentIdConfiguration)
-            : base(opportunityIdConfiguration.OpportunityUriTemplate, opportunityIdConfiguration.OfferUriTemplate,
-                  parentIdConfiguration?.OpportunityUriTemplate, parentIdConfiguration?.OfferUriTemplate,
-                  grandparentIdConfiguration?.OpportunityUriTemplate, grandparentIdConfiguration?.OfferUriTemplate)
+            : base(opportunityIdConfiguration.OpportunityIdTemplate, opportunityIdConfiguration.OfferIdTemplate,
+                  parentIdConfiguration?.OpportunityIdTemplate, parentIdConfiguration?.OfferIdTemplate,
+                  grandparentIdConfiguration?.OpportunityIdTemplate, grandparentIdConfiguration?.OfferIdTemplate)
         {
 
 

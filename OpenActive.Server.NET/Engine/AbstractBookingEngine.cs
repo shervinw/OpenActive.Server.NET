@@ -206,7 +206,6 @@ namespace OpenActive.Server.NET
             }
         }
 
-
         // Note this is not a helper as it relies on engine settings state
         private IBookableIdComponents ResolveOpportunityID(string opportunityTypeString, Uri opportunityId, Uri offerId)
         {

@@ -65,8 +65,8 @@ namespace BookingSystem.AspNetCore
                         {
                             OpportunityType = OpportunityType.ScheduledSession,
                             AssignedFeed = OpportunityType.ScheduledSession,
-                            OpportunityUriTemplate = "{+BaseUrl}api/scheduled-sessions/{SessionSeriesId}/events/{ScheduledSessionId}",
-                            OfferUriTemplate =       "{+BaseUrl}api/scheduled-sessions/{SessionSeriesId}/events/{ScheduledSessionId}#/offers/{OfferId}",
+                            OpportunityIdTemplate = "{+BaseUrl}api/scheduled-sessions/{SessionSeriesId}/events/{ScheduledSessionId}",
+                            OfferIdTemplate =       "{+BaseUrl}api/scheduled-sessions/{SessionSeriesId}/events/{ScheduledSessionId}#/offers/{OfferId}",
                             Bookable = true
                         },
                         // Parent
@@ -74,8 +74,8 @@ namespace BookingSystem.AspNetCore
                         {
                             OpportunityType = OpportunityType.SessionSeries,
                             AssignedFeed = OpportunityType.SessionSeries,
-                            OpportunityUriTemplate = "{+BaseUrl}api/session-series/{SessionSeriesId}",
-                            OfferUriTemplate =       "{+BaseUrl}api/session-series/{SessionSeriesId}#/offers/{OfferId}",
+                            OpportunityIdTemplate = "{+BaseUrl}api/session-series/{SessionSeriesId}",
+                            OfferIdTemplate =       "{+BaseUrl}api/session-series/{SessionSeriesId}#/offers/{OfferId}",
                             Bookable = true
                         }) /*,
 

@@ -57,8 +57,8 @@ namespace OpenActive.Server.NET.Tests
                         {
                             OpportunityType = OpportunityType.Event,
                             AssignedFeed = OpportunityType.Event,
-                            OpportunityUriTemplate = "{+BaseUrl}api/{EventType}/{SessionSeriesId}/events/{ScheduledSessionId}",
-                            OfferUriTemplate = "{+BaseUrl}api/{EventType}/{SessionSeriesId}/events/{ScheduledSessionId}#/offers/{OfferId}",
+                            OpportunityIdTemplate = "{+BaseUrl}api/{EventType}/{SessionSeriesId}/events/{ScheduledSessionId}",
+                            OfferIdTemplate = "{+BaseUrl}api/{EventType}/{SessionSeriesId}/events/{ScheduledSessionId}#/offers/{OfferId}",
                             Bookable = true
                         });
 
