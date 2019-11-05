@@ -1,6 +1,7 @@
 using System;
 using Xunit;
 using OpenActive.Server.NET;
+using OpenActive.DatasetSite.NET;
 
 namespace OpenActive.Server.NET.Tests
 {
@@ -13,6 +14,7 @@ namespace OpenActive.Server.NET.Tests
             public string SessionSeriesId { get; set; }
             public long? ScheduledSessionId { get; set; }
             public long? OfferId { get; set; }
+            public OpportunityType? OpportunityType { get; set; }
         }
 
         [Fact]
@@ -50,11 +52,15 @@ namespace OpenActive.Server.NET.Tests
         public void BookablePairIdTemplate_GetIdComponents()
         {
             var template = new BookablePairIdTemplate<SessionSeriesComponents>(
-                OpportunityType.Event,
-                DatasetSite.NET.FeedType.Event,
-                "{+BaseUrl}api/{EventType}/{SessionSeriesId}/events/{ScheduledSessionId}",
-                "{+BaseUrl}api/{EventType}/{SessionSeriesId}/events/{ScheduledSessionId}#/offers/{OfferId}"
-                );
+                        // Opportunity
+                        new OpportunityIdConfiguration
+                        {
+                            OpportunityType = OpportunityType.Event,
+                            AssignedFeed = OpportunityType.Event,
+                            OpportunityUriTemplate = "{+BaseUrl}api/{EventType}/{SessionSeriesId}/events/{ScheduledSessionId}",
+                            OfferUriTemplate = "{+BaseUrl}api/{EventType}/{SessionSeriesId}/events/{ScheduledSessionId}#/offers/{OfferId}",
+                            Bookable = true
+                        });
 
             var components = template.GetIdComponents(
                 new Uri("https://example.com/api/session-series/asdf/events/123"),

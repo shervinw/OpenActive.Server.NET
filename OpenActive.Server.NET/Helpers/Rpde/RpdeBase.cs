@@ -49,7 +49,15 @@ namespace OpenActive.Server.NET
 
         public RpdePage GetRPDEPage(long? afterTimestamp, long? afterId)
         {
-            return new RpdePage(this.FeedUrl, afterTimestamp, afterId, GetRPDEItems(afterTimestamp, afterId));
+            if ((!afterTimestamp.HasValue && afterId.HasValue) ||
+                (afterTimestamp.HasValue && !afterId.HasValue) )
+            {
+                throw new ArgumentNullException("afterTimestamp and afterId must both be supplied, or neither supplied");
+            }
+            else
+            {
+                return new RpdePage(this.FeedUrl, afterTimestamp, afterId, GetRPDEItems(afterTimestamp, afterId));
+            }
         }
     }
     public abstract class RPDEFeedModifiedTimestampAndIDString : RPDEFeedGenerator
@@ -58,7 +66,15 @@ namespace OpenActive.Server.NET
 
         public RpdePage GetRPDEPage(long? afterTimestamp, string afterId)
         {
-            return new RpdePage(this.FeedUrl, afterTimestamp, afterId, GetRPDEItems(afterTimestamp, afterId));
+            if ((!afterTimestamp.HasValue && !string.IsNullOrWhiteSpace(afterId)) ||
+                (afterTimestamp.HasValue && string.IsNullOrWhiteSpace(afterId)))
+            {
+                throw new ArgumentNullException("afterTimestamp and afterId must both be supplied, or neither supplied");
+            }
+            else
+            {
+                return new RpdePage(this.FeedUrl, afterTimestamp, afterId, GetRPDEItems(afterTimestamp, afterId));
+            }
         }
     }
 

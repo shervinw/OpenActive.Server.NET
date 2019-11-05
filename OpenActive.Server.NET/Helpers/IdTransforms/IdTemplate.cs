@@ -12,6 +12,7 @@ namespace OpenActive.Server.NET
 {
     public interface IBookableIdComponents {
         Uri BaseUrl { get; set; }
+        OpportunityType? OpportunityType { get; set; }
     }
 
     public class OrderId
@@ -61,8 +62,8 @@ namespace OpenActive.Server.NET
 
         public BookablePairIdTemplateWithOfferInheritance(
             OpportunityIdConfiguration opportunityIdConfiguration,
-            OpportunityIdConfiguration parentIdConfiguration = default(OpportunityIdConfiguration),
-            OpportunityIdConfiguration grandparentIdConfiguration = default(OpportunityIdConfiguration))
+            OpportunityIdConfiguration? parentIdConfiguration = null,
+            OpportunityIdConfiguration? grandparentIdConfiguration = null)
             : base(false, opportunityIdConfiguration, parentIdConfiguration, grandparentIdConfiguration)
         {
             // ScheduledSession with SessionSeries is the only opportunity type that allows Offer inheritance within Modelling Specification 2.0
@@ -89,14 +90,12 @@ namespace OpenActive.Server.NET
             // As inheritance is in use, the Offer must be resolved against either: Opportunity with Offer; or Opportunity and _parent_ Offer
             // Note in OpenActive Modelling Specification 2.0 this behaviour is only applicable to SessionSeries and ScheduledSession
             // Note the grandparent (e.g. EventSeries) is never bookable
-            if (this.OpportunityIdConfiguration.Bookable == true)
-            {
-                return (IBookableIdComponents)base.GetIdComponents(nameof(GetOpportunityReference), opportunityId, offerId, null, null)
-                ?? (IBookableIdComponents)base.GetIdComponents(nameof(GetOpportunityReference), opportunityId, null, null, offerId);
-            } else
-            {
-                return null;
-            }
+
+            // TODO: Make this check for this.OpportunityIdConfiguration.Bookable == true
+
+            return GetIdComponentsWithOpportunityType(this.OpportunityIdConfiguration.OpportunityType, opportunityId, offerId, null, null)
+            ?? GetIdComponentsWithOpportunityType(this.ParentIdConfiguration?.OpportunityType, opportunityId, null, null, offerId);
+
         }
     }
 
@@ -113,26 +112,11 @@ namespace OpenActive.Server.NET
     [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1054:Uri parameters should not be strings", Justification = "<Pending>")]
     public class BookablePairIdTemplate<T> : IdTemplate<T>, IBookablePairIdTemplate where T : IBookableIdComponents, new()
     {
-        protected BookablePairIdTemplate(bool overrideSessionSeriesCheck,
-            OpportunityIdConfiguration opportunityIdConfiguration,
-            OpportunityIdConfiguration? parentIdConfiguration = null,
-            OpportunityIdConfiguration? grandparentIdConfiguration = null)
-            : base(opportunityIdConfiguration.OpportunityUriTemplate, opportunityIdConfiguration.OfferUriTemplate,
-                  parentIdConfiguration?.OpportunityUriTemplate, parentIdConfiguration?.OfferUriTemplate,
-                  grandparentIdConfiguration?.OpportunityUriTemplate, grandparentIdConfiguration?.OfferUriTemplate)
-        {
-            this.OpportunityIdConfiguration = opportunityIdConfiguration;
-            this.ParentIdConfiguration = parentIdConfiguration;
-            this.GrandparentIdConfiguration = grandparentIdConfiguration;
-        }
-
         public BookablePairIdTemplate(
             OpportunityIdConfiguration opportunityIdConfiguration,
             OpportunityIdConfiguration? parentIdConfiguration = null,
             OpportunityIdConfiguration? grandparentIdConfiguration = null)
-            : base(opportunityIdConfiguration.OpportunityUriTemplate, opportunityIdConfiguration.OfferUriTemplate,
-                  parentIdConfiguration?.OpportunityUriTemplate, parentIdConfiguration?.OfferUriTemplate,
-                  grandparentIdConfiguration?.OpportunityUriTemplate, grandparentIdConfiguration?.OfferUriTemplate)
+            : this(false, opportunityIdConfiguration, parentIdConfiguration, grandparentIdConfiguration)
         {
             // ScheduledSession with SessionSeries is the only opportunity type that allows Offer inheritance within Modelling Specification 2.0
             // Therefore the check below ensures that this class is only used in accordance with the spec
@@ -140,6 +124,16 @@ namespace OpenActive.Server.NET
             {
                 throw new NotSupportedException($"{nameof(BookablePairIdTemplate<T>)} used with unsupported {nameof(OpportunityType)} pair. ScheduledSession with SessionSeries are the only opportunity types that allows Offer inheritance within Modelling Specification 2.0. Please use {nameof(BookablePairIdTemplateWithOfferInheritance<T>)}.");
             }
+        }
+
+        protected BookablePairIdTemplate(bool overrideSessionSeriesCheck,
+            OpportunityIdConfiguration opportunityIdConfiguration,
+            OpportunityIdConfiguration? parentIdConfiguration,
+            OpportunityIdConfiguration? grandparentIdConfiguration)
+            : base(opportunityIdConfiguration.OpportunityUriTemplate, opportunityIdConfiguration.OfferUriTemplate,
+                  parentIdConfiguration?.OpportunityUriTemplate, parentIdConfiguration?.OfferUriTemplate,
+                  grandparentIdConfiguration?.OpportunityUriTemplate, grandparentIdConfiguration?.OfferUriTemplate)
+        {
 
 
             // SH-TODO: Add more code here to validate the combinations of child/parent/grandparent OpportunityType based on the Parent relationship
@@ -185,8 +179,23 @@ namespace OpenActive.Server.NET
             // and has many edge cases
             // Note the grandparent is never bookable
 
-            return (IBookableIdComponents)base.GetIdComponents(nameof(GetOpportunityReference), opportunityId, offerId, null, null)
-                ?? (IBookableIdComponents)base.GetIdComponents(nameof(GetOpportunityReference), null, null, opportunityId, offerId);
+            return GetIdComponentsWithOpportunityType(this.OpportunityIdConfiguration.OpportunityType, opportunityId, offerId, null, null)
+                ?? GetIdComponentsWithOpportunityType(this.ParentIdConfiguration?.OpportunityType, null, null, opportunityId, offerId);
+        }
+
+        protected IBookableIdComponents GetIdComponentsWithOpportunityType(OpportunityType? opportunityType, params Uri[] ids)
+        {
+            var components = base.GetIdComponents((nameof(GetOpportunityReference)), ids);
+            if (components != null)
+            {
+                if (!opportunityType.HasValue) throw new ArgumentNullException("Unexpected match with invalid OpportunityIdConfiguration.");
+                components.OpportunityType = opportunityType.Value;
+                return components;
+            }
+            else
+            {
+                return null;
+            }
         }
 
         public T GetIdComponents(Uri opportunityId, Uri offerId)
@@ -287,7 +296,7 @@ namespace OpenActive.Server.NET
 
         protected IdTemplate(params string[] uriTemplate)
         {
-            uriTemplates = uriTemplate.Select(t => new UriTemplate.Core.UriTemplate(t)).ToList();
+            uriTemplates = uriTemplate.Select(t => t == null ? null : new UriTemplate.Core.UriTemplate(t)).ToList();
         }
 
         /// <summary>
@@ -305,6 +314,9 @@ namespace OpenActive.Server.NET
             var components = new T();
             var componentsType = typeof(T);
 
+            // TODO: Create detailed tests around this and ensure that if components that match are zero length or whitespace,
+            // it behaves the same as if no match has occurred
+
             for (var index = 0; index < ids.Length; index++)
             {
                 // Ignore an id where it is supplied as null
@@ -318,6 +330,7 @@ namespace OpenActive.Server.NET
                 // If ID does match template, return null
                 if (match.Bindings.Count == 0) return default(T);
 
+                // Set matching components in supplied POCO based on property name
                 foreach (var binding in match.Bindings)
                 {
                     if (componentsType.GetProperty(binding.Key) == null) throw new ArgumentException("Supplied UriTemplates must match supplied component type properties");

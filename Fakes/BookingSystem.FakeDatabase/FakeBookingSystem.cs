@@ -20,15 +20,18 @@ namespace BookingSystem.FakeDatabase
         /// 
         /// TODO: Move this initialisation data into an embedded string to increase portability / ease of installation
         /// </summary>
-        public static FakeBookingSystem Database { get; } = new FakeBookingSystem();// JsonConvert.DeserializeObject<FakeBookingSystem>(File.ReadAllText($"../../../../fakedata.json"));
+        public static FakeDatabase Database { get; } = new FakeDatabase();// JsonConvert.DeserializeObject<FakeBookingSystem>(File.ReadAllText($"../../../../fakedata.json"));
+    }
 
+    public class FakeDatabase
+    {
         private static readonly Faker faker = new Faker("en");
 
         public abstract class Table
         {
             // A database-wide auto-incrementing id is used for simplicity
             private static int nextId = 100000;
-            public int Id { get; set; } = nextId++;
+            public int Id { get; set; } // = nextId++;
             public bool Deleted { get; set; } = false;
             public DateTimeOffset Modified { get; set; } = DateTimeOffset.Now;
         }
@@ -50,13 +53,14 @@ namespace BookingSystem.FakeDatabase
         }
 
         public List<OccurrenceTable> Occurrences { get; set; } = Enumerable.Range(1, 10000)
-            .Select(id => new {
-                id = id,
+            .Select(n => new {
+                id = n,
                 startDate = faker.Date.Soon()
             })
             .Select(x => new OccurrenceTable
             {
-                Id = Decimal.ToInt32(x.id / 10),
+                ClassId = Decimal.ToInt32(x.id / 10),
+                Id = x.id,
                 Deleted = false,
                 Start = x.startDate,
                 End = x.startDate + TimeSpan.FromMinutes(faker.Random.Int(0, 360))

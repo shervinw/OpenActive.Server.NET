@@ -25,7 +25,7 @@ namespace OpenActive.Server.NET
         public SingleIdTemplate<OrderId> OrderIdTemplate { get; set; }
         public Dictionary<OpportunityType, RPDEFeedGenerator> OpenDataFeeds { get; set; }
         public int RPDEPageSize { get; set; } = 500;
-        public Uri JsonLdIdBaseUrl { get; internal set; }
+        public Uri JsonLdIdBaseUrl { get; set; }
     }
 
 
@@ -43,6 +43,7 @@ namespace OpenActive.Server.NET
         public Uri BaseUrl { get; set; }
         public long? SessionSeriesId { get; set; }
         public long? OfferId { get; set; }
+        public OpportunityType? OpportunityType { get; set; }
     }
 
     public class ScheduledSessionOpportunity : IBookableIdComponents
@@ -51,6 +52,7 @@ namespace OpenActive.Server.NET
         public long? SessionSeriesId { get; set; }
         public long? ScheduledSessionId { get; set; }
         public long? OfferId { get; set; }
+        public OpportunityType? OpportunityType { get; set; }
     }
 
     public class SlotOpportunity : IBookableIdComponents
@@ -60,6 +62,7 @@ namespace OpenActive.Server.NET
         public long? SlotId { get; set; }
 
         public long? OfferId { get; set; }
+        public OpportunityType? OpportunityType { get; set; }
     }
 
     public class DefaultSellerIdComponents

@@ -31,7 +31,7 @@ namespace OpenActive.Server.NET
         /// </summary>
         /// <param name="settings"></param>
         /// <param name="datasetSettings"></param>
-        public AbstractBookingEngine(BookingEngineSettings settings, DatasetSiteGeneratorSettings datasetSettings) : this(settings, datasetSettings?.OpenDataFeedBaseUrl, datasetSettings?.OpenBookingAPIBaseUrl)
+        public AbstractBookingEngine(BookingEngineSettings settings, DatasetSiteGeneratorSettings datasetSettings) : this(settings, datasetSettings?.OpenBookingAPIBaseUrl, datasetSettings?.OpenDataFeedBaseUrl)
         {
             if (datasetSettings == null) throw new ArgumentNullException(nameof(datasetSettings));
             this.datasetSettings = datasetSettings;
@@ -58,9 +58,9 @@ namespace OpenActive.Server.NET
             // (there should never be, as each template represents everyting you need in one feed)
             this.feedAssignedTemplates = settings.IdConfiguration.Select(t => t.IdConfigurations.Select(x => new
             {
-                opportunityType = x.OpportunityType,
+                assignedFeed = x.AssignedFeed,
                 bookablePairIdTemplate = t
-            })).SelectMany(x => x.ToList()).ToDictionary(k => k.opportunityType, v => v.bookablePairIdTemplate);
+            })).SelectMany(x => x.ToList()).ToDictionary(k => k.assignedFeed, v => v.bookablePairIdTemplate);
 
             // Setup each RPDEFeedGenerator with the relevant settings, including the relevant IdTemplate inferred from the config
             foreach (var kv in settings.OpenDataFeeds)
@@ -73,6 +73,12 @@ namespace OpenActive.Server.NET
 
             // Set supportedFeeds locally for use by dataset site
             this.supportedFeeds = settings.OpenDataFeeds.Keys.ToList();
+
+            // Check that OpenDataFeeds match IdConfiguration
+            if (supportedFeeds.Except(feedAssignedTemplates.Keys).Any() || feedAssignedTemplates.Keys.Except(supportedFeeds).Any())
+            {
+                throw new ArgumentException("Feeds configured in OpenDataFeeds must match those in IdConfiguration");
+            }
 
             // Setup array of types for lookup of OrderItem, based on the type string that will be supplied with the opportunity
             this.idConfigurationLookup = settings.IdConfiguration.Select(t => t.IdConfigurations.Select(x => new

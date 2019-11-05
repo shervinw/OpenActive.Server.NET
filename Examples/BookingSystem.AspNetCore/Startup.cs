@@ -18,6 +18,7 @@ using OpenActive.Server.NET;
 using OpenActive.DatasetSite.NET;
 using BookingSystem.AspNetCore.Feeds;
 using OpenActive.NET;
+using Newtonsoft.Json.Converters;
 
 namespace BookingSystem.AspNetCore
 {
@@ -33,14 +34,18 @@ namespace BookingSystem.AspNetCore
         // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
         {
-            services.AddAuthentication(AzureADB2CDefaults.BearerAuthenticationScheme)
-                .AddAzureADB2CBearer(options => Configuration.Bind("AzureAdB2C", options));
+            // TODO: Authentication disabled for now
+            //services.AddAuthentication(AzureADB2CDefaults.BearerAuthenticationScheme)
+            //    .AddAzureADB2CBearer(options => Configuration.Bind("AzureAdB2C", options));
             services.AddMvc().AddJsonOptions(options => {
                 options.SerializerSettings.Converters = new List<JsonConverter>()
                 {
                     // This enables every relevant response to be rendered to JSON-LD by OpenActive.NET
                     // TODO: Document use of this
-                    new OpenActiveThingConverter()
+                    // TODO: Is there a way we can not require this? Just output a string from the library direct? Less chances of rendering issues and misuse?
+                    new OpenActiveThingConverter(),
+                    new ValuesConverter(),
+                    new StringEnumConverter()
                 };
                 })
                 .SetCompatibilityVersion(CompatibilityVersion.Version_2_1);
@@ -69,10 +74,10 @@ namespace BookingSystem.AspNetCore
                         {
                             OpportunityType = OpportunityType.SessionSeries,
                             AssignedFeed = OpportunityType.SessionSeries,
-                            OpportunityUriTemplate = "{+BaseUrl}api/scheduled-sessions/{SessionSeriesId}",
-                            OfferUriTemplate =       "{+BaseUrl}api/scheduled-sessions/{SessionSeriesId}#/offers/{OfferId}",
+                            OpportunityUriTemplate = "{+BaseUrl}api/session-series/{SessionSeriesId}",
+                            OfferUriTemplate =       "{+BaseUrl}api/session-series/{SessionSeriesId}#/offers/{OfferId}",
                             Bookable = true
-                        }),
+                        }) /*,
 
                     new BookablePairIdTemplate<ScheduledSessionOpportunity>(
                         // Opportunity
@@ -139,10 +144,11 @@ namespace BookingSystem.AspNetCore
                             OpportunityUriTemplate = "{+BaseUrl}api/events/{EventId}",
                             OfferUriTemplate =       "{+BaseUrl}api/events/{EventId}#/offers/{OfferId}",
                             Bookable = true
-                        })
+                        })*/
                     
                 },
-        
+
+                JsonLdIdBaseUrl = new Uri("https://example.com/api/identifiers/"),
                 OrderBaseUrl = new Uri("https://example.com/api/orders/"),
 
                 OrderIdTemplate = new SingleIdTemplate<OrderId>(
@@ -151,14 +157,17 @@ namespace BookingSystem.AspNetCore
 
                 OpenDataFeeds = new Dictionary<OpportunityType, RPDEFeedGenerator> {
                     {
-                        OpportunityType.ScheduledSession, new AcmeScheduledSessionRPDEGenerator() // ID, ParentID
+                        OpportunityType.ScheduledSession, new AcmeScheduledSessionRPDEGenerator()
+                    },
+                    {
+                        OpportunityType.SessionSeries, new AcmeSessionSeriesRPDEGenerator()
                     }
                 }
             },
             new DatasetSiteGeneratorSettings
             {
-                OpenDataFeedBaseUrl = "https://customer.example.com/feed/".ParseUrlOrNull(),
-                DatasetSiteUrl = "https://halo-odi.legendonlineservices.co.uk/openactive/".ParseUrlOrNull(),
+                OpenDataFeedBaseUrl = "https://localhost:44307/feeds/".ParseUrlOrNull(),
+                DatasetSiteUrl = "https://localhost:44307/openactive/".ParseUrlOrNull(),
                 DatasetDiscussionUrl = "https://github.com/gll-better/opendata".ParseUrlOrNull(),
                 DatasetDocumentationUrl = "https://docs.acmebooker.example.com/".ParseUrlOrNull(),
                 DatasetLanguages = new List<string> { "en-GB" },
@@ -173,7 +182,7 @@ namespace BookingSystem.AspNetCore
                 PlatformVersion = "2.0",
                 BackgroundImageUrl = "https://data.better.org.uk/images/bg.jpg".ParseUrlOrNull(),
                 DateFirstPublished = new DateTimeOffset(new DateTime(2019, 01, 14)),
-                OpenBookingAPIBaseUrl = "https://customer.example.com/api/openbooking/".ParseUrlOrNull(),
+                OpenBookingAPIBaseUrl = "https://localhost:44307/api/openbooking/".ParseUrlOrNull(),
             },
             new AcmeStore()
             ));
