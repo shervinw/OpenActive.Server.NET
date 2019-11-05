@@ -51,22 +51,33 @@ namespace BookingSystem.AspNetCore
 
             services.AddSingleton<IBookingEngine>(sp => new StoreBookingEngine(new BookingEngineSettings
             {
+                // This assigns the ID pattern used for each ID
                 IdConfiguration = new Dictionary<BookableOpportunityClass, IBookablePairIdTemplate> {
                     {
+                        // Note that ScheduledSession is the only opportunity type that allows offer inheritance  
                         BookableOpportunityClass.ScheduledSession,
-                        new BookablePairIdTemplate<ScheduledSessionOpportunity>(
+                        new BookablePairIdTemplateWithOfferInheritance<ScheduledSessionOpportunity>(
                             "{+BaseUrl}api/scheduled-sessions/{SessionSeriesId}/events/{ScheduledSessionId}",
-                            "{+BaseUrl}api/scheduled-sessions/{SessionSeriesId}/events/{ScheduledSessionId}#/offers/{OfferId}"
+                            "{+BaseUrl}api/scheduled-sessions/{SessionSeriesId}/events/{ScheduledSessionId}#/offers/{OfferId}",
+                            "{+BaseUrl}api/scheduled-sessions/{SessionSeriesId}",
+                            "{+BaseUrl}api/scheduled-sessions/{SessionSeriesId}#/offers/{OfferId}"
                             )
                     },
                     {
                         BookableOpportunityClass.Slot,
                         new BookablePairIdTemplate<SlotOpportunity>(
                             "{+BaseUrl}api/facility-uses/{FacilityUseId}/slots/{SlotId}",
-                            "{+BaseUrl}api/facility-uses/{FacilityUseId}/slots/{SlotId}#/offers/{OfferId}"
+                            "{+BaseUrl}api/facility-uses/{FacilityUseId}/slots/{SlotId}#/offers/{OfferId}",
+                            "{+BaseUrl}api/facility-uses/{FacilityUseId}"
                             )
-
-                        //TODO: add "parentId" and make the offers list of urlTemplates an array? To handle the two differnet places where Offers can exist
+                    },
+                    {
+                        BookableOpportunityClass.Event,
+                        new BookablePairIdTemplate<SlotOpportunity>(
+                            "{+BaseUrl}api/facility-uses/{FacilityUseId}/slots/{SlotId}",
+                            "{+BaseUrl}api/facility-uses/{FacilityUseId}/slots/{SlotId}#/offers/{OfferId}",
+                            "{+BaseUrl}api/facility-uses/{FacilityUseId}"
+                            )
                     }
                 },
         

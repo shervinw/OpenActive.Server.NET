@@ -38,10 +38,36 @@ namespace OpenActive.Server.NET
     public interface IBookablePairIdTemplate
     {
         IBookableIdComponents GetOpportunityReference(Uri opportunityId, Uri offerId);
-
-        Uri RenderOpportunityId(IBookableIdComponents components);
-
         Uri RenderOfferId(IBookableIdComponents components);
+        Uri RenderOpportunityId(IBookableIdComponents components);
+        Uri RenderParentOfferId(IBookableIdComponents components);
+        Uri RenderParentOpportunityId(IBookableIdComponents components);
+    }
+
+    public class BookablePairIdTemplateWithOfferInheritance<T> : BookablePairIdTemplate<T> where T : IBookableIdComponents, new()
+    {
+        public BookablePairIdTemplateWithOfferInheritance(string opportunityUriTemplate, string offerUriTemplate, string parentOpportunityUriTemplate, string parentOfferUriTemplate)
+        : base(opportunityUriTemplate, offerUriTemplate, parentOpportunityUriTemplate, parentOfferUriTemplate)
+        {
+        }
+
+        /// <summary>
+        /// This is used by the booking engine to resolve an OrderItem to its components, using only opportunityId and Uri offerId
+        /// </summary>
+        /// <param name="opportunityId"></param>
+        /// <param name="offerId"></param>
+        /// <returns>Null if either ID does not match the template for the Opportunity, with its own Offer or the Offer of its parent</returns>
+        public new IBookableIdComponents GetOpportunityReference(Uri opportunityId, Uri offerId)
+        {
+            // Require both opportunityId and offerId to not be null
+            if (opportunityId == null) throw new ArgumentNullException(nameof(opportunityId));
+            if (offerId == null) throw new ArgumentNullException(nameof(offerId));
+
+            // As inheritance is in use, the Offer must be resolved against either: Opportunity with Offer; or Opportunity and parent Offer
+            // Note in OpenActive Modelling Specification 2.0 this behaviour is only applicable to SessionSeries and ScheduledSession
+            return (IBookableIdComponents)base.GetIdComponents(nameof(GetIdComponents), opportunityId, offerId, null, null)
+                ?? (IBookableIdComponents)base.GetIdComponents(nameof(GetIdComponents), opportunityId, null, null, offerId);
+        }
     }
 
     public class BookablePairIdTemplate<T> : IdTemplate<T>, IBookablePairIdTemplate where T : IBookableIdComponents, new()
@@ -49,34 +75,78 @@ namespace OpenActive.Server.NET
         public BookablePairIdTemplate(string opportunityUriTemplate, string offerUriTemplate) : base(opportunityUriTemplate, offerUriTemplate)
         {
         }
+        public BookablePairIdTemplate(string opportunityUriTemplate, string offerUriTemplate, string parentOpportunityUriTemplate)
+            : base(opportunityUriTemplate, offerUriTemplate, parentOpportunityUriTemplate)
+        {
+        }
+        protected BookablePairIdTemplate(string opportunityUriTemplate, string offerUriTemplate, string parentOpportunityUriTemplate, string parentOfferUriTemplate)
+: base(opportunityUriTemplate, offerUriTemplate, parentOpportunityUriTemplate, parentOfferUriTemplate)
+        {
+        }
 
+        /// <summary>
+        /// This is used by the booking engine to resolve an OrderItem to its components, using only opportunityId and Uri offerId
+        /// </summary>
+        /// <param name="opportunityId"></param>
+        /// <param name="offerId"></param>
+        /// <returns>Null if either ID does not match the template</returns>
         public IBookableIdComponents GetOpportunityReference(Uri opportunityId, Uri offerId)
         {
-            return base.GetIdComponents(opportunityId, offerId);
+            // Require both opportunityId and offerId to not be null
+            if (opportunityId == null) throw new ArgumentNullException(nameof(opportunityId));
+            if (offerId == null) throw new ArgumentNullException(nameof(offerId));
+            return base.GetIdComponents(nameof(GetOpportunityReference), opportunityId, offerId);
         }
 
         public T GetIdComponents(Uri opportunityId, Uri offerId)
         {
-            return base.GetIdComponents(opportunityId, offerId);
+            return base.GetIdComponents(nameof(GetIdComponents), opportunityId, offerId);
         }
+        public T GetIdComponents(Uri opportunityId, Uri offerId, Uri parentOpportunityId)
+        {
+            return base.GetIdComponents(nameof(GetIdComponents), opportunityId, offerId, parentOpportunityId);
+        }
+        /*
+         * Note: this is not provided as an option as it should never need to be used in a sane implementation
+        public T GetIdComponents(Uri opportunityId, Uri offerId, Uri parentOpportunityId, Uri parentOfferId)
+        {
+            return base.GetIdComponents(nameof(GetIdComponents), opportunityId, offerId, parentOpportunityId, parentOfferId);
+        }*/
 
         public Uri RenderOpportunityId(T components)
         {
-            return RenderId(0, components);
+            return RenderId(0, components, nameof(RenderOpportunityId), "opportunityUriTemplate");
         }
         public Uri RenderOfferId(T components)
         {
-            return RenderId(1, components);
+            return RenderId(1, components, nameof(RenderOfferId), "offerUriTemplate");
         }
+        public Uri RenderParentOpportunityId(T components)
+        {
+            return RenderId(2, components, nameof(RenderParentOpportunityId), "parentOpportunityUriTemplate");
+        }
+        public Uri RenderParentOfferId(T components)
+        {
+            return RenderId(3, components, nameof(RenderParentOfferId), "parentOfferUriTemplate");
+        }
+
 
         public Uri RenderOpportunityId(IBookableIdComponents components)
         {
-            return RenderOpportunityId((T)components);
+            return RenderId(0, (T)components, nameof(RenderOpportunityId), "opportunityUriTemplate");
         }
 
         public Uri RenderOfferId(IBookableIdComponents components)
         {
-            return RenderOfferId((T)components);
+            return RenderId(1, (T)components, nameof(RenderOfferId), "offerUriTemplate");
+        }
+        public Uri RenderParentOpportunityId(IBookableIdComponents components)
+        {
+            return RenderId(2, (T)components, nameof(RenderParentOpportunityId), "parentOpportunityUriTemplate");
+        }
+        public Uri RenderParentOfferId(IBookableIdComponents components)
+        {
+            return RenderId(3, (T)components, nameof(RenderParentOfferId), "parentOfferUriTemplate");
         }
     }
 
@@ -84,16 +154,17 @@ namespace OpenActive.Server.NET
     {
         public SingleIdTemplate(string uriTemplate) : base(uriTemplate)
         {
+            if (uriTemplate == null) throw new ArgumentNullException(nameof(uriTemplate));
         }
 
         public T GetIdComponents(Uri id)
         {
-            return base.GetIdComponents(id);
+            return base.GetIdComponents(nameof(GetIdComponents) , id);
         }
 
         public Uri RenderId(T components)
         {
-            return RenderId(0, components);
+            return RenderId(0, components, nameof(RenderId),  "uriTemplate");
         }
 
     }
@@ -105,25 +176,39 @@ namespace OpenActive.Server.NET
     {
         private List<UriTemplate.Core.UriTemplate> uriTemplates;
 
-        //IdTemplate<ScheduledSessionIdComponents>("<scheduled_session_url", "offer_url")
-
         protected IdTemplate(params string[] uriTemplate)
         {
             uriTemplates = uriTemplate.Select(t => new UriTemplate.Core.UriTemplate(t)).ToList();
         }
 
-        protected T GetIdComponents(params Uri[] ids)
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="method"></param>
+        /// <param name="matchRequired">Defaults to bool[] { true, true, ... } if not set</param>
+        /// <param name="ids"></param>
+        /// <returns></returns>
+        protected T GetIdComponents(string method, params Uri[] ids)
         {
-            if (ids.Length != uriTemplates.Count)
-                throw new ArgumentException("Supplied ids must match number of UriTemplates in order");
-
-            var matches = ids.Zip(uriTemplates, (id, uriTemplate) => uriTemplate.Match(id));
+            if (ids.Length > uriTemplates.Count)
+                throw new ArgumentException("{method} must have a number of supplied id parameters that are at least covered by the number of templates supplied when using the constructor for this class. Pass null for these ids if not known.");
 
             var components = new T();
             var componentsType = typeof(T);
 
-            foreach (UriTemplateMatch match in matches)
+            for (var index = 0; index < ids.Length; index++)
             {
+                // Ignore an id where it is supplied as null
+                if (ids[index] == null) continue;
+
+                var match = uriTemplates[index].Match(ids[index]);
+
+                // If ID does match template, return null
+                if (match.Bindings.Count == 0)
+                {
+                    return default(T);
+                }
+
                 foreach (var binding in match.Bindings)
                 {
                     if (componentsType.GetProperty(binding.Key) == null) throw new ArgumentException("Supplied UriTemplates must match supplied component type properties");
@@ -174,8 +259,13 @@ namespace OpenActive.Server.NET
             return components;
         }
 
-        protected Uri RenderId(int index, T components)
+        protected Uri RenderId(int index, T components, string method, string param)
         {
+            if (uriTemplates.ElementAtOrDefault(index) == null)
+            {
+                throw new NotSupportedException($"{method} is not available as {param} was not specified when using the constructor for this class.");
+            }
+
             var componentDictionary = components.GetType()
                 .GetProperties(BindingFlags.Instance | BindingFlags.Public)
                      .ToDictionary(prop => prop.Name, prop => prop.GetValue(components, null));
