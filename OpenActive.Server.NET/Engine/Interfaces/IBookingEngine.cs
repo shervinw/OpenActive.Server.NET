@@ -13,8 +13,8 @@ namespace OpenActive.Server.NET
         OrderQuote ProcessCheckpoint2(string uuid, OrderQuote orderQuote);
         void ProcessOrderUpdate(string uuid, Order order);
         string RenderDatasetSite();
-        void CreateTestData(Event @event);
-        void DeleteTestData(string name);
-        TOrder ProcessFlowRequest<TOrder>(FlowStage stage, OrderId orderId, TOrder orderQuote, TaxPayeeRelationship taxPayeeRelationship, SingleValues<Organization, Person> payer) where TOrder : Order;
+        void CreateTestData(string opportunityType, Event @event);
+        void DeleteTestData(string opportunityType, string name);
+        TOrder ProcessFlowRequest<TOrder>(FlowStage stage, OrderIdComponents orderId, TOrder orderQuote, TaxPayeeRelationship taxPayeeRelationship, SingleValues<Organization, Person> payer) where TOrder : Order;
     }
 }

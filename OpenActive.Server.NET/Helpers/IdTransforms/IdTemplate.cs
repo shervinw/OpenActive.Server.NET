@@ -10,16 +10,12 @@ using System.Collections;
 
 namespace OpenActive.Server.NET
 {
-    public interface IBookableIdComponents {
+    public interface IBookableIdComponents
+    {
         Uri BaseUrl { get; set; }
         OpportunityType? OpportunityType { get; set; }
     }
 
-    public class OrderId
-    {
-        public Uri BaseUrl { get; set; }
-        public string uuid { get; set; }
-    }
 
     public class BookableOpportunityAndOfferMismatchException : Exception
     {
@@ -249,6 +245,7 @@ namespace OpenActive.Server.NET
         
     }
 
+
     public class SingleIdTemplate<T> : IdTemplate<T> where T : new()
     {
         public SingleIdTemplate(string uriTemplate) : base(uriTemplate)
@@ -258,12 +255,12 @@ namespace OpenActive.Server.NET
 
         public T GetIdComponents(Uri id)
         {
-            return base.GetIdComponents(nameof(GetIdComponents) , id);
+            return base.GetIdComponents(nameof(GetIdComponents), id);
         }
 
         public Uri RenderId(T components)
         {
-            return RenderId(0, components, nameof(RenderId),  "uriTemplate");
+            return RenderId(0, components, nameof(RenderId), "uriTemplate");
         }
 
     }

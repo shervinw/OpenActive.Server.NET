@@ -9,6 +9,7 @@ using System.Text;
 using System.Linq;
 using BookingSystem.FakeDatabase;
 using static BookingSystem.FakeDatabase.FakeDatabase;
+using OpenActive.DatasetSite.NET;
 
 namespace BookingSystem.AspNetCore
 {
@@ -16,24 +17,26 @@ namespace BookingSystem.AspNetCore
     /// <summary>
     /// TODO: Move to BookingSystem.AspNetCore
     /// </summary>
-    class AcmeStore : IOpenBookingStore
+    class SessionsStore : OpenBookingStore<SessionOpportunity>, IOpenBookingStore
     {
-        public void CreateTestDataItem(Event @event)
+        
+        public override void CreateTestDataItem(OpportunityType opportunityType, Event @event)
         {
-            FakeBookingSystem.Database.AddClass(@event.Name, @event.Offers?.FirstOrDefault()?.Price);
+            // Note assume that if it's been routed here, it will be possible to cast it to type Event
+            FakeBookingSystem.Database.AddClass(@event.Name, ((Event)@event).Offers?.FirstOrDefault()?.Price);
         }
 
-        public void DeleteTestDataItem(string name)
+        public override void DeleteTestDataItem(OpportunityType opportunityType, string name)
         {
             FakeBookingSystem.Database.DeleteClass(name);
         }
 
 
         //public void CreateFakeEvent()
-        public OrderItem GetOrderItem(IBookableIdComponents opportunityOfferId, DefaultSellerIdComponents sellerId)
+        public override OrderItem GetOrderItem(SessionOpportunity opportunityOfferId, SellerIdComponents sellerId)
         {
             // Note switch statement exists here as we need to handle booking for a single Order that contains different types of opportunity
-            switch (opportunityOfferId)
+            /*switch (opportunityOfferId)
             {
                 case SessionOpportunity sessionOpportunity:
 
@@ -43,11 +46,10 @@ namespace BookingSystem.AspNetCore
 
                 default:
                     break;
-            }
+            }*/
 
             return null;
         }
     }
 
-    
 }

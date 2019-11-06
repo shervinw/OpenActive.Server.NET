@@ -1,10 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text;
 using OpenActive.DatasetSite.NET;
 using OpenActive.NET;
 using OpenActive.NET.Rpde.Version1;
-using Schema.NET;
 
 namespace OpenActive.Server.NET
 {
@@ -22,40 +22,60 @@ namespace OpenActive.Server.NET
         /// </summary>
         /// <param name="settings">Settings are used exclusively by the AbstractBookingEngine</param>
         /// <param name="store">Store used exclusively by the StoreBookingEngine</param>
-        public StoreBookingEngine(BookingEngineSettings settings, DatasetSiteGeneratorSettings datasetSettings, IOpenBookingStore store) : base(settings, datasetSettings)
+        public StoreBookingEngine(BookingEngineSettings settings, DatasetSiteGeneratorSettings datasetSettings, Dictionary<IOpenBookingStore, List<OpportunityType>> openBookingStoreRouting) : base(settings, datasetSettings)
         {
-            this.store = store;
+            this.stores = openBookingStoreRouting.Keys.ToList();
+
+            // TODO: Add test to ensure there are not two or more at FirstOrDefault step, in case of configuration error 
+            storeRouting = openBookingStoreRouting.Select(t => t.Value.Select(y => new
+            {
+                store = t.Key,
+                opportunityType = y
+            })).SelectMany(x => x.ToList()).GroupBy(g => g.opportunityType).ToDictionary(k => k.Key, v => v.Select(a => a.store).FirstOrDefault());
         }
 
-        private readonly IOpenBookingStore store;
+        private readonly List<IOpenBookingStore> stores;
+        private readonly Dictionary<OpportunityType, IOpenBookingStore> storeRouting;
 
-        public override void CreateTestDataItem(OpenActive.NET.Event @event)
+        public override void CreateTestDataItem(OpportunityType opportunityType, Event @event)
         {
-            store.CreateTestDataItem(@event);
+            if (!storeRouting.ContainsKey(opportunityType))
+                throw new OpenBookingException(new OpenBookingError(), "Specified opportunity type is not configured as bookable in the StoreBookingEngine constructor.");
+
+            //TODO: This forces the cast into the Store. Perhaps best to move the cast here to simplify the store?
+            storeRouting[opportunityType].CreateTestDataItem(opportunityType, @event);
         }
 
-        public override void DeleteTestDataItem(string name)
+        public override void DeleteTestDataItem(OpportunityType opportunityType, string name)
         {
-            store.DeleteTestDataItem(name);
+            if (!storeRouting.ContainsKey(opportunityType))
+                throw new OpenBookingException(new OpenBookingError(), "Specified opportunity type is not configured as bookable in the StoreBookingEngine constructor.");
+
+            storeRouting[opportunityType].DeleteTestDataItem(opportunityType, name);
         }
 
-        public override TOrder ProcessFlowRequest<TOrder>(FlowStage stage, OrderId orderId, TOrder orderQuote, TaxPayeeRelationship taxPayeeRelationship, SingleValues<OpenActive.NET.Organization, OpenActive.NET.Person> payer)
+        public override TOrder ProcessFlowRequest<TOrder>(FlowStage stage, OrderIdComponents orderId, TOrder orderQuote,
+            TaxPayeeRelationship taxPayeeRelationship, SingleValues<Organization, Person> payer)
         {
             throw new NotImplementedException();
+
+
             /*
-           // Get seller info
-           var seller = getSeller(authKey, orderQuote.seller.id, data);
+            // Get seller info (note Id has already been validated in Abstract
+            var seller = store.GetSeller(authKey, orderQuote.Seller.Id, data);
 
 
-        // Get the booking service info (usually static for the booking system)
-        var bookingService = getBookingService(data);
+            // Get the booking service info (usually static for the booking system)
+            var bookingService = getBookingService(data);
 
-        // Reflect back only those customer fields that are supported
-        var customer = getCustomerSupportedFields(orderQuote.customer)
+            // Reflect back only those customer fields that are supported
+            var customer = getCustomerSupportedFields(orderQuote.customer)
 
-        // Reflect back only those broker fields that are supported
-        var broker = getBrokerSupportedFields(orderQuote.broker)
+            // Reflect back only those broker fields that are supported
+            var broker = getBrokerSupportedFields(orderQuote.broker)
 
+                    
+            // The below goes into RpdeBase
 
         // Map all requested OrderedItems to their full details, and validate any details provided if at C2
         var orderedItems = orderQuote.orderedItem.Select(x => 

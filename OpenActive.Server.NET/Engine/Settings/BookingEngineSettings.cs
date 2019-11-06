@@ -22,7 +22,8 @@ namespace OpenActive.Server.NET
         /// </summary>
         public List<IBookablePairIdTemplate> IdConfiguration { get; set;  }
         public Uri OrderBaseUrl { get; set; }
-        public SingleIdTemplate<OrderId> OrderIdTemplate { get; set; }
+        public SingleIdTemplate<OrderIdComponents> OrderIdTemplate { get; set; }
+        public SingleIdTemplate<SellerIdComponents> SellerIdTemplate { get; set; }
         public Dictionary<OpportunityType, IRPDEFeedGenerator> OpenDataFeeds { get; set; }
         public int RPDEPageSize { get; set; } = 500;
         public Uri JsonLdIdBaseUrl { get; set; }
@@ -30,8 +31,4 @@ namespace OpenActive.Server.NET
 
 
 
-    public class DefaultSellerIdComponents
-    {
-        public long? SellerId { get; set; }
-    }
 }

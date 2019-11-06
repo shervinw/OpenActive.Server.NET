@@ -32,7 +32,7 @@ namespace BookingSystem.AspNetCore.Controllers
             }
             catch (OpenBookingException obe)
             {
-                return StatusCode((int)obe.GetHttpStatusCode(), obe);
+                return StatusCode((int)obe.GetHttpStatusCode(), obe.OpenBookingError);
             }
         }
 
@@ -49,7 +49,7 @@ namespace BookingSystem.AspNetCore.Controllers
             }
             catch (OpenBookingException obe)
             {
-                return StatusCode((int)obe.GetHttpStatusCode(), obe);
+                return StatusCode((int)obe.GetHttpStatusCode(), obe.OpenBookingError);
             }
         }
 
@@ -67,6 +67,7 @@ namespace BookingSystem.AspNetCore.Controllers
             }
             catch (OpenBookingException obe)
             {
+                //TODO : Fix this
                 return StatusCode((int)obe.GetHttpStatusCode(), Content(obe.ToOpenActiveString(), "application/ld+json"));
             }
         }
@@ -85,7 +86,7 @@ namespace BookingSystem.AspNetCore.Controllers
             }
             catch (OpenBookingException obe)
             {
-                return StatusCode((int)obe.GetHttpStatusCode(), obe);
+                return StatusCode((int)obe.GetHttpStatusCode(), obe.OpenBookingError);
             }
         }
 
@@ -103,7 +104,7 @@ namespace BookingSystem.AspNetCore.Controllers
             }
             catch (OpenBookingException obe)
             {
-                return StatusCode((int)obe.GetHttpStatusCode(), obe);
+                return StatusCode((int)obe.GetHttpStatusCode(), obe.OpenBookingError);
             }
         }
 
@@ -114,33 +115,33 @@ namespace BookingSystem.AspNetCore.Controllers
             throw new NotImplementedException();
         }
 
-        // POST api/openbooking/test-interface/create
-        [HttpPost("test-interface/create")]
-        public ActionResult<Schema.NET.Thing> Post([FromServices] IBookingEngine bookingEngine, [FromBody] Event @event)
+        // POST api/openbooking/test-interface/scheduled-sessions
+        [HttpPost("test-interface/{type}")]
+        public ActionResult<Schema.NET.Thing> Post([FromServices] IBookingEngine bookingEngine, string type, [FromBody] Event @event)
         {
             try
             {
-                bookingEngine.CreateTestData(@event);
+                bookingEngine.CreateTestData(type, @event);
                 return NoContent();
             }
             catch (OpenBookingException obe)
             {
-                return StatusCode((int)obe.GetHttpStatusCode(), obe);
+                return StatusCode((int)obe.GetHttpStatusCode(), obe.OpenBookingError);
             }
         }
 
-        // POST api/openbooking/test-interface
-        [HttpPost("test-interface/delete/{name}")]
-        public ActionResult<Schema.NET.Thing> Delete([FromServices] IBookingEngine bookingEngine, string name)
+        // DELETE api/openbooking/test-interface/scheduled-sessions/{name}
+        [HttpPost("test-interface/{type}/{name}")]
+        public ActionResult<Schema.NET.Thing> Delete([FromServices] IBookingEngine bookingEngine, string type, string name)
         {
             try
             {
-                bookingEngine.DeleteTestData(name);
+                bookingEngine.DeleteTestData(type, name);
                 return NoContent();
             }
             catch (OpenBookingException obe)
             {
-                return StatusCode((int)obe.GetHttpStatusCode(), obe);
+                return StatusCode((int)obe.GetHttpStatusCode(), obe.OpenBookingError);
             }
         }
     }

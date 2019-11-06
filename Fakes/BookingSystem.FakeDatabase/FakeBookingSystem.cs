@@ -13,7 +13,7 @@ namespace BookingSystem.FakeDatabase
     /// This class models the database schema within an actual booking system.
     /// It is designed to simulate the database that would be available in a full implementation.
     /// </summary>
-    public class FakeBookingSystem
+    public static class FakeBookingSystem
     {
         /// <summary>
         /// The Database is created as static, to simulate the persistence of a real database

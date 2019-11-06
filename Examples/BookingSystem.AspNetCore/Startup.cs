@@ -77,7 +77,7 @@ namespace BookingSystem.AspNetCore
                             AssignedFeed = OpportunityType.SessionSeries,
                             OpportunityIdTemplate = "{+BaseUrl}api/session-series/{SessionSeriesId}",
                             OfferIdTemplate =       "{+BaseUrl}api/session-series/{SessionSeriesId}#/offers/{OfferId}",
-                            Bookable = true
+                            Bookable = false
                         }) /*,
 
                     new BookablePairIdTemplate<ScheduledSessionOpportunity>(
@@ -152,8 +152,13 @@ namespace BookingSystem.AspNetCore
                 JsonLdIdBaseUrl = new Uri("https://example.com/api/identifiers/"),
                 OrderBaseUrl = new Uri("https://example.com/api/orders/"),
 
-                OrderIdTemplate = new SingleIdTemplate<OrderId>(
-                    "{+BaseUrl}api/{Mode}/{OrderId}"
+                // Note unlike other IDs this one needs to be resolvable
+                OrderIdTemplate = new SingleIdTemplate<OrderIdComponents>(
+                    "{+BaseUrl}api/{OrderType}/{OrderId}"
+                    ),
+
+                SellerIdTemplate = new SingleIdTemplate<SellerIdComponents>(
+                    "{+BaseUrl}api/identifiers/sellers/{SellerIdString}"
                     ),
 
                 OpenDataFeeds = new Dictionary<OpportunityType, IRPDEFeedGenerator> {
@@ -185,7 +190,12 @@ namespace BookingSystem.AspNetCore
                 DateFirstPublished = new DateTimeOffset(new DateTime(2019, 01, 14)),
                 OpenBookingAPIBaseUrl = "https://localhost:44307/api/openbooking/".ParseUrlOrNull(),
             },
-            new AcmeStore()
+            // List of _bookable_ opportunity types along with and the stores they should be routed to
+            new Dictionary<IOpenBookingStore, List<OpportunityType>> {
+                {
+                     new SessionsStore(), new List<OpportunityType> { OpportunityType.ScheduledSession }
+                }
+            }
             ));
         }
 

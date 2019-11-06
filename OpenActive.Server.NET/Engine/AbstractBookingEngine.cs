@@ -62,6 +62,14 @@ namespace OpenActive.Server.NET
                 bookablePairIdTemplate = t
             })).SelectMany(x => x.ToList()).ToDictionary(k => k.assignedFeed, v => v.bookablePairIdTemplate);
 
+            // Create a lookup for the purposes of finding arbitary IdConfigurations, for use in the store
+            // TODO: Pull this and the above into a function?
+            this.opportunityTemplateLookup = settings.IdConfiguration.Select(t => t.IdConfigurations.Select(x => new
+            {
+                assignedFeed = x.OpportunityType,
+                bookablePairIdTemplate = t
+            })).SelectMany(x => x.ToList()).ToDictionary(k => k.assignedFeed, v => v.bookablePairIdTemplate);
+
             // Setup each RPDEFeedGenerator with the relevant settings, including the relevant IdTemplate inferred from the config
             foreach (var kv in settings.OpenDataFeeds)
             {
@@ -100,6 +108,7 @@ namespace OpenActive.Server.NET
         private Uri openBookingAPIBaseUrl;
         private Dictionary<string, List<IBookablePairIdTemplate>> idConfigurationLookup;
         private Dictionary<OpportunityType, IBookablePairIdTemplate> feedAssignedTemplates;
+        private Dictionary<OpportunityType, IBookablePairIdTemplate> opportunityTemplateLookup;
 
         /// <summary>
         /// In this mode, the Booking Engine does not handle open data feeds or dataset site rendering, and these must both be handled manually
@@ -244,29 +253,42 @@ namespace OpenActive.Server.NET
             return orderQuote;
         }
 
-        public void CreateTestData(Event @event)
+        // Note opportunityType is required here to facilitate routing to the correct store to handle the request
+        public void CreateTestData(string opportunityType, Event @event)
         {
-            this.CreateTestDataItem(@event);
+            this.CreateTestDataItem((OpportunityType)Enum.Parse(typeof(OpportunityType), opportunityType, true), @event);
         }
 
-        public abstract void CreateTestDataItem(Event @event);
+        public abstract void CreateTestDataItem(OpportunityType opportunityType, Event @event);
 
-        public void DeleteTestData(string name)
+        // Note opportunityType is required here to facilitate routing to the correct store to handle the request
+        public void DeleteTestData(string opportunityType, string name)
         {
-            this.DeleteTestDataItem(name);
+            this.DeleteTestDataItem((OpportunityType)Enum.Parse(typeof(OpportunityType), opportunityType, true), name);
         }
 
-        public abstract void DeleteTestDataItem(string name);
+        public abstract void DeleteTestDataItem(OpportunityType opportunityType, string name);
 
+
+        //TODO: Should we move Seller into the Abstract level? Perhaps too much complexity
         private O ValidateFlowRequest<O>(FlowStage stage, string uuid, O orderQuote) where O : Order
         {
-            var orderId = new OrderId
+            var orderId = new OrderIdComponents
             {
                 uuid = uuid,
                 BaseUrl = settings.OrderBaseUrl
             };
 
             // TODO: Add more request validation rules here
+
+            // Check that taxMode is set in Seller
+            if (orderQuote?.Seller?.Id == null)
+            {
+                // TODO: Update data model to throw actual error for all occurances of OpenBookingError
+                throw new OpenBookingException(new OpenBookingError(), "SellerNotSpecified");
+            }
+
+            var sellerID = settings.SellerIdTemplate.GetIdComponents(orderQuote.Seller.Id);
 
             // Check that taxMode is set in Seller
             if (orderQuote?.Seller?.Id == null)
@@ -290,7 +312,7 @@ namespace OpenActive.Server.NET
             return ProcessFlowRequest<O>(stage, orderId, orderQuote, taxPayeeRelationship, payer);
         }
 
-        public abstract TOrder ProcessFlowRequest<TOrder>(FlowStage stage, OrderId orderId, TOrder orderQuote,
+        public abstract TOrder ProcessFlowRequest<TOrder>(FlowStage stage, OrderIdComponents orderId, TOrder orderQuote,
             TaxPayeeRelationship taxPayeeRelationship, SingleValues<Organization, Person> payer) where TOrder : Order;
 
     }
