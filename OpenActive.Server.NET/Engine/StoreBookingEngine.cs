@@ -22,20 +22,22 @@ namespace OpenActive.Server.NET
         /// </summary>
         /// <param name="settings">Settings are used exclusively by the AbstractBookingEngine</param>
         /// <param name="store">Store used exclusively by the StoreBookingEngine</param>
-        public StoreBookingEngine(BookingEngineSettings settings, DatasetSiteGeneratorSettings datasetSettings, Dictionary<IOpenBookingStore, List<OpportunityType>> openBookingStoreRouting) : base(settings, datasetSettings)
+        public StoreBookingEngine(BookingEngineSettings settings, DatasetSiteGeneratorSettings datasetSettings, StoreBookingEngineSettings storeBookingEngineSettings) : base(settings, datasetSettings)
         {
-            this.stores = openBookingStoreRouting.Keys.ToList();
+            this.stores = storeBookingEngineSettings.OpenBookingStoreRouting.Keys.ToList();
+            this.storeBookingEngineSettings = storeBookingEngineSettings;
 
             // TODO: Add test to ensure there are not two or more at FirstOrDefault step, in case of configuration error 
-            storeRouting = openBookingStoreRouting.Select(t => t.Value.Select(y => new
+            storeRouting = storeBookingEngineSettings.OpenBookingStoreRouting.Select(t => t.Value.Select(y => new
             {
                 store = t.Key,
                 opportunityType = y
             })).SelectMany(x => x.ToList()).GroupBy(g => g.opportunityType).ToDictionary(k => k.Key, v => v.Select(a => a.store).FirstOrDefault());
         }
 
-        private readonly List<IOpenBookingStore> stores;
-        private readonly Dictionary<OpportunityType, IOpenBookingStore> storeRouting;
+        private readonly List<IOpportunityStore> stores;
+        private readonly Dictionary<OpportunityType, IOpportunityStore> storeRouting;
+        private readonly StoreBookingEngineSettings storeBookingEngineSettings;
 
         public override void CreateTestDataItem(OpportunityType opportunityType, Event @event)
         {
@@ -54,120 +56,150 @@ namespace OpenActive.Server.NET
             storeRouting[opportunityType].DeleteTestDataItem(opportunityType, name);
         }
 
-        public override TOrder ProcessFlowRequest<TOrder>(FlowStage stage, OrderIdComponents orderId, TOrder orderQuote,
-            TaxPayeeRelationship taxPayeeRelationship, SingleValues<Organization, Person> payer)
+
+
+        public override TOrder ProcessFlowRequest<TOrder>(BookingFlowContext<TOrder> request)
         {
-            throw new NotImplementedException();
-
-
-            /*
-            // Get seller info (note Id has already been validated in Abstract
-            var seller = store.GetSeller(authKey, orderQuote.Seller.Id, data);
-
-
-            // Get the booking service info (usually static for the booking system)
-            var bookingService = getBookingService(data);
+            StoreBookingFlowContext<TOrder> context = new StoreBookingFlowContext<TOrder> { FlowContext = request };
 
             // Reflect back only those customer fields that are supported
-            var customer = getCustomerSupportedFields(orderQuote.customer)
+           
+            if (context.FlowContext.Order.Customer.Value1.Type == nameof(Organization)) //TODO: Add HasValue to OA.NET to make this more robust
+            {
+                context.Customer = context.FlowContext.Order.Customer.Value1
+                    .FilterProperties(storeBookingEngineSettings.CustomerOrganizationSupportedFields);
+            }
+            else if (context.FlowContext.Order.Customer.Value2.Type == nameof(Person))  //TODO: Add HasValue to OA.NET to make this more robust
+            {
+                context.Customer = context.FlowContext.Order.Customer.Value2
+                    .FilterProperties(storeBookingEngineSettings.CustomerPersonSupportedFields);
+            }
 
             // Reflect back only those broker fields that are supported
-            var broker = getBrokerSupportedFields(orderQuote.broker)
+            context.Broker = context.FlowContext.Order.Broker.FilterProperties(storeBookingEngineSettings.BrokerSupportedFields);
 
-                    
-            // The below goes into RpdeBase
+            // Get static BookingService fields from settings
+            context.BookingSystem = storeBookingEngineSettings.BookingServiceDetails;
 
-        // Map all requested OrderedItems to their full details, and validate any details provided if at C2
-        var orderedItems = orderQuote.orderedItem.Select(x => 
-          // Validate input OrderItem
-          {
-            if (x.acceptedOffer && x.orderedItem) {
-              var opportunityComponents = getComponentsFromId(x.orderedItem.id, getOpportunityUrlTemplate());
-              var offerComponents = getComponentsFromId(x.acceptedOffer.id, getOfferUrlTemplate());
+            // TODO: Organization seller from a store
+            context.SellerIdComponents = new SellerIdComponents();
 
-              var fullOrderItem = getOrderItem(x, opportunityComponents, offerComponents, seller, taxPayeeRelationship, data);
+            foreach(OrderItem orderItem in context.FlowContext.Order.OrderedItem)
+            {
+                IBookableIdComponents idComponents =
+                    this.ResolveOpportunityID(orderItem.OrderedItem.Type, orderItem.OrderedItem.Id, orderItem.AcceptedOffer.Id);
 
-              var sellerId = fullOrderItem.organizer.id || fullOrderItem.superEvent.organizer.id || fullOrderItem.facilityUse.organizer.id || fullOrderItem.superEvent.superEvent.organizer.id;
-
-              if (seller.id != sellerId) {
-                x.error[] += renderError("OpportunitySellerMismatch", notBookableReason);    
-                return x;
-              }
-
-              // Validate output, and throw on error
-              validateOutputOrderItem(fullOrderItem);
-
-              // Check for a 'bookable' Opportunity and Offer pair was returned
-              var notBookableReason = validateBookable(fullOrderItem);
-              if (notBookableReason) {
-                x.error[] += renderError("OpportunityOfferPairNotBookable", notBookableReason);    
-                return x;
-              } else {
-                // Note: only validating details if the output is valid (previous check)
-                return validateDetailsCapture(checkpointStage, fullOrderItem);
-              }
-            } else {
-              x.error[] += renderError("IncompleteOrderItemError");  
-              return x;
+                storeRouting[idComponents.OpportunityType.Value]
+                    .GetOrderItem(idComponents, context);
             }
-          } 
-        );
 
-        if (checkpointStage == "C1" || checkpointStage == "C2") {
-          var draftOrderQuote = {
-            "@context": "https://openactive.io/",
-            "type": "OrderQuote",
-            "identifier": orderQuoteId,
-            "brokerRole": orderQuote.brokerRole,
-            "broker": broker,
-            "seller": seller,
-            "customer": customer,
-            "bookingService": bookingService
-          };
-
-          // Attempt to retrieve lease, or at a minimum check the items can be purchased together (are not conflicted)
-          // Note leaseOrCheckBookable adds errors to the orderedItems supplied array
-          draftOrderQuote.lease = leaseOrCheckBookable(mutable orderedItems, draftOrderQuote, checkpointStage, seller.taxMode, taxPayeeRelationship, payer, authKey, data );
-
-          // TODO: leases need to be set at the beginning, as they'll influence remaining spaces and OpportunityIsFullError etc. 
-
-          // Add orderItems and totals to draftOrderQuote
-          draftOrderQuote.orderedItems = orderedItems;
-          augmentOrderWithTotals(draftOrderQuote);
-          return draftOrderQuote;
+            throw new NotImplementedException();
         }
 
-        if (checkpointStage == "B") {
-          var payment = getPaymentSupportedFields(orderQuote.payment)
 
-          var draftOrder = {
-            "@context": "https://openactive.io/",
-            "type": "Order",
-            "identifier": orderQuoteId,
-            "brokerRole": orderQuote.brokerRole,
-            "broker": broker,
-            "seller": seller,
-            "customer": customer,
-            "bookingService": bookingService,
-            "orderedItems": orderedItems,
-            "payment": payment
-          };
-          augmentOrderWithTotals(draftOrder);
 
-          // Check that draftOrder matches expected totalPaymentDue provided with input order
-          if (draftOrder.totalPaymentDue.price != orderQuote.totalPaymentDue.price) {
-            return renderError("TotalPaymentDueMismatchError");
+
+
+        /*
+         * 
+        // Get seller info (note Id has already been validated in Abstract
+        var seller = store.GetSeller(authKey, orderQuote.Seller.Id, data);
+
+
+
+        // The below goes into RpdeBase
+
+    // Map all requested OrderedItems to their full details, and validate any details provided if at C2
+    var orderedItems = orderQuote.orderedItem.Select(x => 
+      // Validate input OrderItem
+      {
+        if (x.acceptedOffer && x.orderedItem) {
+          var opportunityComponents = getComponentsFromId(x.orderedItem.id, getOpportunityUrlTemplate());
+          var offerComponents = getComponentsFromId(x.acceptedOffer.id, getOfferUrlTemplate());
+
+          var fullOrderItem = getOrderItem(x, opportunityComponents, offerComponents, seller, taxPayeeRelationship, data);
+
+          var sellerId = fullOrderItem.organizer.id || fullOrderItem.superEvent.organizer.id || fullOrderItem.facilityUse.organizer.id || fullOrderItem.superEvent.superEvent.organizer.id;
+
+          if (seller.id != sellerId) {
+            x.error[] += renderError("OpportunitySellerMismatch", notBookableReason);    
+            return x;
           }
 
-          // Add orderItem.id, orderItem.accessCode and orderItem.accessToken for successful booking
-          // Note this needs to store enough data to contract an Orders feed entry
-          processBooking(orderId, draftOrder, seller.taxMode, taxPayeeRelationship, payer, authKey, data);
+          // Validate output, and throw on error
+          validateOutputOrderItem(fullOrderItem);
 
-          return draftOrder;
+          // Check for a 'bookable' Opportunity and Offer pair was returned
+          var notBookableReason = validateBookable(fullOrderItem);
+          if (notBookableReason) {
+            x.error[] += renderError("OpportunityOfferPairNotBookable", notBookableReason);    
+            return x;
+          } else {
+            // Note: only validating details if the output is valid (previous check)
+            return validateDetailsCapture(checkpointStage, fullOrderItem);
+          }
+        } else {
+          x.error[] += renderError("IncompleteOrderItemError");  
+          return x;
         }
+      } 
+    );
 
-   }
-   */
-        }
+    if (checkpointStage == "C1" || checkpointStage == "C2") {
+      var draftOrderQuote = {
+        "@context": "https://openactive.io/",
+        "type": "OrderQuote",
+        "identifier": orderQuoteId,
+        "brokerRole": orderQuote.brokerRole,
+        "broker": broker,
+        "seller": seller,
+        "customer": customer,
+        "bookingService": bookingService
+      };
+
+      // Attempt to retrieve lease, or at a minimum check the items can be purchased together (are not conflicted)
+      // Note leaseOrCheckBookable adds errors to the orderedItems supplied array
+      draftOrderQuote.lease = leaseOrCheckBookable(mutable orderedItems, draftOrderQuote, checkpointStage, seller.taxMode, taxPayeeRelationship, payer, authKey, data );
+
+      // TODO: leases need to be set at the beginning, as they'll influence remaining spaces and OpportunityIsFullError etc. 
+
+      // Add orderItems and totals to draftOrderQuote
+      draftOrderQuote.orderedItems = orderedItems;
+      augmentOrderWithTotals(draftOrderQuote);
+      return draftOrderQuote;
+    }
+
+    if (checkpointStage == "B") {
+      var payment = getPaymentSupportedFields(orderQuote.payment)
+
+      var draftOrder = {
+        "@context": "https://openactive.io/",
+        "type": "Order",
+        "identifier": orderQuoteId,
+        "brokerRole": orderQuote.brokerRole,
+        "broker": broker,
+        "seller": seller,
+        "customer": customer,
+        "bookingService": bookingService,
+        "orderedItems": orderedItems,
+        "payment": payment
+      };
+      augmentOrderWithTotals(draftOrder);
+
+      // Check that draftOrder matches expected totalPaymentDue provided with input order
+      if (draftOrder.totalPaymentDue.price != orderQuote.totalPaymentDue.price) {
+        return renderError("TotalPaymentDueMismatchError");
+      }
+
+      // Add orderItem.id, orderItem.accessCode and orderItem.accessToken for successful booking
+      // Note this needs to store enough data to contract an Orders feed entry
+      processBooking(orderId, draftOrder, seller.taxMode, taxPayeeRelationship, payer, authKey, data);
+
+      return draftOrder;
+    }
+
+}
+*/
     }
 }
+

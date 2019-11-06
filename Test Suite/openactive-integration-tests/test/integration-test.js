@@ -19,21 +19,27 @@ describe("Create test event", function() {
     var apiResponse;
 
     var testEvent = {
-        type: "Event",
-        name: "Testevent2"
+        "@type": "Event",
+        name: "Testevent2",
+        "offers": [
+            {
+                "@type": "Offer",
+                "price": 2,
+            }
+        ]
     };
 
     before(function () {
         apiResponse = chakram.get("http://localhost:3000/get-match/Testevent2");
 
-        delay(500).then(x => chakram.post("https://localhost:44307/api/openbooking/test-interface/create", testEvent));
+        delay(500).then(x => chakram.post("https://localhost:44307/api/openbooking/test-interface/scheduledsession", testEvent));
 
         return apiResponse;
     });
 
     after(function () {
         var name = testEvent.name;
-        return chakram.delete("https://localhost:44307/api/openbooking/test-interface/delete/" + encodeURIComponent(name));
+        return chakram.delete("https://localhost:44307/api/openbooking/test-interface/scheduledsession/" + encodeURIComponent(name));
     });
 
     it("should return 200 on success", function () {
@@ -51,7 +57,7 @@ describe("Create test event", function() {
     });
     
     it("offer should have price of 2", function () {
-        return expect(apiResponse).to.have.json('data.offers[0].price', '2');
+        return expect(apiResponse).to.have.json('data.offers[0].price', 2);
     });
 
 });

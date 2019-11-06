@@ -17,7 +17,7 @@ namespace BookingSystem.AspNetCore
     /// <summary>
     /// TODO: Move to BookingSystem.AspNetCore
     /// </summary>
-    class SessionsStore : OpenBookingStore<SessionOpportunity>, IOpenBookingStore
+    class SessionsStore : OpportunityStore<SessionOpportunity>, IOpportunityStore
     {
         
         public override void CreateTestDataItem(OpportunityType opportunityType, Event @event)
@@ -31,24 +31,59 @@ namespace BookingSystem.AspNetCore
             FakeBookingSystem.Database.DeleteClass(name);
         }
 
-
-        //public void CreateFakeEvent()
-        public override OrderItem GetOrderItem(SessionOpportunity opportunityOfferId, SellerIdComponents sellerId)
+        // Similar to the RPDE logic, this needs to render and return an OrderItem from the database
+        protected override OrderItem GetOrderItem<TOrder>(SessionOpportunity opportunityOfferId, StoreBookingFlowContext<TOrder> context)
         {
-            // Note switch statement exists here as we need to handle booking for a single Order that contains different types of opportunity
-            /*switch (opportunityOfferId)
-            {
-                case SessionOpportunity sessionOpportunity:
-
-                case FacilityOpportunity facilityOpportunity:
-
-                case null:
-
-                default:
-                    break;
-            }*/
-
-            return null;
+            var query = from occurances in FakeBookingSystem.Database.Occurrences
+                        join classes in FakeBookingSystem.Database.Classes on occurances.ClassId equals classes.Id
+                        where occurances.Id == opportunityOfferId.ScheduledSessionId
+                        // and offers.id = opportunityOfferId.OfferId
+                        select new OrderItem
+                        {
+                            AllowCustomerCancellationFullRefund = true,
+                            UnitTaxSpecification = context.FlowContext.TaxPayeeRelationship == TaxPayeeRelationship.BusinessToConsumer ?
+                                new List<TaxChargeSpecification>
+                                {
+                                    new TaxChargeSpecification
+                                    {
+                                        Name = "VAT at 20%",
+                                        Price = classes.Price * (decimal?)0.2,
+                                        PriceCurrency = "GBP",
+                                        Rate = (decimal?)0.2
+                                    }
+                                } : null,
+                            AcceptedOffer = new Offer
+                            {
+                                // Note this should always use RenderOfferId with the supplied SessionOpportunity, to take into account inheritance
+                                Id = this.RenderOfferId(opportunityOfferId),
+                                Price = classes.Price,
+                                PriceCurrency = "GBP"
+                            },
+                            OrderedItem = new ScheduledSession
+                            {
+                                // Note this should always be driven from the database, with new SessionOpportunity's instantiated
+                                Id = this.RenderOpportunityId(new SessionOpportunity
+                                {
+                                    OpportunityType = OpportunityType.ScheduledSession,
+                                    BaseUrl = this.JsonLdIdBaseUrl,
+                                    SessionSeriesId = occurances.ClassId,
+                                    ScheduledSessionId = occurances.Id
+                                }),
+                                SuperEvent = new SessionSeries
+                                {
+                                    Id = this.RenderOpportunityId(new SessionOpportunity
+                                    {
+                                        OpportunityType = OpportunityType.SessionSeries,
+                                        BaseUrl = this.JsonLdIdBaseUrl,
+                                        SessionSeriesId = occurances.ClassId
+                                    }),
+                                    Name = classes.Title
+                                },
+                                StartDate = (DateTimeOffset)occurances.Start,
+                                EndDate = (DateTimeOffset)occurances.End
+                            }
+                        };
+            return query.First();
         }
     }
 

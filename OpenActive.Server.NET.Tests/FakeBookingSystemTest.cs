@@ -29,16 +29,16 @@ namespace OpenActive.Server.NET.Tests
                             startDate = occurances.Start,
                         };
 
-            
+            var list = query.ToList();
 
-            foreach (var result in query.ToList())
+            foreach (var result in list)
             {
                 output.WriteLine(result.title + " " + result.startDate.ToString());
             }
 
             //var components = template.GetIdComponents(new Uri("https://example.com/api/session-series/asdf/events/123"));
 
-            Assert.Equal("https://example.com/", "false");
+            Assert.True(list.Count > 0);
             //Assert.Equal("session-series", components.EventType);
             //Assert.Equal("asdf", components.SessionSeriesId);
             //Assert.Equal(123, components.ScheduledSessionId);

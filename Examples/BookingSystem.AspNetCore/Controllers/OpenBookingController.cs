@@ -131,7 +131,7 @@ namespace BookingSystem.AspNetCore.Controllers
         }
 
         // DELETE api/openbooking/test-interface/scheduled-sessions/{name}
-        [HttpPost("test-interface/{type}/{name}")]
+        [HttpDelete("test-interface/{type}/{name}")]
         public ActionResult<Schema.NET.Thing> Delete([FromServices] IBookingEngine bookingEngine, string type, string name)
         {
             try

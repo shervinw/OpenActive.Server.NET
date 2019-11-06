@@ -33,14 +33,16 @@ namespace BookingSystem.AspNetCore
                                 // QUESTION: Should the this.IdTemplate and this.BaseUrl be passed in each time rather than set on
                                 // the parent class? Current thinking is it's more extensible on parent class as function signature remains
                                 // constant as power of configuration through underlying class grows (i.e. as new properties are added)
-                                Id = this.RenderOpportunityId(OpportunityType.ScheduledSession, new SessionOpportunity
+                                Id = this.RenderOpportunityId(new SessionOpportunity
                                 {
+                                    OpportunityType = OpportunityType.ScheduledSession,
                                     BaseUrl = this.JsonLdIdBaseUrl,
                                     SessionSeriesId = occurances.ClassId,
                                     ScheduledSessionId = occurances.Id
                                 }),
-                                SuperEvent = this.RenderOpportunityId(OpportunityType.SessionSeries, new SessionOpportunity
+                                SuperEvent = this.RenderOpportunityId(new SessionOpportunity
                                 {
+                                    OpportunityType = OpportunityType.SessionSeries,
                                     BaseUrl = this.JsonLdIdBaseUrl,
                                     SessionSeriesId = occurances.ClassId
                                 }),
@@ -73,16 +75,18 @@ namespace BookingSystem.AspNetCore
                                 // QUESTION: Should the this.IdTemplate and this.BaseUrl be passed in each time rather than set on
                                 // the parent class? Current thinking is it's more extensible on parent class as function signature remains
                                 // constant as power of configuration through underlying class grows (i.e. as new properties are added)
-                                Id = this.RenderOpportunityId(OpportunityType.SessionSeries, new SessionOpportunity
+                                Id = this.RenderOpportunityId( new SessionOpportunity
                                 {
+                                    OpportunityType = OpportunityType.SessionSeries,
                                     BaseUrl = this.JsonLdIdBaseUrl,
                                     SessionSeriesId = @class.Id
                                 }),
                                 Name = @class.Title,
                                 Offers = new List<Offer> { new Offer
                                     {
-                                        Id = this.RenderOfferId(OpportunityType.SessionSeries, new SessionOpportunity
+                                        Id = this.RenderOfferId(new SessionOpportunity
                                         {
+                                            OfferOpportunityType = OpportunityType.SessionSeries,
                                             BaseUrl = this.JsonLdIdBaseUrl,
                                             SessionSeriesId = @class.Id,
                                             OfferId = 0
@@ -97,16 +101,6 @@ namespace BookingSystem.AspNetCore
         }
     }
 
-
-    public class AcmeFacilityUseRPDEGenerator : RPDEFeedIncrementingUniqueChangeNumber<SessionOpportunity>
-    {
-        protected override List<RpdeItem> GetRPDEItems(long? afterChangeNumber)
-        {
-            throw new NotImplementedException();
-        }
-    }
-
-
     /// <summary>
     /// These classes must be created by the booking system, the below are some simple examples.
     /// These should be created alongside the IdConfiguration and OpenDataFeeds settings, as the two work together
@@ -116,22 +110,13 @@ namespace BookingSystem.AspNetCore
     /// There is a choice of `string`, `long?` and `Uri` available for each component of the ID
     /// </summary>
 
-    public class SessionOpportunity : IBookableIdComponents
+    public class SessionOpportunity : IBookableIdComponentsWithInheritance
     {
         public Uri BaseUrl { get; set; }
         public OpportunityType? OpportunityType { get; set; }
+        public OpportunityType? OfferOpportunityType { get; set; }
         public long? SessionSeriesId { get; set; }
         public long? ScheduledSessionId { get; set; }
         public long? OfferId { get; set; }
-    }
-
-    public class FacilityOpportunity : IBookableIdComponents
-    {
-        public Uri BaseUrl { get; set; }
-        public OpportunityType? OpportunityType { get; set; }
-        public string FacilityUseId { get; set; }
-        public long? SlotId { get; set; }
-        public long? OfferId { get; set; }
-
     }
 }

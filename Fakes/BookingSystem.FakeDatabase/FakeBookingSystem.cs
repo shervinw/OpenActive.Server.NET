@@ -32,7 +32,7 @@ namespace BookingSystem.FakeDatabase
 
         public abstract class Table
         {
-            public int Id { get; set; }
+            public long Id { get; set; }
             public bool Deleted { get; set; } = false;
             public DateTimeOffset Modified { get; set; } = DateTimeOffset.Now;
         }

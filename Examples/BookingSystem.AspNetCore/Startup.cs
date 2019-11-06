@@ -55,12 +55,13 @@ namespace BookingSystem.AspNetCore
             //QUESTION: Should all these be configured here? Are we using the pattern correctly?
             //https://docs.microsoft.com/en-us/aspnet/core/mvc/controllers/dependency-injection?view=aspnetcore-3.0
 
-            services.AddSingleton<IBookingEngine>(sp => new StoreBookingEngine(new BookingEngineSettings
+            services.AddSingleton<IBookingEngine>(sp => new StoreBookingEngine(
+            new BookingEngineSettings
             {
                 // This assigns the ID pattern used for each ID
                 IdConfiguration = new List<IBookablePairIdTemplate> {
                     // Note that ScheduledSession is the only opportunity type that allows offer inheritance  
-                    new BookablePairIdTemplateWithOfferInheritance<SessionOpportunity>(
+                    new BookablePairIdTemplateWithOfferInheritance<SessionOpportunity> (
                         // Opportunity
                         new OpportunityIdConfiguration
                         {
@@ -78,16 +79,16 @@ namespace BookingSystem.AspNetCore
                             OpportunityIdTemplate = "{+BaseUrl}api/session-series/{SessionSeriesId}",
                             OfferIdTemplate =       "{+BaseUrl}api/session-series/{SessionSeriesId}#/offers/{OfferId}",
                             Bookable = false
-                        }) /*,
+                        }), 
 
-                    new BookablePairIdTemplate<ScheduledSessionOpportunity>(
+                    new BookablePairIdTemplate<FacilityOpportunity> (
                         // Opportunity
                         new OpportunityIdConfiguration
                         {
                             OpportunityType = OpportunityType.FacilityUseSlot,
                             AssignedFeed = OpportunityType.FacilityUseSlot,
-                            OpportunityUriTemplate = "{+BaseUrl}api/facility-uses/{FacilityUseId}/facility-use-slots/{SlotId}",
-                            OfferUriTemplate =       "{+BaseUrl}api/facility-uses/{FacilityUseId}/facility-use-slots/{SlotId}#/offers/{OfferId}",
+                            OpportunityIdTemplate = "{+BaseUrl}api/facility-uses/{FacilityUseId}/facility-use-slots/{SlotId}",
+                            OfferIdTemplate =       "{+BaseUrl}api/facility-uses/{FacilityUseId}/facility-use-slots/{SlotId}#/offers/{OfferId}",
                             Bookable = true
                         },
                         // Parent
@@ -95,8 +96,8 @@ namespace BookingSystem.AspNetCore
                         {
                             OpportunityType = OpportunityType.FacilityUse,
                             AssignedFeed = OpportunityType.FacilityUse,
-                            OpportunityUriTemplate = "{+BaseUrl}api/facility-uses/{FacilityUseId}"
-                        }),
+                            OpportunityIdTemplate = "{+BaseUrl}api/facility-uses/{FacilityUseId}"
+                        })/*,,
 
                     new BookablePairIdTemplate<ScheduledSessionOpportunity>(
                         // Opportunity
@@ -117,7 +118,7 @@ namespace BookingSystem.AspNetCore
                             OfferUriTemplate =       "{+BaseUrl}api/headline-events/{HeadlineEventId}#/offers/{OfferId}"
                         }),
 
-                     new BookablePairIdTemplate<ScheduledSessionOpportunity>(
+                        new BookablePairIdTemplate<ScheduledSessionOpportunity>(
                         // Opportunity
                         new OpportunityIdConfiguration
                         {
@@ -158,7 +159,7 @@ namespace BookingSystem.AspNetCore
                     ),
 
                 SellerIdTemplate = new SingleIdTemplate<SellerIdComponents>(
-                    "{+BaseUrl}api/identifiers/sellers/{SellerIdString}"
+                    "{+BaseUrl}api/sellers/{SellerIdString}"
                     ),
 
                 OpenDataFeeds = new Dictionary<OpportunityType, IRPDEFeedGenerator> {
@@ -167,6 +168,13 @@ namespace BookingSystem.AspNetCore
                     },
                     {
                         OpportunityType.SessionSeries, new AcmeSessionSeriesRPDEGenerator()
+                    },
+                    {
+                        OpportunityType.FacilityUse, new AcmeFacilityUseRPDEGenerator()
+                    }
+                    ,
+                    {
+                        OpportunityType.FacilityUseSlot, new AcmeFacilityUseSlotRPDEGenerator()
                     }
                 }
             },
@@ -190,13 +198,56 @@ namespace BookingSystem.AspNetCore
                 DateFirstPublished = new DateTimeOffset(new DateTime(2019, 01, 14)),
                 OpenBookingAPIBaseUrl = "https://localhost:44307/api/openbooking/".ParseUrlOrNull(),
             },
-            // List of _bookable_ opportunity types along with and the stores they should be routed to
-            new Dictionary<IOpenBookingStore, List<OpportunityType>> {
+            new StoreBookingEngineSettings
+            {
+                // A list of the supported fields that are accepted by your system for guest checkout bookings
+                // These are reflected back to the broker
+                // Note that only E-mail address is required, as per Open Booking API spec
+                CustomerPersonSupportedFields = new List<string>()
                 {
-                     new SessionsStore(), new List<OpportunityType> { OpportunityType.ScheduledSession }
+                    nameof(Person.Email),
+                    nameof(Person.GivenName),
+                    nameof(Person.FamilyName),
+                    nameof(Person.Telephone)
+                },
+                // A list of the supported fields that are accepted by your system for guest checkout bookings
+                // These are reflected back to the broker
+                // Note that only E-mail address is required, as per Open Booking API spec
+                CustomerOrganizationSupportedFields = new List<string>()
+                {
+                    nameof(Organization.Email),
+                    nameof(Organization.Name),
+                    nameof(Organization.Telephone)
+                },
+                // A list of the supported fields that are accepted by your system for broker details
+                // These are reflected back to the broker
+                // Note that storage of these details is entirely optional
+                BrokerSupportedFields = new List<string>()
+                {
+                    nameof(Organization.Name),
+                    nameof(Organization.Url),
+                    nameof(Organization.Telephone)
+                },
+                // Details of your booking system, complete with an customer-facing terms and conditions
+                BookingServiceDetails = new BookingService
+                {
+                    Name = "Acme booking system",
+                    Url = new Uri("https://example.com"),
+                    TermsOfService = new List<Terms>
+                    {
+                        new PrivacyPolicy
+                        {
+                            Url = new Uri("https://example.com/privacy.html")
+                        }
+                    }
+                },
+                // List of _bookable_ opportunity types and which store to route to for each
+                OpenBookingStoreRouting = new Dictionary<IOpportunityStore, List<OpportunityType>> {
+                    {
+                        new SessionsStore(), new List<OpportunityType> { OpportunityType.ScheduledSession }
+                    }
                 }
-            }
-            ));
+            }));
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.

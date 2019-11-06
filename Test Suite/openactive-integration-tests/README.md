@@ -6,3 +6,7 @@ This Node.js script runs tests against the specified openactive-broker-microserv
 
 1. `npm install`
 2. `npm start`
+
+
+## Test cases
+- Check session series inheritance is implemented correctly (and that ids always match on input and output)

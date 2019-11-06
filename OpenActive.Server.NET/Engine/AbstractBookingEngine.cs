@@ -216,7 +216,7 @@ namespace OpenActive.Server.NET
         }
 
         // Note this is not a helper as it relies on engine settings state
-        private IBookableIdComponents ResolveOpportunityID(string opportunityTypeString, Uri opportunityId, Uri offerId)
+        protected IBookableIdComponents ResolveOpportunityID(string opportunityTypeString, Uri opportunityId, Uri offerId)
         {
             // Return the first matching ID combination for the opportunityId and offerId provided.
             // TODO: Make this more efficient?
@@ -309,11 +309,16 @@ namespace OpenActive.Server.NET
 
             var payer = orderQuote.BrokerRole == BrokerType.ResellerBroker ? orderQuote.Broker : orderQuote.Customer;
 
-            return ProcessFlowRequest<O>(stage, orderId, orderQuote, taxPayeeRelationship, payer);
+            return ProcessFlowRequest<O>(new BookingFlowContext<O> {
+                Stage = stage,
+                OrderIdComponents = orderId,
+                Order = orderQuote,
+                TaxPayeeRelationship = taxPayeeRelationship,
+                Payer = payer }
+            );
         }
 
-        public abstract TOrder ProcessFlowRequest<TOrder>(FlowStage stage, OrderIdComponents orderId, TOrder orderQuote,
-            TaxPayeeRelationship taxPayeeRelationship, SingleValues<Organization, Person> payer) where TOrder : Order;
+        public abstract TOrder ProcessFlowRequest<TOrder>(BookingFlowContext<TOrder> request) where TOrder : Order;
 
     }
 }
