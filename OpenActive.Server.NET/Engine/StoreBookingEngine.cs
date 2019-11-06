@@ -84,21 +84,20 @@ namespace OpenActive.Server.NET
             // TODO: Organization seller from a store
             context.SellerIdComponents = new SellerIdComponents();
 
-            foreach(OrderItem orderItem in context.FlowContext.Order.OrderedItem)
+            // Resolve each OrderItem via a store, then augment the result with errors based on validation conditions
+            var orderedItems = context.FlowContext.Order.OrderedItem.Select(orderItem =>
             {
                 IBookableIdComponents idComponents =
                     this.ResolveOpportunityID(orderItem.OrderedItem.Type, orderItem.OrderedItem.Id, orderItem.AcceptedOffer.Id);
 
-                storeRouting[idComponents.OpportunityType.Value]
+                return storeRouting[idComponents.OpportunityType.Value]
                     .GetOrderItem(idComponents, context);
-            }
+
+                // TODO: Implement error logic for all types of item errors based on the results of this
+            });
 
             throw new NotImplementedException();
         }
-
-
-
-
 
         /*
          * 
@@ -114,8 +113,7 @@ namespace OpenActive.Server.NET
       // Validate input OrderItem
       {
         if (x.acceptedOffer && x.orderedItem) {
-          var opportunityComponents = getComponentsFromId(x.orderedItem.id, getOpportunityUrlTemplate());
-          var offerComponents = getComponentsFromId(x.acceptedOffer.id, getOfferUrlTemplate());
+          
 
           var fullOrderItem = getOrderItem(x, opportunityComponents, offerComponents, seller, taxPayeeRelationship, data);
 
