@@ -7,6 +7,8 @@ using System.Data;
 using System.IO;
 using System.Text;
 using System.Linq;
+using BookingSystem.FakeDatabase;
+using static BookingSystem.FakeDatabase.FakeDatabase;
 
 namespace BookingSystem.AspNetCore
 {
@@ -16,6 +18,15 @@ namespace BookingSystem.AspNetCore
     /// </summary>
     class AcmeStore : IOpenBookingStore
     {
+        public void CreateTestDataItem(Event @event)
+        {
+            FakeBookingSystem.Database.AddClass(@event.Name, @event.Offers?.FirstOrDefault()?.Price);
+        }
+
+        public void DeleteTestDataItem(Uri id)
+        {
+            //FakeBookingSystem.Database.DeleteClass(get id from idTemplate);
+        }
 
 
         //public void CreateFakeEvent()
@@ -24,9 +35,9 @@ namespace BookingSystem.AspNetCore
             // Note switch statement exists here as we need to handle booking for a single Order that contains different types of opportunity
             switch (opportunityOfferId)
             {
-                case ScheduledSessionOpportunity scheduledSessionOpportunity:
+                case SessionOpportunity sessionOpportunity:
 
-                case SlotOpportunity slotOpportunity:
+                case FacilityOpportunity facilityOpportunity:
 
                 case null:
 

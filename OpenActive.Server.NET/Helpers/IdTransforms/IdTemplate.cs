@@ -40,19 +40,15 @@ namespace OpenActive.Server.NET
 
     public interface IBookablePairIdTemplate
     {
-        OpportunityIdConfiguration OpportunityIdConfiguration { get;  }
-        OpportunityIdConfiguration? ParentIdConfiguration { get; }
-        OpportunityIdConfiguration? GrandparentIdConfiguration { get; }
+        //OpportunityIdConfiguration OpportunityIdConfiguration { get;  }
+        //OpportunityIdConfiguration? ParentIdConfiguration { get; }
+        //OpportunityIdConfiguration? GrandparentIdConfiguration { get; }
         List<OpportunityIdConfiguration> IdConfigurations { get; }
 
         IBookableIdComponents GetOpportunityReference(Uri opportunityId, Uri offerId);
 
-        Uri RenderOfferId(IBookableIdComponents components);
-        Uri RenderOpportunityId(IBookableIdComponents components);
-        Uri RenderParentOfferId(IBookableIdComponents components);
-        Uri RenderParentOpportunityId(IBookableIdComponents components);
-        Uri RenderGrandparentOfferId(IBookableIdComponents components);
-        Uri RenderGrandparentOpportunityId(IBookableIdComponents components);
+        //Uri RenderOfferId(OpportunityType opportunityType, IBookableIdComponents components);
+        //Uri RenderOpportunityId(OpportunityType opportunityType, IBookableIdComponents components);
 
     }
 
@@ -152,9 +148,9 @@ namespace OpenActive.Server.NET
         }
 
 
-        public OpportunityIdConfiguration OpportunityIdConfiguration { get; }
-        public OpportunityIdConfiguration? ParentIdConfiguration { get;}
-        public OpportunityIdConfiguration? GrandparentIdConfiguration { get; }
+        protected OpportunityIdConfiguration OpportunityIdConfiguration { get; }
+        protected OpportunityIdConfiguration? ParentIdConfiguration { get;}
+        protected OpportunityIdConfiguration? GrandparentIdConfiguration { get; }
         public List<OpportunityIdConfiguration> IdConfigurations { get; }
 
 
@@ -215,57 +211,42 @@ namespace OpenActive.Server.NET
 
         // TODO: Fix strings below to include accurate error messages
 
-        public Uri RenderOpportunityId(T components)
+        public Uri RenderOpportunityId(OpportunityType opportunityType, T components)
         {
-            return RenderId(0, components, nameof(RenderOpportunityId), "opportunityUriTemplate");
-        }
-        public Uri RenderOfferId(T components)
-        {
-            return RenderId(1, components, nameof(RenderOfferId), "offerUriTemplate");
-        }
-        public Uri RenderParentOpportunityId(T components)
-        {
-            return RenderId(2, components, nameof(RenderParentOpportunityId), "parentOpportunityUriTemplate");
-        }
-        public Uri RenderParentOfferId(T components)
-        {
-            return RenderId(3, components, nameof(RenderParentOfferId), "parentOfferUriTemplate");
-        }
-        public Uri RenderGrandparentOpportunityId(T components)
-        {
-            return RenderId(4, components, nameof(RenderGrandparentOpportunityId), "parentOpportunityUriTemplate");
-        }
-        public Uri RenderGrandparentOfferId(T components)
-        {
-            return RenderId(5, components, nameof(RenderGrandparentOfferId), "parentOfferUriTemplate");
+            if (opportunityType == OpportunityIdConfiguration.OpportunityType)
+                return RenderId(0, components, nameof(RenderOpportunityId), "opportunityUriTemplate");
+            else if (opportunityType == ParentIdConfiguration?.OpportunityType)
+                return RenderId(2, components, nameof(RenderOpportunityId), "parentOpportunityUriTemplate");
+            else if (opportunityType == GrandparentIdConfiguration?.OpportunityType)
+                return RenderId(4, components, nameof(RenderOpportunityId), "parentOpportunityUriTemplate");
+            else
+                throw new ArgumentOutOfRangeException(nameof(opportunityType), "OpportunityType was not found within this template");
         }
 
-
-        public Uri RenderOpportunityId(IBookableIdComponents components)
+        public Uri RenderOfferId(OpportunityType opportunityType, T components)
         {
-            return RenderId(0, (T)components, nameof(RenderOpportunityId), "opportunityUriTemplate");
+            if (opportunityType == OpportunityIdConfiguration.OpportunityType)
+                return RenderId(1, components, nameof(RenderOfferId), "offerUriTemplate");
+            else if (opportunityType == ParentIdConfiguration?.OpportunityType)
+                return RenderId(3, components, nameof(RenderOfferId), "parentOfferUriTemplate");
+            else if (opportunityType == GrandparentIdConfiguration?.OpportunityType)
+                return RenderId(5, components, nameof(RenderOfferId), "parentOfferUriTemplate");
+            else
+                throw new ArgumentOutOfRangeException(nameof(opportunityType), "OpportunityType was not found within this template");
         }
 
-        public Uri RenderOfferId(IBookableIdComponents components)
+        /*
+        public Uri RenderOpportunityId(OpportunityType opportunityType, IBookableIdComponents components)
         {
-            return RenderId(1, (T)components, nameof(RenderOfferId), "offerUriTemplate");
+            return RenderOpportunityId(opportunityType, (T)components);
         }
-        public Uri RenderParentOpportunityId(IBookableIdComponents components)
+
+        public Uri RenderOfferId(OpportunityType opportunityType, IBookableIdComponents components)
         {
-            return RenderId(2, (T)components, nameof(RenderParentOpportunityId), "parentOpportunityUriTemplate");
+            return RenderOfferId(opportunityType, (T)components);
         }
-        public Uri RenderParentOfferId(IBookableIdComponents components)
-        {
-            return RenderId(3, (T)components, nameof(RenderParentOfferId), "parentOfferUriTemplate");
-        }
-        public Uri RenderGrandparentOpportunityId(IBookableIdComponents components)
-        {
-            return RenderId(4, (T)components, nameof(RenderGrandparentOpportunityId), "parentOfferUriTemplate");
-        }
-        public Uri RenderGrandparentOfferId(IBookableIdComponents components)
-        {
-            return RenderId(5, (T)components, nameof(RenderGrandparentOfferId), "parentOfferUriTemplate");
-        }
+        */
+        
     }
 
     public class SingleIdTemplate<T> : IdTemplate<T> where T : new()

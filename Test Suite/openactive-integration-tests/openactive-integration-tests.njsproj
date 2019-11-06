@@ -31,6 +31,10 @@
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="app.js" />
+    <Content Include="IntegrationTests.js">
+      <SubType>Code</SubType>
+      <TestFramework>Mocha</TestFramework>
+    </Content>
     <Content Include="package.json" />
     <Content Include="README.md" />
   </ItemGroup>

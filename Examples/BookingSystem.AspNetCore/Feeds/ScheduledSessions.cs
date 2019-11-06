@@ -1,4 +1,5 @@
 ﻿using BookingSystem.FakeDatabase;
+using OpenActive.DatasetSite.NET;
 using OpenActive.NET;
 using OpenActive.NET.Rpde.Version1;
 using OpenActive.Server.NET;
@@ -7,9 +8,9 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 
-namespace BookingSystem.AspNetCore.Feeds
+namespace BookingSystem.AspNetCore
 {
-    public class AcmeScheduledSessionRPDEGenerator : RPDEFeedModifiedTimestampAndIDLong
+    public class AcmeScheduledSessionRPDEGenerator : RPDEFeedModifiedTimestampAndIDLong<SessionOpportunity>
     {
         //public override string FeedPath { get; protected set; } = "example path override";
 
@@ -32,13 +33,13 @@ namespace BookingSystem.AspNetCore.Feeds
                                 // QUESTION: Should the this.IdTemplate and this.BaseUrl be passed in each time rather than set on
                                 // the parent class? Current thinking is it's more extensible on parent class as function signature remains
                                 // constant as power of configuration through underlying class grows (i.e. as new properties are added)
-                                Id = this.IdTemplate.RenderOpportunityId(new ScheduledSessionOpportunity
+                                Id = this.RenderOpportunityId(OpportunityType.ScheduledSession, new SessionOpportunity
                                 {
                                     BaseUrl = this.JsonLdIdBaseUrl,
                                     SessionSeriesId = occurances.ClassId,
                                     ScheduledSessionId = occurances.Id
                                 }),
-                                SuperEvent = this.IdTemplate.RenderParentOpportunityId(new ScheduledSessionOpportunity
+                                SuperEvent = this.RenderOpportunityId(OpportunityType.SessionSeries, new SessionOpportunity
                                 {
                                     BaseUrl = this.JsonLdIdBaseUrl,
                                     SessionSeriesId = occurances.ClassId
@@ -51,7 +52,7 @@ namespace BookingSystem.AspNetCore.Feeds
         }
     }
 
-    public class AcmeSessionSeriesRPDEGenerator : RPDEFeedModifiedTimestampAndIDLong
+    public class AcmeSessionSeriesRPDEGenerator : RPDEFeedModifiedTimestampAndIDLong<SessionOpportunity>
     {
         protected override List<RpdeItem> GetRPDEItems(long? afterTimestamp, long? afterId)
         {
@@ -72,7 +73,7 @@ namespace BookingSystem.AspNetCore.Feeds
                                 // QUESTION: Should the this.IdTemplate and this.BaseUrl be passed in each time rather than set on
                                 // the parent class? Current thinking is it's more extensible on parent class as function signature remains
                                 // constant as power of configuration through underlying class grows (i.e. as new properties are added)
-                                Id = this.IdTemplate.RenderParentOpportunityId(new ScheduledSessionOpportunity
+                                Id = this.RenderOpportunityId(OpportunityType.SessionSeries, new SessionOpportunity
                                 {
                                     BaseUrl = this.JsonLdIdBaseUrl,
                                     SessionSeriesId = @class.Id
@@ -80,7 +81,7 @@ namespace BookingSystem.AspNetCore.Feeds
                                 Name = @class.Title,
                                 Offers = new List<Offer> { new Offer
                                     {
-                                        Id = this.IdTemplate.RenderParentOfferId(new ScheduledSessionOpportunity
+                                        Id = this.RenderOfferId(OpportunityType.SessionSeries, new SessionOpportunity
                                         {
                                             BaseUrl = this.JsonLdIdBaseUrl,
                                             SessionSeriesId = @class.Id,
@@ -97,11 +98,40 @@ namespace BookingSystem.AspNetCore.Feeds
     }
 
 
-    public class AcmeFacilityUseRPDEGenerator : RPDEFeedIncrementingUniqueChangeNumber
+    public class AcmeFacilityUseRPDEGenerator : RPDEFeedIncrementingUniqueChangeNumber<SessionOpportunity>
     {
         protected override List<RpdeItem> GetRPDEItems(long? afterChangeNumber)
         {
             throw new NotImplementedException();
         }
+    }
+
+
+    /// <summary>
+    /// These classes must be created by the booking system, the below are some simple examples.
+    /// These should be created alongside the IdConfiguration and OpenDataFeeds settings, as the two work together
+    /// 
+    /// They can be completely customised to match the preferred ID structure of the booking system
+    /// 
+    /// There is a choice of `string`, `long?` and `Uri` available for each component of the ID
+    /// </summary>
+
+    public class SessionOpportunity : IBookableIdComponents
+    {
+        public Uri BaseUrl { get; set; }
+        public OpportunityType? OpportunityType { get; set; }
+        public long? SessionSeriesId { get; set; }
+        public long? ScheduledSessionId { get; set; }
+        public long? OfferId { get; set; }
+    }
+
+    public class FacilityOpportunity : IBookableIdComponents
+    {
+        public Uri BaseUrl { get; set; }
+        public OpportunityType? OpportunityType { get; set; }
+        public string FacilityUseId { get; set; }
+        public long? SlotId { get; set; }
+        public long? OfferId { get; set; }
+
     }
 }

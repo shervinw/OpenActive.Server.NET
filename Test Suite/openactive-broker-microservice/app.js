@@ -1,105 +1,94 @@
-const DATA_MODEL_OUTPUT_DIR = "../OpenActive.DatasetSite.NET/metadata/";
-const DATASET_SITE_TEMPLATE_URL = "https://www.openactive.io/dataset-site-template/datasetsite.2.mustache";
+var express = require('express');
+var logger = require('morgan');
+var request = require('request');
+ 
+process.env["NODE_TLS_REJECT_UNAUTHORIZED"] = 0;
+process.env["PORT"] = 3000;
 
-const { getModels, getEnums, getMetaData } = require('@openactive/data-models');
-var fs = require('fs');
-var fsExtra = require('fs-extra');
-var request = require('sync-request');
-var path = require('path');
+var app = express();
 
-removeFiles()
-generateDatasetSiteMustacheTemplate(DATASET_SITE_TEMPLATE_URL);
-generateFeedConfigurations();
+app.use(logger('dev'));
+app.use(express.json());
 
-function removeFiles() {
-    // Empty output directories
-    fsExtra.emptyDirSync(DATA_MODEL_OUTPUT_DIR);
-}
-
-function generateDatasetSiteMustacheTemplate (datasetSiteTemplateUrl) {
-    var content = getContentFromUrl(datasetSiteTemplateUrl);
-    if (content) {
-        writeFile('DatasetSiteMustacheTemplate', renderMustacheTemplateFile(content));
-    }
-}
-
-function renderMustacheTemplateFile(content) {
-    return `
-namespace OpenActive.DatasetSite.NET
-{
-    public static class DatasetSiteMustacheTemplate
-    {
-        public const string Content = @"
-${content.replace(/\"/g, '""')}
-";
-    }
-}
-`;
-}
-
-function generateFeedConfigurations() {
-    // Returns the latest version of the models map
-    const feedConfigurations = getMetaData().feedConfigurations;
-
-    if (feedConfigurations) {
-        writeFile('FeedConfigurations', renderFeedConfigurations(feedConfigurations));
-    }
-}
-
-function renderFeedConfigurations(feedConfigurations) {
-    return `
-using System;
-using System.Collections.Generic;
-using System.Text;
-
-namespace OpenActive.DatasetSite.NET
-{
-    public enum FeedType
-    {
-        ${feedConfigurations.map(c => c.name).join(`,
-        `)}
-    }
-
-    public static class FeedConfigurations
-    {
-        public readonly static Dictionary<FeedType, FeedConfiguration> Configurations = new Dictionary<FeedType, FeedConfiguration>
-        {${feedConfigurations.map(c => `
-            {
-                FeedType.${c.name},
-                new FeedConfiguration {
-                    Name = "${c.name}",
-                    SameAs = new Uri("${c.sameAs}"),
-                    DefaultFeedPath = "${c.defaultFeedPath}",
-                    PossibleKinds = new List<string> { ${c.possibleKinds.map(k => `"${k}"`).join(', ')} }${c.displayName ? `,
-                    DisplayName = "${c.displayName}"` : ''}
-                }
-            }`).join(',')}
-        };
-    }
-}
-`
-}
-
-function getContentFromUrl(url) {
-    var response = request('GET', url, { accept: 'text/html' });
-    if (response && response.statusCode == 200) {
-        return response.getBody('utf8');
+function getRPDE(url, cb) {
+  var headers = {
+    'Accept': 'application/json',
+    'Content-Type': 'application/json',
+    'Cache-Control' : 'max-age=0'
+  };
+  var options = {
+    'method': 'get',
+    'headers': headers
+  };
+  request.get({ url }, function(error, response, body) { 
+    if (!error && response.statusCode == 200) { 
+      cb(JSON.parse(body));
     } else {
-        return undefined;
+      console.log("Error for RPDE page: " + error);
+      // Fake next page to force retry, after a delay
+      setTimeout(cb({ next: url, items: [] }), 5000);
     }
+  });
 }
 
-function writeFile(name, content) {
-    var filename = name + ".cs";
-    
-    console.log("NAME: " + filename);
-    console.log(content);
-
-    fs.writeFile(DATA_MODEL_OUTPUT_DIR + filename, content, function (err) {
-        if (err) {
-            return console.log(err);
-        }
-
-        console.log("FILE SAVED: " + filename);
-    });
+function getBaseUrl(url) {
+  if (url.indexOf("//") > -1) {
+    return url.substring(0, url.indexOf("/", url.indexOf("//") + 2));
+  } else {
+    return ""
+  }
 }
+
+var responses = {
+  /* Keyed by expression =*/
+};
+
+var requestCounter = 0;
+
+app.get('/get-match/:expression', function (req, res) {
+  // respond with json
+  if (req.params.expression) {
+    requestCounter += 1;
+    var expression = req.params.expression;
+
+    // Stash the response and reply later when an event comes through (kill any existing expression still waiting)
+    if (responses[expression] && responses[expression] !== null) responses[expression].end();
+    responses[expression] = {
+      send: function(json) {
+        responses[expression] = null;
+        res.json(json);
+        res.end();
+      },
+      end: function() {
+        res.end();
+      },
+      res
+    };
+  } else {
+    res.send("Expression not valid");
+  }
+});
+
+var nextUrl = 'https://localhost:44307/feeds/session-series';
+var pageNumber = 0;
+
+// Start processing first page
+getRPDE(nextUrl, processPage);
+
+function processPage(rpde) {
+  pageNumber++;
+
+  console.log(`RPDE page: ${pageNumber}, length: ${rpde.items.length}, next: '${rpde.next}'`);
+
+  rpde.items.forEach((item) => {
+    // TODO: make this regex loop
+    if (responses[item.data.name]) {
+      responses[item.data.name].send(item);
+    }
+  });
+
+  setTimeout(x => getRPDE(rpde.next, processPage), 200);
+}
+
+app.listen(3000, '127.0.0.1');
+console.log('Node server running on port 3000');

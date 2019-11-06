@@ -58,15 +58,16 @@ namespace BookingSystem.AspNetCore.Controllers
         /// GET api/openbooking/orders/ABCD1234
         /// </summary>
         [HttpPut("orders/{uuid}")]
-        public ActionResult<Schema.NET.Thing> OrderCreationB([FromServices] IBookingEngine bookingEngine, string uuid, [FromBody] Order order)
+        public IActionResult OrderCreationB([FromServices] IBookingEngine bookingEngine, string uuid, [FromBody] Order order)
         {
             try
             {
-                return bookingEngine.ProcessOrderCreationB(uuid, order);
+                return StatusCode((int)404, new OpenBookingError().ToOpenActiveString());
+                //return Content(bookingEngine.ProcessOrderCreationB(uuid, order).ToOpenActiveString(), "application/ld+json");
             }
             catch (OpenBookingException obe)
             {
-                return StatusCode((int)obe.GetHttpStatusCode(), obe);
+                return StatusCode((int)obe.GetHttpStatusCode(), Content(obe.ToOpenActiveString(), "application/ld+json"));
             }
         }
 
@@ -113,10 +114,34 @@ namespace BookingSystem.AspNetCore.Controllers
             throw new NotImplementedException();
         }
 
-        // POST api/values
-        [HttpPost]
-        public void Post([FromBody] string value)
+        // POST api/openbooking/test-interface/create
+        [HttpPost("test-interface/create")]
+        public ActionResult<Schema.NET.Thing> Post([FromServices] IBookingEngine bookingEngine, [FromBody] Event @event)
         {
+            try
+            {
+                bookingEngine.CreateTestData(@event);
+                return NoContent();
+            }
+            catch (OpenBookingException obe)
+            {
+                return StatusCode((int)obe.GetHttpStatusCode(), obe);
+            }
+        }
+
+        // POST api/openbooking/test-interface
+        [HttpPost("test-interface/delete")]
+        public ActionResult<Schema.NET.Thing> Delete([FromServices] IBookingEngine bookingEngine, Uri @id)
+        {
+            try
+            {
+                bookingEngine.DeleteTestData(@id);
+                return NoContent();
+            }
+            catch (OpenBookingException obe)
+            {
+                return StatusCode((int)obe.GetHttpStatusCode(), obe);
+            }
         }
     }
 }

@@ -27,15 +27,28 @@ namespace BookingSystem.FakeDatabase
     {
         private static readonly Faker faker = new Faker("en");
 
+        // A database-wide auto-incrementing id is used for simplicity
+        private static int nextId = 100000;
+
         public abstract class Table
         {
-            // A database-wide auto-incrementing id is used for simplicity
-            private static int nextId = 100000;
-            public int Id { get; set; } // = nextId++;
+            public int Id { get; set; }
             public bool Deleted { get; set; } = false;
             public DateTimeOffset Modified { get; set; } = DateTimeOffset.Now;
         }
 
+        public void AddClass(string title, decimal? price)
+        {
+            Classes.Add(new ClassTable
+            {
+                Id = nextId++,
+                Deleted = false,
+                Title = title,
+                Price = price
+            });
+        }
+
+        
         public List<ClassTable> Classes { get; set; } = Enumerable.Range(1, 1000)
             .Select(id => new ClassTable
             {
@@ -49,7 +62,7 @@ namespace BookingSystem.FakeDatabase
         public class ClassTable : Table
         {
             public string Title { get; set; }
-            public decimal Price { get; set; }
+            public decimal? Price { get; set; }
         }
 
         public List<OccurrenceTable> Occurrences { get; set; } = Enumerable.Range(1, 10000)

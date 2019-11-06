@@ -29,6 +29,14 @@ namespace OpenActive.Server.NET
 
         private readonly IOpenBookingStore store;
 
+        public override void CreateTestDataItem(OpenActive.NET.Event @event)
+        {
+            store.CreateTestDataItem(@event);
+        }
 
+        public override void DeleteTestDataItem(Uri id)
+        {
+            store.DeleteTestDataItem(id);
+        }
     }
 }

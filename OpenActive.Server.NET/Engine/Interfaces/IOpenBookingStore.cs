@@ -13,7 +13,7 @@ namespace OpenActive.Server.NET
     public interface IOpenBookingStore
     {
         OrderItem GetOrderItem(IBookableIdComponents opportunityOfferId, DefaultSellerIdComponents sellerId);
-
-
+        void CreateTestDataItem(Event @event);
+        void DeleteTestDataItem(Uri id);
     }
 }

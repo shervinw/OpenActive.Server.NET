@@ -16,7 +16,6 @@ using OpenActive.NET.Rpde.Version1;
 using Newtonsoft.Json;
 using OpenActive.Server.NET;
 using OpenActive.DatasetSite.NET;
-using BookingSystem.AspNetCore.Feeds;
 using OpenActive.NET;
 using Newtonsoft.Json.Converters;
 
@@ -47,7 +46,9 @@ namespace BookingSystem.AspNetCore
                     new ValuesConverter(),
                     new StringEnumConverter()
                 };
-                })
+                options.SerializerSettings.NullValueHandling = NullValueHandling.Ignore;
+                options.SerializerSettings.DefaultValueHandling = DefaultValueHandling.Ignore;
+            })
                 .SetCompatibilityVersion(CompatibilityVersion.Version_2_1);
 
 
@@ -59,7 +60,7 @@ namespace BookingSystem.AspNetCore
                 // This assigns the ID pattern used for each ID
                 IdConfiguration = new List<IBookablePairIdTemplate> {
                     // Note that ScheduledSession is the only opportunity type that allows offer inheritance  
-                    new BookablePairIdTemplateWithOfferInheritance<ScheduledSessionOpportunity>(
+                    new BookablePairIdTemplateWithOfferInheritance<SessionOpportunity>(
                         // Opportunity
                         new OpportunityIdConfiguration
                         {
@@ -155,7 +156,7 @@ namespace BookingSystem.AspNetCore
                     "{+BaseUrl}api/{Mode}/{OrderId}"
                     ),
 
-                OpenDataFeeds = new Dictionary<OpportunityType, RPDEFeedGenerator> {
+                OpenDataFeeds = new Dictionary<OpportunityType, IRPDEFeedGenerator> {
                     {
                         OpportunityType.ScheduledSession, new AcmeScheduledSessionRPDEGenerator()
                     },

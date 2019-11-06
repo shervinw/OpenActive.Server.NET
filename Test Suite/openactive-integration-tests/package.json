@@ -4,8 +4,8 @@
   "description": "OpenActive booking system integration tests",
   "main": "app.js",
   "scripts": {
-    "start": "node app.js",
-    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "echo \"Error: package contains only tests\" && exit 1",
+    "test": "./node_modules/.bin/mocha --reporter spec",
     "debug": "node --inspect-brk -i app.js"
   },
   "author": "Nick Evans",
@@ -14,5 +14,9 @@
     "@openactive/data-models": "^1.5.5",
     "fs-extra": "^7.0.1",
     "sync-request": "^6.0.0"
+  },
+  "devDependencies": {
+    "chakram": "^1.5.0",
+    "mocha": "^6.2.2"
   }
 }

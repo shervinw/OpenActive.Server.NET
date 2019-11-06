@@ -1,4 +1,5 @@
-﻿using OpenActive.NET;
+﻿using System;
+using OpenActive.NET;
 using OpenActive.NET.Rpde.Version1;
 
 namespace OpenActive.Server.NET
@@ -12,5 +13,7 @@ namespace OpenActive.Server.NET
         OrderQuote ProcessCheckpoint2(string uuid, OrderQuote orderQuote);
         void ProcessOrderUpdate(string uuid, Order order);
         string RenderDatasetSite();
+        void CreateTestData(Event @event);
+        void DeleteTestData(Uri id);
     }
 }

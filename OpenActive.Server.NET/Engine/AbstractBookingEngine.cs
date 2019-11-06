@@ -20,7 +20,7 @@ namespace OpenActive.Server.NET
     /// and throw exceptions that subclass OpenActiveException, on which GetHttpStatusCode() and ToOpenActiveString() can
     /// be called to construct a response.
     /// </summary>
-    public class AbstractBookingEngine : IBookingEngine
+    public abstract class AbstractBookingEngine : IBookingEngine
     {
         /// <summary>
         /// In this mode, the Booking Engine also handles generation of open data feeds and the dataset site
@@ -94,7 +94,7 @@ namespace OpenActive.Server.NET
 
         private DatasetSiteGeneratorSettings datasetSettings = null;
         private readonly BookingEngineSettings settings;
-        private Dictionary<string, RPDEFeedGenerator> feedLookup;
+        private Dictionary<string, IRPDEFeedGenerator> feedLookup;
         private List<OpportunityType> supportedFeeds;
         private Uri openDataFeedBaseUrl;
         private Uri openBookingAPIBaseUrl;
@@ -174,13 +174,13 @@ namespace OpenActive.Server.NET
         {
             if (openDataFeedBaseUrl == null) throw new NotSupportedException("GetOpenDataRPDEPageForFeed is only supported if an OpenDataFeedBaseUrl and BookingEngineSettings.OpenDataFeed is supplied to the IBookingEngine");
 
-            if (feedLookup.TryGetValue(feedname, out RPDEFeedGenerator generator))
+            if (feedLookup.TryGetValue(feedname, out IRPDEFeedGenerator generator))
             {
                 switch (generator) {
-                    case RPDEFeedIncrementingUniqueChangeNumber changeNumberGenerator:
+                    case IRPDEFeedIncrementingUniqueChangeNumber changeNumberGenerator:
                         return changeNumberGenerator.GetRPDEPage(afterChangeNumber);
 
-                    case RPDEFeedModifiedTimestampAndIDLong timestampAndIDGeneratorLong:
+                    case IRPDEFeedModifiedTimestampAndIDLong timestampAndIDGeneratorLong:
                         if (long.TryParse(afterId, out long afterIdLong))
                         {
                             return timestampAndIDGeneratorLong.GetRPDEPage(afterTimestamp, afterIdLong);
@@ -194,7 +194,7 @@ namespace OpenActive.Server.NET
                             throw new ArgumentOutOfRangeException(nameof(afterId), "afterId must be numeric");
                         }
 
-                    case RPDEFeedModifiedTimestampAndIDString timestampAndIDGeneratorString:
+                    case IRPDEFeedModifiedTimestampAndIDString timestampAndIDGeneratorString:
                         return timestampAndIDGeneratorString.GetRPDEPage(afterTimestamp, afterId);
 
                     default:
@@ -241,8 +241,24 @@ namespace OpenActive.Server.NET
 
         private O ProcessFlowRequest<O>(FlowStage stage, string uuid, O orderQuote) where O : Order
         {
-            throw new NotImplementedException();
+            return orderQuote;
         }
+
+        public void CreateTestData(Event @event)
+        {
+            this.CreateTestDataItem(@event);
+        }
+
+        public abstract void CreateTestDataItem(Event @event);
+
+        public void DeleteTestData(Uri id)
+        {
+            this.DeleteTestDataItem(id);
+        }
+
+        public abstract void DeleteTestDataItem(Uri id);
+
+
 
         /*
        private O ProcessFlowRequest<O>(FlowStage stage, string uuid, O orderQuote) where O : Order

@@ -23,47 +23,12 @@ namespace OpenActive.Server.NET
         public List<IBookablePairIdTemplate> IdConfiguration { get; set;  }
         public Uri OrderBaseUrl { get; set; }
         public SingleIdTemplate<OrderId> OrderIdTemplate { get; set; }
-        public Dictionary<OpportunityType, RPDEFeedGenerator> OpenDataFeeds { get; set; }
+        public Dictionary<OpportunityType, IRPDEFeedGenerator> OpenDataFeeds { get; set; }
         public int RPDEPageSize { get; set; } = 500;
         public Uri JsonLdIdBaseUrl { get; set; }
     }
 
 
-    /// <summary>
-    /// These classes are created by the booking system, the below are temporary default examples.
-    /// These should be created alongside the settings containing IdConfiguration, as the two work together
-    /// 
-    /// They can be completely customised to match the preferred ID structure of the booking system
-    /// 
-    /// There is a choice of `string` or `long?` available for each component of the ID
-    /// </summary>
-
-    public class SessionSeriesOpportunity : IBookableIdComponents
-    {
-        public Uri BaseUrl { get; set; }
-        public long? SessionSeriesId { get; set; }
-        public long? OfferId { get; set; }
-        public OpportunityType? OpportunityType { get; set; }
-    }
-
-    public class ScheduledSessionOpportunity : IBookableIdComponents
-    {
-        public Uri BaseUrl { get; set; }
-        public long? SessionSeriesId { get; set; }
-        public long? ScheduledSessionId { get; set; }
-        public long? OfferId { get; set; }
-        public OpportunityType? OpportunityType { get; set; }
-    }
-
-    public class SlotOpportunity : IBookableIdComponents
-    {
-        public Uri BaseUrl { get; set; }
-        public string FacilityUseId { get; set; }
-        public long? SlotId { get; set; }
-
-        public long? OfferId { get; set; }
-        public OpportunityType? OpportunityType { get; set; }
-    }
 
     public class DefaultSellerIdComponents
     {
