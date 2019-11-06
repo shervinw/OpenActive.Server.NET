@@ -130,12 +130,12 @@ namespace BookingSystem.AspNetCore.Controllers
         }
 
         // POST api/openbooking/test-interface
-        [HttpPost("test-interface/delete")]
-        public ActionResult<Schema.NET.Thing> Delete([FromServices] IBookingEngine bookingEngine, Uri @id)
+        [HttpPost("test-interface/delete/{name}")]
+        public ActionResult<Schema.NET.Thing> Delete([FromServices] IBookingEngine bookingEngine, string name)
         {
             try
             {
-                bookingEngine.DeleteTestData(@id);
+                bookingEngine.DeleteTestData(name);
                 return NoContent();
             }
             catch (OpenBookingException obe)

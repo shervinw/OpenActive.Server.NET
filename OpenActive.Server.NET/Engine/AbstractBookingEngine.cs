@@ -251,12 +251,12 @@ namespace OpenActive.Server.NET
 
         public abstract void CreateTestDataItem(Event @event);
 
-        public void DeleteTestData(Uri id)
+        public void DeleteTestData(string name)
         {
-            this.DeleteTestDataItem(id);
+            this.DeleteTestDataItem(name);
         }
 
-        public abstract void DeleteTestDataItem(Uri id);
+        public abstract void DeleteTestDataItem(string name);
 
 
 

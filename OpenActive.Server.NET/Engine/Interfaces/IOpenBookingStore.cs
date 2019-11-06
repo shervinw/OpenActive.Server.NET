@@ -14,6 +14,6 @@ namespace OpenActive.Server.NET
     {
         OrderItem GetOrderItem(IBookableIdComponents opportunityOfferId, DefaultSellerIdComponents sellerId);
         void CreateTestDataItem(Event @event);
-        void DeleteTestDataItem(Uri id);
+        void DeleteTestDataItem(string name);
     }
 }

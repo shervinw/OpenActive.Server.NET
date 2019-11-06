@@ -18,13 +18,13 @@ describe("Create test event", function() {
 
     var apiResponse;
 
+    var testEvent = {
+        type: "Event",
+        name: "Testevent2"
+    };
+
     before(function () {
         apiResponse = chakram.get("http://localhost:3000/get-match/Testevent2");
-
-        testEvent = {
-            type: "Event",
-            name: "Testevent2"
-        };
 
         delay(500).then(x => chakram.post("https://localhost:44307/api/openbooking/test-interface/create", testEvent));
 
@@ -32,9 +32,8 @@ describe("Create test event", function() {
     });
 
     after(function () {
-        id = apiResponse.body['@id'];
-
-        return chakram.delete("http://localhost:3000/delete/" + encodeURIComponent(id));
+        var name = testEvent.name;
+        return chakram.delete("https://localhost:44307/api/openbooking/test-interface/delete/Testevent2");// + encodeURIComponent(name));
     });
 
     it("should return 200 on success", function () {

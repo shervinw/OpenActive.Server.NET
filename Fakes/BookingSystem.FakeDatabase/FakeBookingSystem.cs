@@ -48,7 +48,17 @@ namespace BookingSystem.FakeDatabase
             });
         }
 
-        
+        public void DeleteClass(string name)
+        {
+            foreach (ClassTable @class in Classes.Where(x => x.Title == name)) {
+                if (!@class.Deleted)
+                {
+                    @class.Modified = DateTimeOffset.Now;
+                    @class.Deleted = true;
+                }
+            }
+        }
+
         public List<ClassTable> Classes { get; set; } = Enumerable.Range(1, 1000)
             .Select(id => new ClassTable
             {

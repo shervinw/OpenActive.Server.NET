@@ -81,8 +81,8 @@ function processPage(rpde) {
   console.log(`RPDE page: ${pageNumber}, length: ${rpde.items.length}, next: '${rpde.next}'`);
 
   rpde.items.forEach((item) => {
-    // TODO: make this regex loop
-    if (responses[item.data.name]) {
+    // TODO: make this regex loop (note ignore deleted items)
+    if (item.data && responses[item.data.name]) {
       responses[item.data.name].send(item);
     }
   });

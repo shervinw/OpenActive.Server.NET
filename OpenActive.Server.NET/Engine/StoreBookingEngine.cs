@@ -34,9 +34,9 @@ namespace OpenActive.Server.NET
             store.CreateTestDataItem(@event);
         }
 
-        public override void DeleteTestDataItem(Uri id)
+        public override void DeleteTestDataItem(string name)
         {
-            store.DeleteTestDataItem(id);
+            store.DeleteTestDataItem(name);
         }
     }
 }

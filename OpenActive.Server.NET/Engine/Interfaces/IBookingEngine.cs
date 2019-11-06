@@ -14,6 +14,6 @@ namespace OpenActive.Server.NET
         void ProcessOrderUpdate(string uuid, Order order);
         string RenderDatasetSite();
         void CreateTestData(Event @event);
-        void DeleteTestData(Uri id);
+        void DeleteTestData(string name);
     }
 }

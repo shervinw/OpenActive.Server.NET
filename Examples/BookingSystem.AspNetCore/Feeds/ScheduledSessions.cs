@@ -48,7 +48,7 @@ namespace BookingSystem.AspNetCore
                                 EndDate = (DateTimeOffset)occurances.End
                             }
                         };
-            return query.Take(500).ToList();
+            return query.Take(this.RPDEPageSize).ToList();
         }
     }
 
@@ -92,7 +92,7 @@ namespace BookingSystem.AspNetCore
                                 }
                             }
                         };
-            var items = query.Take(500).ToList();
+            var items = query.Take(this.RPDEPageSize).ToList();
             return items;
         }
     }

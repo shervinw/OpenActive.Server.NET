@@ -10,15 +10,13 @@ namespace OpenActive.Server.NET
     public interface IRPDEFeedGenerator
     {
         string FeedPath { get; }
-        Uri FeedUrl { get; }
-        Uri JsonLdIdBaseUrl { get; }
-
         void SetConfiguration(OpportunityTypeConfiguration OpportunityTypeConfiguration, BookingEngineSettings settings, IBookablePairIdTemplate template, Uri openDataFeedBaseUrl);
     }
 
     public abstract class RPDEFeedGenerator<T> : IRPDEFeedGenerator where T : IBookableIdComponents, new()
     {
         public Uri JsonLdIdBaseUrl { get; private set; }
+        public int RPDEPageSize { get; private set; }
         public virtual Uri FeedUrl { get; protected set; }
         public virtual string FeedPath { get; protected set; }
         private BookablePairIdTemplate<T> IdTemplate { get; set; }
@@ -40,6 +38,7 @@ namespace OpenActive.Server.NET
             this.BookingEngineSettings = settings;
             this.IdTemplate = template;
 
+            this.RPDEPageSize = settings.RPDEPageSize;
             this.JsonLdIdBaseUrl = settings.JsonLdIdBaseUrl;
 
             // Allow these to be overridden by implementations if customisation is required

@@ -23,9 +23,9 @@ namespace BookingSystem.AspNetCore
             FakeBookingSystem.Database.AddClass(@event.Name, @event.Offers?.FirstOrDefault()?.Price);
         }
 
-        public void DeleteTestDataItem(Uri id)
+        public void DeleteTestDataItem(string name)
         {
-            //FakeBookingSystem.Database.DeleteClass(get id from idTemplate);
+            FakeBookingSystem.Database.DeleteClass(name);
         }
 
 
