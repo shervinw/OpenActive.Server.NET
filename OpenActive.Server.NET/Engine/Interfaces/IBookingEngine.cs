@@ -15,5 +15,6 @@ namespace OpenActive.Server.NET
         string RenderDatasetSite();
         void CreateTestData(Event @event);
         void DeleteTestData(string name);
+        TOrder ProcessFlowRequest<TOrder>(FlowStage stage, OrderId orderId, TOrder orderQuote, TaxPayeeRelationship taxPayeeRelationship, SingleValues<Organization, Person> payer) where TOrder : Order;
     }
 }

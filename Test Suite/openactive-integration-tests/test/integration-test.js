@@ -33,7 +33,7 @@ describe("Create test event", function() {
 
     after(function () {
         var name = testEvent.name;
-        return chakram.delete("https://localhost:44307/api/openbooking/test-interface/delete/Testevent2");// + encodeURIComponent(name));
+        return chakram.delete("https://localhost:44307/api/openbooking/test-interface/delete/" + encodeURIComponent(name));
     });
 
     it("should return 200 on success", function () {
