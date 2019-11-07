@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.HttpsPolicy;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.Formatters.Json;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.AzureADB2C.UI;
 using Microsoft.Extensions.Configuration;
@@ -18,6 +19,9 @@ using OpenActive.Server.NET;
 using OpenActive.DatasetSite.NET;
 using OpenActive.NET;
 using Newtonsoft.Json.Converters;
+using OpenActive.Server.NET.StoreBooking;
+using OpenActive.Server.NET.OpenBookingHelper;
+using BookingSystem.AspNetCore.Helpers;
 
 namespace BookingSystem.AspNetCore
 {
@@ -36,19 +40,9 @@ namespace BookingSystem.AspNetCore
             // TODO: Authentication disabled for now
             //services.AddAuthentication(AzureADB2CDefaults.BearerAuthenticationScheme)
             //    .AddAzureADB2CBearer(options => Configuration.Bind("AzureAdB2C", options));
-            services.AddMvc().AddJsonOptions(options => {
-                options.SerializerSettings.Converters = new List<JsonConverter>()
-                {
-                    // This enables every relevant response to be rendered to JSON-LD by OpenActive.NET
-                    // TODO: Document use of this
-                    // TODO: Is there a way we can not require this? Just output a string from the library direct? Less chances of rendering issues and misuse?
-                    new OpenActiveThingConverter(),
-                    new ValuesConverter(),
-                    new StringEnumConverter()
-                };
-                options.SerializerSettings.NullValueHandling = NullValueHandling.Ignore;
-                options.SerializerSettings.DefaultValueHandling = DefaultValueHandling.Ignore;
-            })
+            services
+                .AddMvc()
+                .AddMvcOptions(options => options.InputFormatters.Insert(0, new OpenBookingInputFormatter()))
                 .SetCompatibilityVersion(CompatibilityVersion.Version_2_1);
 
 

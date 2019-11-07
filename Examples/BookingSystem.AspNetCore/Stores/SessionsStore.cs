@@ -1,6 +1,5 @@
 ﻿using Newtonsoft.Json;
 using OpenActive.NET;
-using OpenActive.Server.NET;
 using System;
 using System.Collections.Generic;
 using System.Data;
@@ -10,6 +9,8 @@ using System.Linq;
 using BookingSystem.FakeDatabase;
 using static BookingSystem.FakeDatabase.FakeDatabase;
 using OpenActive.DatasetSite.NET;
+using OpenActive.Server.NET.StoreBooking;
+using OpenActive.Server.NET.OpenBookingHelper;
 
 namespace BookingSystem.AspNetCore
 {

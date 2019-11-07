@@ -2,6 +2,7 @@ using System;
 using Xunit;
 using OpenActive.Server.NET;
 using OpenActive.DatasetSite.NET;
+using OpenActive.Server.NET.OpenBookingHelper;
 
 namespace OpenActive.Server.NET.Tests
 {

@@ -1,39 +1,25 @@
-﻿using System;
+﻿using OpenActive.Server.NET.OpenBookingHelper;
+using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net;
+using System.Net.Http;
 using System.Threading.Tasks;
-using BookingSystem.AspNetCore.Helpers;
-using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Mvc;
-using Newtonsoft.Json.Linq;
-using OpenActive.NET;
-using OpenActive.NET.Rpde.Version1;
-using OpenActive.Server.NET;
-using OpenActive.Server.NET.OpenBookingHelper;
+using System.Web.Http;
 
-namespace BookingSystem.AspNetCore.Controllers
+namespace BookingSystem.AspNetFramework.Controllers
 {
-    //[Authorize]
-    [Route("api/openbooking")]
-    [ApiController]
-    [Consumes(MediaTypeNames.OpenBooking.Version1)]
-    public class OpenBookingController : ControllerBase
+    [RoutePrefix("api/openbooking")]
+    public class OpenBookingController : ApiController
     {
-        // Open Booking Errors must be handled as thrown exceptions and the ErrorResponseContent of the exception returned.
-        // Note that exceptions may be caught and logged in the usual way, and such error handling moved to a filter or middleware as required,
-        // provided that the ErrorResponseContent is still returned. 
-
-        /// Note that this interface expects JSON requests to be supplied as strings, and provides JSON responses as strings.
-        /// This ensures that deserialisation is always correct, regardless of the configuration of the web framework.
-        /// It also removes the need to expose OpenActive (de)serialisation settings and parsers to the implementer, and makes
-        /// this interface more maintainble as OpenActive.NET will likely upgrade to use the new System.Text.Json in time.
-
+        /*
         /// <summary>
         /// OrderQuote Creation C1
         /// GET api/openbooking/order-quote-templates/ABCD1234
         /// </summary>
-        [HttpPut("order-quote-template/{uuid}")]
-        public ContentResult OrderQuoteCreationC1([FromServices] IBookingEngine bookingEngine, string uuid, [FromBody] string orderQuote)
+        [HttpPut]
+        [Route("order-quote-template/{uuid}")]
+        public async Task<IHttpActionResult> OrderQuoteCreationC1([FromServices] IBookingEngine bookingEngine, string uuid, [FromBody] string orderQuote)
         {
             try
             {
@@ -49,8 +35,9 @@ namespace BookingSystem.AspNetCore.Controllers
         /// OrderQuote Creation C2
         /// GET api/openbooking/order-quotes/ABCD1234
         /// </summary>
-        [HttpPut("order-quotes/{uuid}")]
-        public ContentResult OrderQuoteCreationC2([FromServices] IBookingEngine bookingEngine, string uuid, [FromBody] string orderQuote)
+        [HttpPut]
+        [Route("order-quotes/{uuid}")]
+        public async Task<IHttpActionResult> OrderQuoteCreationC2([FromServices] IBookingEngine bookingEngine, string uuid, [FromBody] string orderQuote)
         {
             try
             {
@@ -66,8 +53,9 @@ namespace BookingSystem.AspNetCore.Controllers
         /// Order Creation B
         /// GET api/openbooking/orders/ABCD1234
         /// </summary>
-        [HttpPut("orders/{uuid}")]
-        public ContentResult OrderCreationB([FromServices] IBookingEngine bookingEngine, string uuid, [FromBody] string order)
+        [HttpPut]
+        [Route("orders/{uuid}")]
+        public async Task<IHttpActionResult> OrderCreationB([FromServices] IBookingEngine bookingEngine, string uuid, [FromBody] string order)
         {
             try
             {
@@ -83,7 +71,8 @@ namespace BookingSystem.AspNetCore.Controllers
         /// Order Deletion
         /// DELETE api/openbooking/orders/ABCD1234
         /// </summary>
-        [HttpDelete("orders/{uuid}")]
+        [HttpDelete]
+        [Route("orders/{uuid}")]
         public IActionResult OrderDeletion([FromServices] IBookingEngine bookingEngine, string uuid)
         {
             try
@@ -101,7 +90,8 @@ namespace BookingSystem.AspNetCore.Controllers
         /// Order Cancellation
         /// GET api/openbooking/orders/ABCD1234
         /// </summary>
-        [HttpPatch("orders/{uuid}")]
+        [HttpPatch]
+        [Route("orders/{uuid}")]
         public IActionResult OrderUpdate([FromServices] IBookingEngine bookingEngine, string uuid, [FromBody] string order)
         {
             try
@@ -116,14 +106,16 @@ namespace BookingSystem.AspNetCore.Controllers
         }
 
         // GET api/openbooking/orders-rpde
-        [HttpGet("orders-rpde")]
-        public ContentResult Get([FromServices] IBookingEngine bookingEngine, int uuid)
+        [HttpGet]
+        [Route("orders-rpde")]
+        public async Task<IHttpActionResult> Get([FromServices] IBookingEngine bookingEngine, int uuid)
         {
-            throw new NotImplementedException();
+            return Ok();
         }
 
         // POST api/openbooking/test-interface/scheduled-sessions
-        [HttpPost("test-interface/{type}")]
+        [HttpPost]
+        [Route("test-interface/{type}")]
         public IActionResult Post([FromServices] IBookingEngine bookingEngine, string type, [FromBody] string @event)
         {
             try
@@ -138,7 +130,8 @@ namespace BookingSystem.AspNetCore.Controllers
         }
 
         // DELETE api/openbooking/test-interface/scheduled-sessions/{name}
-        [HttpDelete("test-interface/{type}/{name}")]
+        [HttpDelete]
+        [Route("test-interface/{type}/{name}")]
         public IActionResult Delete([FromServices] IBookingEngine bookingEngine, string type, string name)
         {
             try
@@ -151,5 +144,6 @@ namespace BookingSystem.AspNetCore.Controllers
                 return obe.ErrorResponseContent.GetContentResult();
             }
         }
+        */
     }
 }

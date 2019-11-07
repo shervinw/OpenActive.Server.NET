@@ -28,4 +28,8 @@
     <PackageReference Include="UriTemplate.Core" Version="1.0.2" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Folder Include="CustomBookingEngine\OrderContext\" />
+  </ItemGroup>
+
 </Project>

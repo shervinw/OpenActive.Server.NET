@@ -1,12 +1,8 @@
-﻿using BookingSystem.FakeDatabase;
-using OpenActive.DatasetSite.NET;
-using OpenActive.NET;
-using OpenActive.NET.Rpde.Version1;
-using OpenActive.Server.NET;
+﻿using OpenActive.NET.Rpde.Version1;
+using OpenActive.Server.NET.OpenBookingHelper;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Threading.Tasks;
 
 namespace BookingSystem.AspNetCore
 {
@@ -30,13 +26,5 @@ namespace BookingSystem.AspNetCore
         }
     }
 
-    public class FacilityOpportunity : IBookableIdComponents
-    {
-        public Uri BaseUrl { get; set; }
-        public OpportunityType? OpportunityType { get; set; }
-        public string FacilityUseId { get; set; }
-        public long? SlotId { get; set; }
-        public long? OfferId { get; set; }
 
-    }
 }

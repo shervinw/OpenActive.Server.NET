@@ -32,14 +32,22 @@ describe("Create test event", function() {
     before(function () {
         apiResponse = chakram.get("http://localhost:3000/get-match/Testevent2");
 
-        delay(500).then(x => chakram.post("https://localhost:44307/api/openbooking/test-interface/scheduledsession", testEvent));
+        delay(500).then(x => chakram.post("https://localhost:44307/api/openbooking/test-interface/scheduledsession", testEvent, {
+            headers: {
+                'Content-Type': 'application/vnd.openactive.booking+json; version=1'
+             }
+        }));
 
         return apiResponse;
     });
 
     after(function () {
         var name = testEvent.name;
-        return chakram.delete("https://localhost:44307/api/openbooking/test-interface/scheduledsession/" + encodeURIComponent(name));
+        return chakram.delete("https://localhost:44307/api/openbooking/test-interface/scheduledsession/" + encodeURIComponent(name), {
+            headers: {
+                'Content-Type': 'application/vnd.openactive.booking+json; version=1'
+             }
+        });
     });
 
     it("should return 200 on success", function () {
