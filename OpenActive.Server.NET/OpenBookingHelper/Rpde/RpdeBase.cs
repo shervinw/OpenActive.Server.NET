@@ -7,13 +7,13 @@ using OpenActive.NET.Rpde.Version1;
 
 namespace OpenActive.Server.NET.OpenBookingHelper
 {
-    public interface IRPDEFeedGenerator
+    public interface IOpportunityDataRPDEFeedGenerator : IRPDEFeedGenerator
     {
         string FeedPath { get; }
         void SetConfiguration(OpportunityTypeConfiguration OpportunityTypeConfiguration, Uri jsonLdIdBaseUrl, int rpdePageSize, IBookablePairIdTemplate template, Uri openDataFeedBaseUrl);
     }
 
-    public abstract class RPDEFeedGenerator<T> : ModelSupport<T>, IRPDEFeedGenerator where T : class, IBookableIdComponents, new()
+    public abstract class OpporunityDataRPDEFeedGenerator<T> : ModelSupport<T>, IOpportunityDataRPDEFeedGenerator where T : class, IBookableIdComponents, new()
     {
         public int RPDEPageSize { get; private set; }
         public virtual Uri FeedUrl { get; protected set; }
@@ -21,7 +21,8 @@ namespace OpenActive.Server.NET.OpenBookingHelper
 
         public void SetConfiguration(OpportunityTypeConfiguration opportunityTypeConfiguration, Uri jsonLdIdBaseUrl, int rpdePageSize, IBookablePairIdTemplate template, Uri openDataFeedBaseUrl)
         {
-            if (template as BookablePairIdTemplate<T> == null) {
+            if (template as BookablePairIdTemplate<T> == null)
+            {
                 throw new NotSupportedException($"{template.GetType().ToString()} does not match {typeof(BookablePairIdTemplate<T>).ToString()}. All types of IBookableIdComponents (T) used for BookablePairIdTemplate<T> assigned to feeds via settings.IdConfiguration must match those used for RPDEFeedGenerator<T> in settings.OpenDataFeeds.");
             }
 
@@ -42,15 +43,10 @@ namespace OpenActive.Server.NET.OpenBookingHelper
         /// <summary>
         /// This class is not designed to be used outside of the library, one of its subclasses must be used instead
         /// </summary>
-        internal RPDEFeedGenerator() { }
+        internal OpporunityDataRPDEFeedGenerator() { }
     }
 
-    public interface IRPDEFeedIncrementingUniqueChangeNumber
-    {
-        RpdePage GetRPDEPage(long? afterChangeNumber);
-    }
-
-    public abstract class RPDEFeedIncrementingUniqueChangeNumber<T> : RPDEFeedGenerator<T>, IRPDEFeedIncrementingUniqueChangeNumber where T : class, IBookableIdComponents, new()
+    public abstract class RPDEFeedIncrementingUniqueChangeNumber<T> : OpporunityDataRPDEFeedGenerator<T>, IRPDEFeedIncrementingUniqueChangeNumber where T : class, IBookableIdComponents, new()
     {
         protected abstract List<RpdeItem> GetRPDEItems(long? afterChangeNumber);
 
@@ -60,12 +56,7 @@ namespace OpenActive.Server.NET.OpenBookingHelper
         }
     }
 
-    public interface IRPDEFeedModifiedTimestampAndIDLong
-    {
-        RpdePage GetRPDEPage(long? afterTimestamp, long? afterId);
-    }
-
-    public abstract class RPDEFeedModifiedTimestampAndIDLong<T> : RPDEFeedGenerator<T>, IRPDEFeedModifiedTimestampAndIDLong where T : class, IBookableIdComponents, new()
+    public abstract class RPDEFeedModifiedTimestampAndIDLong<T> : OpporunityDataRPDEFeedGenerator<T>, IRPDEFeedModifiedTimestampAndIDLong where T : class, IBookableIdComponents, new()
     {
         protected abstract List<RpdeItem> GetRPDEItems(long? afterTimestamp, long? afterId);
 
@@ -83,12 +74,7 @@ namespace OpenActive.Server.NET.OpenBookingHelper
         }
     }
 
-    public interface IRPDEFeedModifiedTimestampAndIDString
-    {
-        RpdePage GetRPDEPage(long? afterTimestamp, string afterId);
-    }
-
-    public abstract class RPDEFeedModifiedTimestampAndIDString<T> : RPDEFeedGenerator<T>, IRPDEFeedModifiedTimestampAndIDString where T : class, IBookableIdComponents, new()
+    public abstract class RPDEFeedModifiedTimestampAndIDString<T> : OpporunityDataRPDEFeedGenerator<T>, IRPDEFeedModifiedTimestampAndIDString where T : class, IBookableIdComponents, new()
     {
         protected abstract List<RpdeItem> GetRPDEItems(long? afterTimestamp, string afterId);
 

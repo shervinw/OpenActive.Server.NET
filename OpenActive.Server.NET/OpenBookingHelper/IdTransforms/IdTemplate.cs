@@ -7,6 +7,7 @@ using UriTemplate.Core;
 using OpenActive.NET;
 using OpenActive.DatasetSite.NET;
 using System.Collections;
+using System.Runtime.Serialization;
 
 namespace OpenActive.Server.NET.OpenBookingHelper
 {
@@ -310,6 +311,34 @@ namespace OpenActive.Server.NET.OpenBookingHelper
         
     }
 
+    public class OrderIdTemplate : IdTemplate<OrderIdComponents>
+    {
+        public OrderIdTemplate(string orderIdTemplate, string orderItemIdTemplate) : base(orderIdTemplate, orderItemIdTemplate)
+        {
+            if (orderIdTemplate == null) throw new ArgumentNullException(nameof(orderIdTemplate));
+            if (orderItemIdTemplate == null) throw new ArgumentNullException(nameof(orderItemIdTemplate));
+        }
+
+        public OrderIdComponents GetOrderIdComponents(Uri id)
+        {
+            return base.GetIdComponents(nameof(GetIdComponents), id, null);
+        }
+        public OrderIdComponents GetOrderItemIdComponents(Uri id)
+        {
+            return base.GetIdComponents(nameof(GetIdComponents), null, id);
+        }
+
+        public Uri RenderOrderId(OrderIdComponents components)
+        {
+            return RenderId(0, components, nameof(RenderId), "orderIdTemplate");
+        }
+
+        public Uri RenderOrderItemId(OrderIdComponents components)
+        {
+            return RenderId(1, components, nameof(RenderId), "orderItemIdTemplate");
+        }
+    }
+
 
     public class SingleIdTemplate<T> : IdTemplate<T> where T : new()
     {
@@ -327,7 +356,6 @@ namespace OpenActive.Server.NET.OpenBookingHelper
         {
             return RenderId(0, components, nameof(RenderId), "uriTemplate");
         }
-
     }
 
     /// <summary>
@@ -371,7 +399,7 @@ namespace OpenActive.Server.NET.OpenBookingHelper
                 var match = uriTemplates[index].Match(ids[index]);
 
                 // If ID does match template, return null
-                if (match.Bindings.Count == 0) return default(T);
+                if (match == null || match.Bindings == null || match.Bindings.Count == 0) return default(T);
 
                 // Set matching components in supplied POCO based on property name
                 foreach (var binding in match.Bindings)
@@ -414,14 +442,64 @@ namespace OpenActive.Server.NET.OpenBookingHelper
                         }
                         componentsType.GetProperty(binding.Key).SetValue(components, newValue);
                     }
+                    else if (Nullable.GetUnderlyingType(componentsType.GetProperty(binding.Key).PropertyType).IsEnum)
+                    {
+                        object existingValue = componentsType.GetProperty(binding.Key).GetValue(components);
+                        object newValue = ToEnum(componentsType.GetProperty(binding.Key).PropertyType, binding.Value.Value as string);
+                        if (newValue == null)
+                        {
+                            throw new ArgumentException($"An enumeration in the template for binding {binding.Key} failed to parse.");
+                        }
+                        if (existingValue != newValue && existingValue != null)
+                        {
+                            throw new BookableOpportunityAndOfferMismatchException($"Supplied Ids do not match on component '{binding.Value.Key}'");
+                        }
+                        try
+                        {
+                            componentsType.GetProperty(binding.Key).SetValue(components, newValue);
+                        }
+                        catch (Exception ex)
+                        {
+                            throw new ArgumentException($"An enumeration in the template for binding {binding.Key} failed to parse.", ex);
+                        } 
+                    }
                     else
                     {
-                        throw new ArgumentException("Only types long?, Uri and string are supported within the component class used for IdTemplate.");
+                        throw new ArgumentException("Only types long?, Uri, enum? and string are supported within the component class used for IdTemplate.");
                     }
                 }
             }
 
             return components;
+        }
+
+        public object ToEnumStringIfEnum(PropertyInfo prop, object value)
+        {
+            if (value == null) return null;
+            //if (prop.PropertyType == typeof(OpportunityType)) return value; // To optimise render, ignore this particular enum
+            var enumType = Nullable.GetUnderlyingType(prop.PropertyType);
+            if (enumType != null && enumType.IsEnum)
+            {
+                var name = Enum.GetName(enumType, value);
+                var enumMemberAttribute = ((EnumMemberAttribute[])enumType.GetField(name).GetCustomAttributes(typeof(EnumMemberAttribute), true)).SingleOrDefault();
+                return enumMemberAttribute?.Value ?? name;
+            }
+            else
+            {
+                return value;
+            }
+        }
+
+        private static object ToEnum(Type nullableEnumType, string str)
+        {
+            Type enumType = Nullable.GetUnderlyingType(nullableEnumType);
+            foreach (var name in Enum.GetNames(enumType))
+            {
+                var enumMemberAttribute = ((EnumMemberAttribute[])enumType.GetField(name).GetCustomAttributes(typeof(EnumMemberAttribute), true)).Single();
+                if (enumMemberAttribute.Value == str) return Enum.Parse(enumType, name);
+            }
+            //throw exception or whatever handling you want or
+            return null;
         }
 
         protected Uri RenderId(int index, T components, string method, string param)
@@ -433,7 +511,7 @@ namespace OpenActive.Server.NET.OpenBookingHelper
 
             var componentDictionary = components.GetType()
                 .GetProperties(BindingFlags.Instance | BindingFlags.Public)
-                     .ToDictionary(prop => prop.Name, prop => prop.GetValue(components, null));
+                     .ToDictionary(prop => prop.Name, prop => ToEnumStringIfEnum(prop, prop.GetValue(components, null)));
 
             return uriTemplates[index].BindByName(componentDictionary);
         }

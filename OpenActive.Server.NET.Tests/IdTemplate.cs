@@ -34,6 +34,45 @@ namespace OpenActive.Server.NET.Tests
         }
 
         [Fact]
+        public void SingleIdTemplate_GetIdComponents_IdToEnum()
+        {
+            var template = new OrderIdTemplate(
+                "{+BaseUrl}api/{OrderType}/{uuid}",
+                "{+BaseUrl}api/{OrderType}/{uuid}#/orderedItems/{OrderItemIdLong}"
+                );
+
+            var components = template.GetOrderItemIdComponents(new Uri("https://example.com/api/orders/asdf#/orderedItems/123"));
+
+            Assert.NotNull(components);
+            Assert.Equal("https://example.com/", components.BaseUrl.ToString());
+            Assert.Equal(OrderType.Order, components.OrderType);
+            Assert.Equal("asdf", components.uuid);
+            Assert.Equal(123, components.OrderItemIdLong);
+        }
+
+        [Fact]
+        public void SingleIdTemplate_GetIdComponents_EnumToId()
+        {
+            var template = new OrderIdTemplate(
+                "{+BaseUrl}api/{OrderType}/{uuid}",
+                "{+BaseUrl}api/{OrderType}/{uuid}#/orderedItems/{OrderItemIdLong}"
+                );
+
+            OrderIdComponents components = new OrderIdComponents
+            {
+                BaseUrl = new Uri("https://example.com/"),
+                uuid = "asdf",
+                OrderItemIdLong = 123,
+                OrderType = OrderType.Order
+            };
+
+            var id = template.RenderOrderItemId(components);
+
+            Assert.Equal(new Uri("https://example.com/api/orders/asdf#/orderedItems/123"), id);
+
+        }
+
+        [Fact]
         public void SingleIdTemplate_RenderId()
         {
             var template = new SingleIdTemplate<SessionSeriesComponents>(

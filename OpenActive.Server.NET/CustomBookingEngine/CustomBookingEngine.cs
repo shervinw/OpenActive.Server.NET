@@ -75,6 +75,8 @@ namespace OpenActive.Server.NET.CustomBooking
                 kv.Value.SetConfiguration(OpportunityTypes.Configurations[kv.Key], settings.JsonLdIdBaseUrl, settings.RPDEPageSize, this.feedAssignedTemplates[kv.Key], openDataFeedBaseUrl);
             }
 
+            settings.OrderFeedGenerator.SetConfiguration(settings.JsonLdIdBaseUrl, settings.OrderBaseUrl, settings.RPDEPageSize, settings.OrderIdTemplate, settings.OrdersFeedUrl);
+
             // Create a dictionary of RPDEFeedGenerator indexed by FeedPath
             this.feedLookup = settings.OpenDataFeeds.Values.ToDictionary(x => x.FeedPath);
 
@@ -101,7 +103,7 @@ namespace OpenActive.Server.NET.CustomBooking
 
         private DatasetSiteGeneratorSettings datasetSettings = null;
         private readonly BookingEngineSettings settings;
-        private Dictionary<string, IRPDEFeedGenerator> feedLookup;
+        private Dictionary<string, IOpportunityDataRPDEFeedGenerator> feedLookup;
         private List<OpportunityType> supportedFeeds;
         private Uri openDataFeedBaseUrl;
         private Uri openBookingAPIBaseUrl;
@@ -145,32 +147,18 @@ namespace OpenActive.Server.NET.CustomBooking
         /// <returns></returns>
         public ResponseContent GetOpenDataRPDEPageForFeed(string feedname, string afterTimestamp, string afterId, string afterChangeNumber)
         {
-            long? afterTimestampLong = null;
-            long? afterChangeNumberLong = null;
-
-            if (long.TryParse(afterTimestamp, out long timestampValue))
-            {
-                afterTimestampLong = timestampValue;
-            }
-            else if (!string.IsNullOrWhiteSpace(afterTimestamp))
-            {
-                throw new ArgumentOutOfRangeException(nameof(afterTimestamp), "afterTimestamp must be numeric");
-            }
-
-            if (long.TryParse(afterChangeNumber, out long changeNumberValue))
-            {
-                afterChangeNumberLong = changeNumberValue;
-            }
-            else if (!string.IsNullOrWhiteSpace(afterChangeNumber))
-            {
-                throw new ArgumentOutOfRangeException(nameof(afterChangeNumber), "afterChangeNumber must be numeric");
-            }
-
-            return ResponseContent.RpdeResponse(RouteOpenDataRPDEPageForFeed(feedname, afterTimestampLong, afterId, afterChangeNumberLong).ToString());
+            return ResponseContent.RpdeResponse(
+                RouteOpenDataRPDEPageForFeed(
+                    feedname,
+                    RpdeOrderingStrategyRouter.ConvertStringToLongOrThrow(afterTimestamp, nameof(afterTimestamp)),
+                    afterId,
+                    RpdeOrderingStrategyRouter.ConvertStringToLongOrThrow(afterChangeNumber, nameof(afterChangeNumber))
+                    ).ToString());
         }
 
+
         /// <summary>
-        /// Handler for an RPDE endpoint - string only version
+        /// Handler for an RPDE endpoint
         /// Designed to be used on a single controller method with a "feedname" parameter,
         /// for uses in situations where the framework does not automatically validate numeric values
         /// </summary>
@@ -183,6 +171,9 @@ namespace OpenActive.Server.NET.CustomBooking
         {
             return ResponseContent.RpdeResponse(RouteOpenDataRPDEPageForFeed(feedname, afterTimestamp, afterId, afterChangeNumber).ToString());
         }
+
+
+
 
         /// <summary>
         /// Handler for an RPDE endpoint
@@ -197,35 +188,69 @@ namespace OpenActive.Server.NET.CustomBooking
         {
             if (openDataFeedBaseUrl == null) throw new NotSupportedException("GetOpenDataRPDEPageForFeed is only supported if an OpenDataFeedBaseUrl and BookingEngineSettings.OpenDataFeed is supplied to the IBookingEngine");
 
-            if (feedLookup.TryGetValue(feedname, out IRPDEFeedGenerator generator))
+            if (feedLookup.TryGetValue(feedname, out IOpportunityDataRPDEFeedGenerator generator))
             {
-                switch (generator) {
-                    case IRPDEFeedIncrementingUniqueChangeNumber changeNumberGenerator:
-                        return changeNumberGenerator.GetRPDEPage(afterChangeNumber);
-
-                    case IRPDEFeedModifiedTimestampAndIDLong timestampAndIDGeneratorLong:
-                        if (long.TryParse(afterId, out long afterIdLong))
-                        {
-                            return timestampAndIDGeneratorLong.GetRPDEPage(afterTimestamp, afterIdLong);
-                        }
-                        else if (string.IsNullOrWhiteSpace(afterId))
-                        {
-                            return timestampAndIDGeneratorLong.GetRPDEPage(afterTimestamp, null);
-                        }
-                        else     
-                        {
-                            throw new ArgumentOutOfRangeException(nameof(afterId), "afterId must be numeric");
-                        }
-
-                    case IRPDEFeedModifiedTimestampAndIDString timestampAndIDGeneratorString:
-                        return timestampAndIDGeneratorString.GetRPDEPage(afterTimestamp, afterId);
-
-                    default:
-                        throw new InvalidCastException($"RPDEFeedGenerator for '{feedname}' not recognised - check the generic template for RPDEFeedModifiedTimestampAndID uses either <string> or <long?>");
-                }
+                return generator.GetRPDEPage(feedname, afterTimestamp, afterId, afterChangeNumber);
             } else
             {
-                throw new KeyNotFoundException($"OpportunityTypeConfiguration for '{feedname}' not found.");
+                throw new OpenBookingException(new NotFoundError(), $"OpportunityTypeConfiguration for '{feedname}' not found.");
+            }
+        }
+
+        /// <summary>
+        /// Handler for an Orders RPDE endpoint (separate to the open data endpoint for security) - string only version
+        /// Designed to be used on a single controller method with a "feedname" parameter,
+        /// for uses in situations where the framework does not automatically validate numeric values
+        /// </summary>
+        /// <param name="authtoken">Token designating the specific authenticated party for which the feed is intended</param>
+        /// <param name="afterTimestamp">The "afterTimestamp" parameter from the URL</param>
+        /// <param name="afterId">The "afterId" parameter from the URL</param>
+        /// <param name="afterChangeNumber">The "afterChangeNumber" parameter from the URL</param>
+        /// <returns></returns>
+        public ResponseContent GetOrdersRPDEPageForFeed(string authtoken, string afterTimestamp, string afterId, string afterChangeNumber)
+        {
+            return ResponseContent.RpdeResponse(
+                RenderOrdersRPDEPageForFeed(
+                    authtoken,
+                    RpdeOrderingStrategyRouter.ConvertStringToLongOrThrow(afterTimestamp, nameof(afterTimestamp)),
+                    afterId,
+                    RpdeOrderingStrategyRouter.ConvertStringToLongOrThrow(afterChangeNumber, nameof(afterChangeNumber))
+                    ).ToString());
+        }
+
+        /// <summary>
+        /// Handler for an Orders RPDE endpoint (separate to the open data endpoint for security)
+        /// For uses in situations where the framework does not automatically validate numeric values
+        /// </summary>
+        /// <param name="authtoken">Token designating the specific authenticated party for which the feed is intended</param>
+        /// <param name="afterTimestamp">The "afterTimestamp" parameter from the URL</param>
+        /// <param name="afterId">The "afterId" parameter from the URL</param>
+        /// <param name="afterChangeNumber">The "afterChangeNumber" parameter from the URL</param>
+        /// <returns></returns>
+        public ResponseContent GetOrdersRPDEPageForFeed(string authtoken, long? afterTimestamp, string afterId, long? afterChangeNumber)
+        {
+            return ResponseContent.RpdeResponse(RenderOrdersRPDEPageForFeed(authtoken, afterTimestamp, afterId, afterChangeNumber).ToString());
+        }
+
+        /// <summary>
+        /// Handler for Orders RPDE endpoint
+        /// </summary>
+        /// <param name="authtoken">Token designating the specific authenticated party for which the feed is intended</param>
+        /// <param name="afterTimestamp">The "afterTimestamp" parameter from the URL</param>
+        /// <param name="afterId">The "afterId" parameter from the URL</param>
+        /// <param name="afterChangeNumber">The "afterChangeNumber" parameter from the URL</param>
+        /// <returns></returns>
+        private RpdePage RenderOrdersRPDEPageForFeed(string authtoken, long? afterTimestamp, string afterId, long? afterChangeNumber)
+        {
+            if (settings.OrderFeedGenerator != null)
+            {
+                // Add lookup against authtoken and pass this into generator?
+                return settings.OrderFeedGenerator.GetRPDEPage(authtoken, afterTimestamp, afterId, afterChangeNumber);
+            }
+            else
+            {
+                // TODO: Change to Not Authorised Error
+                throw new OpenBookingException(new NotFoundError(), $"Access to this endpoint is not authorised.");
             }
         }
 
