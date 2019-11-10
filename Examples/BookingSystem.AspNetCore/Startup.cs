@@ -247,7 +247,7 @@ namespace BookingSystem.AspNetCore
                 // List of _bookable_ opportunity types and which store to route to for each
                 OpenBookingStoreRouting = new Dictionary<IOpportunityStore, List<OpportunityType>> {
                     {
-                        new SessionsStore(), new List<OpportunityType> { OpportunityType.ScheduledSession }
+                        new SessionStore(), new List<OpportunityType> { OpportunityType.ScheduledSession }
                     }
                 }
             }));

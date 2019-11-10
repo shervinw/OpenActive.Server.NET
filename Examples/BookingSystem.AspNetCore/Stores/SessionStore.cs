@@ -18,7 +18,7 @@ namespace BookingSystem.AspNetCore
     /// <summary>
     /// TODO: Move to BookingSystem.AspNetCore
     /// </summary>
-    class SessionsStore : OpportunityStore<SessionOpportunity>, IOpportunityStore
+    class SessionStore : OpportunityStore<SessionOpportunity>, IOpportunityStore
     {
         
         public override void CreateTestDataItem(OpportunityType opportunityType, Event @event)
@@ -33,7 +33,7 @@ namespace BookingSystem.AspNetCore
         }
 
         // Similar to the RPDE logic, this needs to render and return an OrderItem from the database
-        protected override OrderItem GetOrderItem<TOrder>(SessionOpportunity opportunityOfferId, StoreBookingFlowContext<TOrder> context)
+        protected override OrderItem GetOrderItem<TOrder>(SessionOpportunity opportunityOfferId, /* Person attendeeDetails, */ StoreBookingFlowContext<TOrder> context)
         {
             var query = from occurances in FakeBookingSystem.Database.Occurrences
                         join classes in FakeBookingSystem.Database.Classes on occurances.ClassId equals classes.Id
@@ -55,7 +55,7 @@ namespace BookingSystem.AspNetCore
                                 } : null,
                             AcceptedOffer = new Offer
                             {
-                                // Note this should always use RenderOfferId with the supplied SessionOpportunity, to take into account inheritance
+                                // Note this should always use RenderOfferId with the supplied SessionOpportunity, to take into account inheritance and OfferType
                                 Id = this.RenderOfferId(opportunityOfferId),
                                 Price = classes.Price,
                                 PriceCurrency = "GBP"

@@ -92,11 +92,36 @@ namespace OpenActive.Server.NET.StoreBooking
                 IBookableIdComponents idComponents =
                     this.ResolveOpportunityID(orderItem.OrderedItem.Type, orderItem.OrderedItem.Id, orderItem.AcceptedOffer.Id);
 
-                return storeRouting[idComponents.OpportunityType.Value]
+                var rawOrderItem = storeRouting[idComponents.OpportunityType.Value]
                     .GetOrderItem(idComponents, context);
 
                 // TODO: Implement error logic for all types of item errors based on the results of this
+
+                Uri sellerId = null;
+
+                // QUESTION: Do we need to force them into include the seller twice??
+
+                switch (rawOrderItem?.OrderedItem) {
+                    case SessionSeries sessionSeries:
+                        sellerId = sessionSeries?.SuperEvent?.Organizer.Value1?.Id ?? sessionSeries?.SuperEvent?.Organizer.Value2?.Id;
+                        break;
+                    case Slot slot:
+                        sellerId = slot?.FacilityUse.Value3?.Provider?.Id ?? slot?.FacilityUse.Value3?.Provider?.Id;
+                        break;
+                    case Event @event: // Should catch HeadlineEvent, Course, etc too
+                        sellerId = @event?.SuperEvent?.Organizer.Value1?.Id ?? @event?.SuperEvent?.Organizer.Value2?.Id
+                            ?? @event?.Organizer.Value1?.Id ?? @event?.Organizer.Value2?.Id;
+                        break;
+                    case null:
+                    default:
+                        throw new OpenBookingException(new OpenBookingError(), "Seller not provided in supplied OrderItem");
+                }
+
+                return rawOrderItem;
             });
+
+
+
 
             throw new NotImplementedException();
         }
@@ -115,9 +140,7 @@ namespace OpenActive.Server.NET.StoreBooking
       // Validate input OrderItem
       {
         if (x.acceptedOffer && x.orderedItem) {
-          
-
-          var fullOrderItem = getOrderItem(x, opportunityComponents, offerComponents, seller, taxPayeeRelationship, data);
+         
 
           var sellerId = fullOrderItem.organizer.id || fullOrderItem.superEvent.organizer.id || fullOrderItem.facilityUse.organizer.id || fullOrderItem.superEvent.superEvent.organizer.id;
 

@@ -32,7 +32,7 @@ namespace BookingSystem.AspNetCore.Controllers
         /// OrderQuote Creation C1
         /// GET api/openbooking/order-quote-templates/ABCD1234
         /// </summary>
-        [HttpPut("order-quote-template/{uuid}")]
+        [HttpPut("order-quote-templates/{uuid}")]
         public ContentResult OrderQuoteCreationC1([FromServices] IBookingEngine bookingEngine, string uuid, [FromBody] string orderQuote)
         {
             try

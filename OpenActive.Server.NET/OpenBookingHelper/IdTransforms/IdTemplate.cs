@@ -476,7 +476,7 @@ namespace OpenActive.Server.NET.OpenBookingHelper
         public object ToEnumStringIfEnum(PropertyInfo prop, object value)
         {
             if (value == null) return null;
-            //if (prop.PropertyType == typeof(OpportunityType)) return value; // To optimise render, ignore this particular enum
+            if (prop.PropertyType == typeof(OpportunityType)) return value; // To optimise render, ignore this particular enum
             var enumType = Nullable.GetUnderlyingType(prop.PropertyType);
             if (enumType != null && enumType.IsEnum)
             {
