@@ -10,14 +10,12 @@ namespace OpenActive.Server.NET.OpenBookingHelper
 
     public class SellerIdComponents
     {
-        public Uri BaseUrl { get; set; }
         public long? SellerIdLong { get; set; }
         public string SellerIdString { get; set; }
     }
 
     public class OrderIdComponents
     {
-        public Uri BaseUrl { get; set; }
         public OrderType? OrderType { get; set; }
         public string uuid { get; set; }
         public long? OrderItemIdLong { get; set; }
@@ -36,4 +34,5 @@ namespace OpenActive.Server.NET.OpenBookingHelper
         [EnumMember(Value = "orders")]
         Order
     }
+
 }

@@ -52,6 +52,12 @@ namespace OpenActive.Server.NET.CustomBooking
 
             this.openDataFeedBaseUrl = openDataFeedBaseUrl;
 
+            foreach (var idConfiguration in settings.IdConfiguration) {
+                idConfiguration.RequiredBaseUrl = settings.JsonLdIdBaseUrl;
+            }
+            settings.OrderIdTemplate.RequiredBaseUrl = settings.OrderBaseUrl;
+            settings.SellerIdTemplate.RequiredBaseUrl = settings.JsonLdIdBaseUrl;
+
             // Create a lookup of each IdTemplate to pass into the appropriate RpdeGenerator
             // TODO: Output better error if there is a feed assigned across two templates
             // (there should never be, as each template represents everyting you need in one feed)
@@ -63,11 +69,11 @@ namespace OpenActive.Server.NET.CustomBooking
 
             // Create a lookup for the purposes of finding arbitary IdConfigurations, for use in the store
             // TODO: Pull this and the above into a function?
-            this.opportunityTemplateLookup = settings.IdConfiguration.Select(t => t.IdConfigurations.Select(x => new
+            this.OpportunityTemplateLookup = settings.IdConfiguration.Select(t => t.IdConfigurations.Select(x => new
             {
-                assignedFeed = x.OpportunityType,
+                opportunityType = x.OpportunityType,
                 bookablePairIdTemplate = t
-            })).SelectMany(x => x.ToList()).ToDictionary(k => k.assignedFeed, v => v.bookablePairIdTemplate);
+            })).SelectMany(x => x.ToList()).ToDictionary(k => k.opportunityType, v => v.bookablePairIdTemplate);
 
             // Setup each RPDEFeedGenerator with the relevant settings, including the relevant IdTemplate inferred from the config
             foreach (var kv in settings.OpenDataFeeds)
@@ -75,7 +81,9 @@ namespace OpenActive.Server.NET.CustomBooking
                 kv.Value.SetConfiguration(OpportunityTypes.Configurations[kv.Key], settings.JsonLdIdBaseUrl, settings.RPDEPageSize, this.feedAssignedTemplates[kv.Key], openDataFeedBaseUrl);
             }
 
-            settings.OrderFeedGenerator.SetConfiguration(settings.JsonLdIdBaseUrl, settings.OrderBaseUrl, settings.RPDEPageSize, settings.OrderIdTemplate, settings.OrdersFeedUrl);
+            settings.OrderFeedGenerator.SetConfiguration(settings.RPDEPageSize, settings.OrderIdTemplate, settings.OrdersFeedUrl);
+
+            settings.SellerStore.SetConfiguration(settings.SellerIdTemplate);
 
             // Create a dictionary of RPDEFeedGenerator indexed by FeedPath
             this.feedLookup = settings.OpenDataFeeds.Values.ToDictionary(x => x.FeedPath);
@@ -109,7 +117,8 @@ namespace OpenActive.Server.NET.CustomBooking
         private Uri openBookingAPIBaseUrl;
         private Dictionary<string, List<IBookablePairIdTemplate>> idConfigurationLookup;
         private Dictionary<OpportunityType, IBookablePairIdTemplate> feedAssignedTemplates;
-        private Dictionary<OpportunityType, IBookablePairIdTemplate> opportunityTemplateLookup;
+
+        protected Dictionary<OpportunityType, IBookablePairIdTemplate> OpportunityTemplateLookup { get; }
 
         /// <summary>
         /// In this mode, the Booking Engine does not handle open data feeds or dataset site rendering, and these must both be handled manually
@@ -268,17 +277,17 @@ namespace OpenActive.Server.NET.CustomBooking
         public ResponseContent ProcessCheckpoint1(string uuid, string orderQuoteJson)
         {
             OrderQuote orderQuote = OpenActiveSerializer.Deserialize<OrderQuote>(orderQuoteJson);
-            return ResponseContent.OpenBookingResponse(ProcessFlowRequest<OrderQuote>(FlowStage.C1, uuid, orderQuote).ToOpenActiveString());
+            return ResponseContent.OpenBookingResponse(ValidateFlowRequest<OrderQuote>(FlowStage.C1, uuid, OrderType.OrderQuoteTemplate, orderQuote).ToOpenActiveString());
         }
         public ResponseContent ProcessCheckpoint2(string uuid, string orderQuoteJson)
         {
             OrderQuote orderQuote = OpenActiveSerializer.Deserialize<OrderQuote>(orderQuoteJson);
-            return ResponseContent.OpenBookingResponse(ProcessFlowRequest<OrderQuote>(FlowStage.C2, uuid, orderQuote).ToOpenActiveString());
+            return ResponseContent.OpenBookingResponse(ValidateFlowRequest<OrderQuote>(FlowStage.C2, uuid, OrderType.OrderQuote, orderQuote).ToOpenActiveString());
         }
         public ResponseContent ProcessOrderCreationB(string uuid, string orderJson)
         {
             Order order = OpenActiveSerializer.Deserialize<Order>(orderJson);
-            return ResponseContent.OpenBookingResponse(ProcessFlowRequest<Order>(FlowStage.B, uuid, order).ToOpenActiveString());
+            return ResponseContent.OpenBookingResponse(ValidateFlowRequest<Order>(FlowStage.B, uuid, OrderType.Order, order).ToOpenActiveString());
         }
         public void DeleteOrder(string uuid)
         {
@@ -288,11 +297,6 @@ namespace OpenActive.Server.NET.CustomBooking
         public void ProcessOrderUpdate(string uuid, string orderJson)
         {
             throw new NotImplementedException();
-        }
-
-        private O ProcessFlowRequest<O>(FlowStage stage, string uuid, O orderQuote) where O : Order
-        {
-            return orderQuote;
         }
 
         // Note opportunityType is required here to facilitate routing to the correct store to handle the request
@@ -314,54 +318,49 @@ namespace OpenActive.Server.NET.CustomBooking
 
 
         //TODO: Should we move Seller into the Abstract level? Perhaps too much complexity
-        private O ValidateFlowRequest<O>(FlowStage stage, string uuid, O orderQuote) where O : Order
+        private O ValidateFlowRequest<O>(FlowStage stage, string uuid, OrderType orderType, O orderQuote) where O : Order, new()
         {
-            var orderId = new OrderIdComponents
+            var orderIdComponents = new OrderIdComponents
             {
                 uuid = uuid,
-                BaseUrl = settings.OrderBaseUrl
+                OrderType = orderType
             };
 
             // TODO: Add more request validation rules here
 
+            var sellerID = orderQuote.Seller.GetClass<Organization>()?.Id ?? orderQuote.Seller.GetClass<Person>()?.Id;
+
             // Check that taxMode is set in Seller
-            if (orderQuote?.Seller?.Id == null)
+            if (sellerID == null)
             {
                 // TODO: Update data model to throw actual error for all occurances of OpenBookingError
                 throw new OpenBookingException(new OpenBookingError(), "SellerNotSpecified");
             }
 
-            var sellerID = settings.SellerIdTemplate.GetIdComponents(orderQuote.Seller.Id);
+            SellerIdComponents sellerIdComponents = settings.SellerIdTemplate.GetIdComponents(sellerID);
+
+            ILegalEntity seller = settings.SellerStore.GetSellerById(sellerIdComponents);
 
             // Check that taxMode is set in Seller
-            if (orderQuote?.Seller?.Id == null)
-            {
-                // TODO: Update data model to throw actual error for all occurances of OpenBookingError
-                throw new OpenBookingException(new OpenBookingError(), "SellerNotSpecified");
-            }
-
-            // Check that taxMode is set in Seller
-            if (!(orderQuote?.Seller?.TaxMode == TaxMode.TaxGross || orderQuote?.Seller?.TaxMode == TaxMode.TaxNet))
+            if (!(seller?.TaxMode == TaxMode.TaxGross || seller?.TaxMode == TaxMode.TaxNet))
             {
                 throw new OpenBookingException(new OpenBookingError(), "taxMode must always be set in the Seller");
             }
 
             TaxPayeeRelationship taxPayeeRelationship = orderQuote.BrokerRole == BrokerType.ResellerBroker
-                // TODO: Add HasValue to SingleValues to make the below check more robust
-                || orderQuote.Customer.Value1.Type == "Organisation" ? TaxPayeeRelationship.BusinessToBusiness : TaxPayeeRelationship.BusinessToConsumer;
+                || orderQuote.Customer.HasValueOfType<Organization>() ? TaxPayeeRelationship.BusinessToBusiness : TaxPayeeRelationship.BusinessToConsumer;
 
             var payer = orderQuote.BrokerRole == BrokerType.ResellerBroker ? orderQuote.Broker : orderQuote.Customer;
 
-            return ProcessFlowRequest<O>(new BookingFlowContext<O> {
+            return ProcessFlowRequest<O>(new BookingFlowContext {
                 Stage = stage,
-                OrderIdComponents = orderId,
-                Order = orderQuote,
+                OrderIdComponents = orderIdComponents,
+                OrderIdTemplate = settings.OrderIdTemplate,
                 TaxPayeeRelationship = taxPayeeRelationship,
-                Payer = payer }
-            );
+                Payer = payer }, orderQuote);
         }
 
-        public abstract TOrder ProcessFlowRequest<TOrder>(BookingFlowContext<TOrder> request) where TOrder : Order;
+        public abstract TOrder ProcessFlowRequest<TOrder>(BookingFlowContext request, TOrder order) where TOrder : Order, new();
 
     }
 }

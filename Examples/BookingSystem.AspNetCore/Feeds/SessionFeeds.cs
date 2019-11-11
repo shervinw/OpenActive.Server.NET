@@ -35,14 +35,12 @@ namespace BookingSystem.AspNetCore
                                 Id = this.RenderOpportunityId(new SessionOpportunity
                                 {
                                     OpportunityType = OpportunityType.ScheduledSession,
-                                    BaseUrl = this.JsonLdIdBaseUrl,
                                     SessionSeriesId = occurances.ClassId,
                                     ScheduledSessionId = occurances.Id
                                 }),
                                 SuperEvent = this.RenderOpportunityId(new SessionOpportunity
                                 {
                                     OpportunityType = OpportunityType.SessionSeries,
-                                    BaseUrl = this.JsonLdIdBaseUrl,
                                     SessionSeriesId = occurances.ClassId
                                 }),
                                 StartDate = (DateTimeOffset)occurances.Start,
@@ -77,7 +75,6 @@ namespace BookingSystem.AspNetCore
                                 Id = this.RenderOpportunityId( new SessionOpportunity
                                 {
                                     OpportunityType = OpportunityType.SessionSeries,
-                                    BaseUrl = this.JsonLdIdBaseUrl,
                                     SessionSeriesId = @class.Id
                                 }),
                                 Name = @class.Title,
@@ -86,7 +83,6 @@ namespace BookingSystem.AspNetCore
                                         Id = this.RenderOfferId(new SessionOpportunity
                                         {
                                             OfferOpportunityType = OpportunityType.SessionSeries,
-                                            BaseUrl = this.JsonLdIdBaseUrl,
                                             SessionSeriesId = @class.Id,
                                             OfferId = 0
                                         }),

@@ -164,6 +164,8 @@ namespace BookingSystem.AspNetCore
                     "{+BaseUrl}api/sellers/{SellerIdString}"
                     ),
 
+                SellerStore = new AcmeSellerStore(),
+
                 OpenDataFeeds = new Dictionary<OpportunityType, IOpportunityDataRPDEFeedGenerator> {
                     {
                         OpportunityType.ScheduledSession, new AcmeScheduledSessionRPDEGenerator()

@@ -22,18 +22,18 @@
   },
   "seller": {
     "@type": "Organization",
-    "@id": "{sellerId}"
+    "@id": "{{& sellerId}}"
   },
   "orderedItem": [
     {
       "@type": "OrderItem",
       "acceptedOffer": {
         "@type": "Offer",
-        "@id": "{offerId}"
+        "@id": "{{& offerId}}"
       },
       "orderedItem": {
         "@type": "ScheduledSession",
-        "@id": "{opportunityId}"
+        "@id": "{{& opportunityId}}"
       }
     }
   ]

@@ -10,18 +10,12 @@ namespace OpenActive.Server.NET.OpenBookingHelper
     public abstract class OrdersRPDEFeedGenerator : IRPDEFeedGenerator
     {
         public int RPDEPageSize { get; private set; }
-        public Uri JsonLdIdBaseUrl { get; private set; }
-        public Uri OrderBaseUrl { get; private set; }
         private OrderIdTemplate IdTemplate { get; set; }
         protected Uri FeedUrl { get; private set; }
 
-        internal void SetConfiguration(Uri jsonLdIdBaseUrl, Uri orderBaseUrl, int rpdePageSize, OrderIdTemplate template,  Uri offersFeedUrl)
+        internal void SetConfiguration(int rpdePageSize, OrderIdTemplate template,  Uri offersFeedUrl)
         {
             this.IdTemplate = template;
-
-            this.JsonLdIdBaseUrl = jsonLdIdBaseUrl;
-
-            this.OrderBaseUrl = orderBaseUrl;
 
             this.RPDEPageSize = rpdePageSize;
 
@@ -31,19 +25,17 @@ namespace OpenActive.Server.NET.OpenBookingHelper
 
         protected Uri RenderOrderId(OrderType orderType, string uuid)
         {
-            return this.IdTemplate.RenderOrderId(new OrderIdComponents { BaseUrl = this.OrderBaseUrl, OrderType = orderType, uuid = uuid } );
+            return this.RenderOrderId(orderType, uuid);
         }
 
         //TODO reduce duplication of the strings / logic below
         protected Uri RenderOrderItemId(OrderType orderType, string uuid, string orderItemId)
         {
-            if (orderType != OrderType.Order) throw new ArgumentOutOfRangeException(nameof(orderType), "The Open Booking API 1.0 specification only permits OrderItem Ids to exist within Orders, not OrderQuotes or OrderProposals.");
-            return this.IdTemplate.RenderOrderItemId(new OrderIdComponents { BaseUrl = this.OrderBaseUrl, OrderType = orderType, uuid = uuid, OrderItemIdString = orderItemId });
+            return this.RenderOrderItemId(orderType, uuid, orderItemId);
         }
         protected Uri RenderOrderItemId(OrderType orderType, string uuid, long orderItemId)
         {
-            if (orderType != OrderType.Order) throw new ArgumentOutOfRangeException(nameof(orderType), "The Open Booking API 1.0 specification only permits OrderItem Ids to exist within Orders, not OrderQuotes or OrderProposals.");
-            return this.IdTemplate.RenderOrderItemId(new OrderIdComponents { BaseUrl = this.OrderBaseUrl, OrderType = orderType, uuid = uuid, OrderItemIdLong = orderItemId });
+            return this.RenderOrderItemId(orderType, uuid, orderItemId);
         }
 
         /// <summary>

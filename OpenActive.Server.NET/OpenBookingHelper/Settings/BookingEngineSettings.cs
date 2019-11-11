@@ -29,6 +29,7 @@ namespace OpenActive.Server.NET.OpenBookingHelper
         public Uri JsonLdIdBaseUrl { get; set; }
         public OrdersRPDEFeedGenerator OrderFeedGenerator { get; set; }
         public Uri OrdersFeedUrl { get; set; }
+        public SellerStore SellerStore { get; set; }
     }
 
 

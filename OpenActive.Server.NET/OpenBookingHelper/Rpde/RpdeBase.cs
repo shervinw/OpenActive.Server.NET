@@ -31,7 +31,7 @@ namespace OpenActive.Server.NET.OpenBookingHelper
 
         internal void SetConfiguration(OpportunityTypeConfiguration opportunityTypeConfiguration, Uri jsonLdIdBaseUrl, int rpdePageSize, BookablePairIdTemplate<T> template, Uri openDataFeedBaseUrl)
         {
-            base.SetConfiguration(jsonLdIdBaseUrl, template);
+            base.SetConfiguration(template);
 
             this.RPDEPageSize = rpdePageSize;
 

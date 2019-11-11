@@ -18,9 +18,9 @@ function bookingRequest(templateJson, replacementMap) {
 
     var req = mustache.render(template, replacementMap);
 
-    console.log("Response: " + req);
+    console.log("\n\n** REQUEST **: \n\n" + req);
 
-    return req;
+    return JSON.parse(req);
 }
 
 
@@ -115,7 +115,7 @@ describe("Basic end-to-end booking", function() {
     before(function () {
         apiResponse = chakram.get("http://localhost:3000/get-match/Testevent2").then(function(respObj) {
             var rpdeItem = respObj.body;
-            console.log("RPDE excerpt: " + JSON.stringify(rpdeItem, null, 2));
+            console.log("\n\n** RPDE excerpt **: \n\n" + JSON.stringify(rpdeItem, null, 2));
 
             opportunityId = rpdeItem.data['@id'];
             offerId = rpdeItem.data.offers[0]['@id'];
@@ -133,8 +133,8 @@ describe("Basic end-to-end booking", function() {
                 'Content-Type': 'application/vnd.openactive.booking+json; version=1'
              }
         })).then(function(respObj) {
-            c1Response = respObj.body;
-            console.log("C1 response: " + JSON.stringify(c1Response, null, 2));
+            c1Response = respObj;
+            console.log("\n\n** C1 response: ** \n\n" + JSON.stringify(c1Response.body, null, 2));
             //var total = c1Response.totalPaymentDue.price;
         }).then(x => chakram.put(BOOKING_API_BASE + 'order-quotes/' + uuid, bookingRequest(c2req, {
             opportunityId,
@@ -146,8 +146,8 @@ describe("Basic end-to-end booking", function() {
                 'Content-Type': 'application/vnd.openactive.booking+json; version=1'
              }
         })).then(function(respObj) {
-            c2Response = respObj.body;
-            console.log("C2 response: " + JSON.stringify(c2Response, null, 2));
+            c2Response = respObj;
+            console.log("\n\n** C2 response: ** \n\n" + JSON.stringify(c2Response.body, null, 2));
             //var total = c2Response.totalPaymentDue.price;
         }).then(x => chakram.put(BOOKING_API_BASE + 'orders/' + uuid, bookingRequest(breq, {
             opportunityId,
@@ -159,8 +159,8 @@ describe("Basic end-to-end booking", function() {
                 'Content-Type': 'application/vnd.openactive.booking+json; version=1'
              }
         })).then(function(respObj) {
-            bResponse = respObj.body;
-            console.log("B response: " + JSON.stringify(bResponse, null, 2));
+            bResponse = respObj;
+            console.log("\n\n** B response: **\n\n" + JSON.stringify(bResponse.body, null, 2));
             //var total = bResponse.totalPaymentDue.price;
         });
 
@@ -188,21 +188,30 @@ describe("Basic end-to-end booking", function() {
     });
 
     it("should return 200 on success", function () {
-        return expect(apiResponse).to.have.status(200);
+        expect(c1Response).to.have.status(200);
+        expect(c2Response).to.have.status(200);
+        expect(bResponse).to.have.status(200);
+        return chakram.wait();
     });
 
     it("should return newly created event", function () {
-        expect(apiResponse).to.have.json('data.@type', 'ScheduledSession');
-        expect(apiResponse).to.have.json('data.name', 'Testevent2');
+        expect(apiResponse).to.have.json('orderedItem[0].orderedItem.@type', 'ScheduledSession');
+        expect(apiResponse).to.have.json('orderedItem[0].orderedItem.superEvent.name', 'Testevent2');
         return chakram.wait();
     });
 
     it("should have one offer", function () {
-        return expect(apiResponse).to.have.schema('data.offers', {minItems: 1, maxItems: 1});
+        expect(c1Response).to.have.schema('data.offers', {minItems: 1, maxItems: 1});
+        expect(c2Response).to.have.schema('data.offers', {minItems: 1, maxItems: 1});
+        expect(bResponse).to.have.schema('data.offers', {minItems: 1, maxItems: 1});
+        return chakram.wait();
     });
     
     it("offer should have price of 2", function () {
-        return expect(apiResponse).to.have.json('data.offers[0].price', 2);
+        expect(c1Response).to.have.json('orderedItem[0].acceptedOffer.price', 2);
+        expect(c2Response).to.have.json('orderedItem[0].acceptedOffer.price', 2);
+        expect(bResponse).to.have.json('orderedItem[0].acceptedOffer.price', 2);
+        return chakram.wait();
     });
 
 });

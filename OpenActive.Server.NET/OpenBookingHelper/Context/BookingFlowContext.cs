@@ -6,13 +6,12 @@ using System.Text;
 
 namespace OpenActive.Server.NET.OpenBookingHelper
 {
-    public class BookingFlowContext<TOrder>
+    public class BookingFlowContext
     {
         public FlowStage Stage { get; set; }
+        public OrderIdTemplate OrderIdTemplate { get; set; }
         public OrderIdComponents OrderIdComponents { get; set; }
-        public SellerIdComponents SellerIdComponents { get; set; }
-        public TOrder Order { get; set; }
         public TaxPayeeRelationship TaxPayeeRelationship { get; set; }
-        public SingleValues<Organization, Person> Payer { get; set; }
+        public IValue Payer { get; set; }
     }
 }
