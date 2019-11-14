@@ -446,7 +446,7 @@ namespace OpenActive.Server.NET.OpenBookingHelper
 
                 var match = uriTemplates[index].Match(ids[index]);
 
-                // If ID does match template, return null
+                // If ID does not match template, return null
                 if (match == null || match.Bindings == null || match.Bindings.Count == 0) return default(T);
 
                 // Set matching components in supplied POCO based on property name
@@ -568,6 +568,8 @@ namespace OpenActive.Server.NET.OpenBookingHelper
             {
                 throw new NotSupportedException($"{method} is not available as {param} was not specified when using the constructor for this class.");
             }
+
+            if (components == null) throw new ArgumentNullException(nameof(components), $"{method} requires non-null components to be supplied");
 
             var componentDictionary = components.GetType()
                 .GetProperties(BindingFlags.Instance | BindingFlags.Public)

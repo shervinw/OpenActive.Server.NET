@@ -9,6 +9,7 @@ namespace BookingSystem.AspNetCore
 {
     public class AcmeSellerStore : SellerStore
     {
+        // If the Seller is not found, simply return null to generate the correct Open Booking error
         protected override ILegalEntity GetSeller(SellerIdComponents sellerIdComponents)
         {
             // For single-organization sellers, this may be hardcoded.

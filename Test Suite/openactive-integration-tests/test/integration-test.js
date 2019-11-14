@@ -117,9 +117,9 @@ describe("Basic end-to-end booking", function() {
             var rpdeItem = respObj.body;
             console.log("\n\n** RPDE excerpt **: \n\n" + JSON.stringify(rpdeItem, null, 2));
 
-            opportunityId = rpdeItem.data['@id'];
+            opportunityId = rpdeItem.data['@id']; // TODO : Support duel feeds: .subEvent[0]
             offerId = rpdeItem.data.offers[0]['@id'];
-            sellerId = 'https://example.com/'; // rpdeItem.data.organizer['@id'];
+            sellerId = rpdeItem.data.organizer['@id'];
             uuid = uuidv5(sellerId, uuidv5.URL); //uuid v5 based on Seller ID
 
             console.log(`opportunityId: ${opportunityId}; offerId: ${offerId}`)

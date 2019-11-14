@@ -9,10 +9,22 @@ namespace OpenActive.Server.NET.OpenBookingHelper
     public class ModelSupport<TComponents> where TComponents : class, IBookableIdComponents, new()
     {
         private BookablePairIdTemplate<TComponents> IdTemplate { get; set; }
+        public SingleIdTemplate<SellerIdComponents> SellerIdTemplate { get; private set; }
 
-        protected internal void SetConfiguration(BookablePairIdTemplate<TComponents> template)
+        protected internal void SetConfiguration(BookablePairIdTemplate<TComponents> template, SingleIdTemplate<SellerIdComponents> sellerTemplate)
         {
             this.IdTemplate = template;
+            this.SellerIdTemplate = sellerTemplate;
+        }
+
+        /// <summary>
+        /// Use OpportunityType from components
+        /// </summary>
+        /// <param name="components"></param>
+        /// <returns></returns>
+        protected Uri RenderSellerId(SellerIdComponents components)
+        {
+            return SellerIdTemplate.RenderId(components);
         }
 
         /// <summary>

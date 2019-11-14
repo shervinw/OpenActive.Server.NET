@@ -208,30 +208,27 @@ namespace BookingSystem.AspNetCore
                 // A list of the supported fields that are accepted by your system for guest checkout bookings
                 // These are reflected back to the broker
                 // Note that only E-mail address is required, as per Open Booking API spec
-                CustomerPersonSupportedFields = new List<string>()
-                {
-                    nameof(Person.Email),
-                    nameof(Person.GivenName),
-                    nameof(Person.FamilyName),
-                    nameof(Person.Telephone)
+                CustomerPersonSupportedFields = p => new Person {
+                    Email = p.Email,
+                    GivenName = p.GivenName,
+                    FamilyName = p.FamilyName,
+                    Telephone = p.Telephone
                 },
                 // A list of the supported fields that are accepted by your system for guest checkout bookings
                 // These are reflected back to the broker
                 // Note that only E-mail address is required, as per Open Booking API spec
-                CustomerOrganizationSupportedFields = new List<string>()
-                {
-                    nameof(Organization.Email),
-                    nameof(Organization.Name),
-                    nameof(Organization.Telephone)
+                CustomerOrganizationSupportedFields = o => new Organization {
+                    Email = o.Email,
+                    Name = o.Name,
+                    Telephone = o.Telephone
                 },
                 // A list of the supported fields that are accepted by your system for broker details
                 // These are reflected back to the broker
                 // Note that storage of these details is entirely optional
-                BrokerSupportedFields = new List<string>()
-                {
-                    nameof(Organization.Name),
-                    nameof(Organization.Url),
-                    nameof(Organization.Telephone)
+                BrokerSupportedFields = o => new Organization {
+                    Name = o.Name,
+                    Url = o.Url,
+                    Telephone = o.Telephone
                 },
                 // Details of your booking system, complete with an customer-facing terms and conditions
                 BookingServiceDetails = new BookingService

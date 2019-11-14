@@ -78,7 +78,7 @@ namespace OpenActive.Server.NET.CustomBooking
             // Setup each RPDEFeedGenerator with the relevant settings, including the relevant IdTemplate inferred from the config
             foreach (var kv in settings.OpenDataFeeds)
             {
-                kv.Value.SetConfiguration(OpportunityTypes.Configurations[kv.Key], settings.JsonLdIdBaseUrl, settings.RPDEPageSize, this.feedAssignedTemplates[kv.Key], openDataFeedBaseUrl);
+                kv.Value.SetConfiguration(OpportunityTypes.Configurations[kv.Key], settings.JsonLdIdBaseUrl, settings.RPDEPageSize, this.feedAssignedTemplates[kv.Key], settings.SellerIdTemplate, openDataFeedBaseUrl);
             }
 
             settings.OrderFeedGenerator.SetConfiguration(settings.RPDEPageSize, settings.OrderIdTemplate, settings.OrdersFeedUrl);
@@ -263,6 +263,11 @@ namespace OpenActive.Server.NET.CustomBooking
             }
         }
 
+        protected bool IsOpportunityTypeRecognised(string opportunityTypeString)
+        {
+            return this.idConfigurationLookup.ContainsKey(opportunityTypeString);
+        }
+
         // Note this is not a helper as it relies on engine settings state
         protected IBookableIdComponents ResolveOpportunityID(string opportunityTypeString, Uri opportunityId, Uri offerId)
         {
@@ -339,7 +344,19 @@ namespace OpenActive.Server.NET.CustomBooking
 
             SellerIdComponents sellerIdComponents = settings.SellerIdTemplate.GetIdComponents(sellerID);
 
+            if (sellerIdComponents == null)
+            {
+                // TODO: Update data model to throw actual error for all occurances of OpenBookingError
+                throw new OpenBookingException(new OpenBookingError(), "SellerInvalid");
+            }
+
             ILegalEntity seller = settings.SellerStore.GetSellerById(sellerIdComponents);
+
+            if (seller == null)
+            {
+                // TODO: Update data model to throw actual error for all occurances of OpenBookingError
+                throw new OpenBookingException(new OpenBookingError(), "SellerNotFound");
+            }
 
             // Check that taxMode is set in Seller
             if (!(seller?.TaxMode == TaxMode.TaxGross || seller?.TaxMode == TaxMode.TaxNet))

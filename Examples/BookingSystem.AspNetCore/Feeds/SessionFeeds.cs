@@ -9,11 +9,11 @@ using System.Linq;
 
 namespace BookingSystem.AspNetCore
 {
-    public class AcmeScheduledSessionRPDEGenerator : RPDEFeedModifiedTimestampAndIDLong<SessionOpportunity>
+    public class AcmeScheduledSessionRPDEGenerator : RPDEFeedModifiedTimestampAndIDLong<SessionOpportunity, ScheduledSession>
     {
         //public override string FeedPath { get; protected set; } = "example path override";
 
-        protected override List<RpdeItem> GetRPDEItems(long? afterTimestamp, long? afterId)
+        protected override List<RpdeItem<ScheduledSession>> GetRPDEItems(long? afterTimestamp, long? afterId)
         {
             var query = from occurances in FakeBookingSystem.Database.Occurrences
                         orderby occurances.Modified, occurances.Id
@@ -21,7 +21,7 @@ namespace BookingSystem.AspNetCore
                               occurances.Modified.ToUnixTimeMilliseconds() > afterTimestamp ||  
                               (occurances.Modified.ToUnixTimeMilliseconds() == afterTimestamp && occurances.Id > afterId)
                         
-                        select new RpdeItem
+                        select new RpdeItem<ScheduledSession>
                         {
                             Kind = RpdeKind.ScheduledSession,
                             Id = occurances.Id,
@@ -51,9 +51,9 @@ namespace BookingSystem.AspNetCore
         }
     }
 
-    public class AcmeSessionSeriesRPDEGenerator : RPDEFeedModifiedTimestampAndIDLong<SessionOpportunity>
+    public class AcmeSessionSeriesRPDEGenerator : RPDEFeedModifiedTimestampAndIDLong<SessionOpportunity, SessionSeries>
     {
-        protected override List<RpdeItem> GetRPDEItems(long? afterTimestamp, long? afterId)
+        protected override List<RpdeItem<SessionSeries>> GetRPDEItems(long? afterTimestamp, long? afterId)
         {
             var query = from @class in FakeBookingSystem.Database.Classes
                         orderby @class.Modified, @class.Id
@@ -61,13 +61,13 @@ namespace BookingSystem.AspNetCore
                               @class.Modified.ToUnixTimeMilliseconds() > afterTimestamp ||
                               (@class.Modified.ToUnixTimeMilliseconds() == afterTimestamp && @class.Id > afterId)
 
-                        select new RpdeItem
+                        select new RpdeItem<SessionSeries>
                         {
                             Kind = RpdeKind.SessionSeries,
                             Id = @class.Id,
                             Modified = @class.Modified.ToUnixTimeMilliseconds(),
                             State = @class.Deleted ? RpdeState.Deleted : RpdeState.Updated,
-                            Data = @class.Deleted ? null : new ScheduledSession
+                            Data = @class.Deleted ? null : new SessionSeries
                             {
                                 // QUESTION: Should the this.IdTemplate and this.BaseUrl be passed in each time rather than set on
                                 // the parent class? Current thinking is it's more extensible on parent class as function signature remains
@@ -78,6 +78,12 @@ namespace BookingSystem.AspNetCore
                                     SessionSeriesId = @class.Id
                                 }),
                                 Name = @class.Title,
+                                Organizer = new Organization
+                                {
+                                    // If there is only one seller, no component values need be supplied
+                                    // Id = RenderSellerId(new SellerIdComponents()) 
+                                    Id = RenderSellerId(new SellerIdComponents { SellerIdLong = 0 }) 
+                                },
                                 Offers = new List<Offer> { new Offer
                                     {
                                         Id = this.RenderOfferId(new SessionOpportunity

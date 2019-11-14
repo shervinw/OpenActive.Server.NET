@@ -45,7 +45,7 @@ namespace OpenActive.Server.NET.StoreBooking
                 .ToDictionary(k => k.Key, v => v.Value.Select(y => base.OpportunityTemplateLookup[y]).Distinct().Single());
             foreach (var store in storeConfig)
             {
-                store.Key.SetConfiguration(store.Value);
+                store.Key.SetConfiguration(store.Value, settings.SellerIdTemplate);
             }
         }
 
@@ -80,16 +80,16 @@ namespace OpenActive.Server.NET.StoreBooking
             switch (order.Customer.Value)
             {
                 case Organization organization:
-                    context.Customer = organization.FilterProperties(storeBookingEngineSettings.CustomerOrganizationSupportedFields);
+                    context.Customer = storeBookingEngineSettings.CustomerOrganizationSupportedFields(organization);
                     break;
 
                 case Person person:
-                    context.Customer = person.FilterProperties(storeBookingEngineSettings.CustomerPersonSupportedFields);
+                    context.Customer = storeBookingEngineSettings.CustomerPersonSupportedFields(person);
                     break;
             }
 
             // Reflect back only those broker fields that are supported
-            context.Broker = order.Broker.FilterProperties(storeBookingEngineSettings.BrokerSupportedFields);
+            context.Broker = storeBookingEngineSettings.BrokerSupportedFields(order.Broker);
             
             // Add broker role to context for completeness
             context.BrokerRole = order.BrokerRole;
@@ -103,11 +103,34 @@ namespace OpenActive.Server.NET.StoreBooking
             // Resolve each OrderItem via a store, then augment the result with errors based on validation conditions
             var orderedItems = order.OrderedItem.Select(orderItem =>
             {
-                IBookableIdComponents idComponents =
-                    this.ResolveOpportunityID(orderItem.OrderedItem.Type, orderItem.OrderedItem.Id, orderItem.AcceptedOffer.Id);
+                if (!base.IsOpportunityTypeRecognised(orderItem.OrderedItem.Type))
+                {
+                    // TODO: Update data model to throw actual error for all occurances of OpenBookingError
+                    throw new OpenBookingException(new OpenBookingError(), $"The type of opportunity specified is not recognised as bookable: '{orderItem.OrderedItem.Type}'.");
+                }
 
-                var rawOrderItem = storeRouting[idComponents.OpportunityType.Value]
-                    .GetOrderItem(idComponents, context);
+                IBookableIdComponents idComponents =
+                    base.ResolveOpportunityID(orderItem.OrderedItem.Type, orderItem.OrderedItem.Id, orderItem.AcceptedOffer.Id);
+
+                if (idComponents == null)
+                {
+                    // TODO: Update data model to throw actual error for all occurances of OpenBookingError
+                    throw new OpenBookingException(new OpenBookingError(), $"Opportunity and Offer ID pair are not in the expected format for a '{orderItem.OrderedItem.Type}': '{orderItem.OrderedItem.Id}' and '{orderItem.AcceptedOffer.Id}'");
+                }
+
+                if (idComponents.OpportunityType == null)
+                {
+                    throw new EngineConfigurationException("OpportunityType must be configured for each IdComponent entry in the settings.");
+                }
+
+                var store = storeRouting[idComponents.OpportunityType.Value];
+
+                if (store == null)
+                {
+                    throw new EngineConfigurationException($"Store is not defined for {idComponents.OpportunityType.Value}");
+                }
+
+                var rawOrderItem = store.GetOrderItem(idComponents, context);
 
                 // TODO: Implement error logic for all types of item errors based on the results of this
 
