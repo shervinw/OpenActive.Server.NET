@@ -1,4 +1,5 @@
-﻿using System;
+﻿using BookingSystem.AspNetFramework.Utils;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Web;
@@ -13,11 +14,12 @@ namespace BookingSystem.AspNetFramework
     {
         protected void Application_Start()
         {
-            AreaRegistration.RegisterAllAreas();
+            // AreaRegistration.RegisterAllAreas();
             GlobalConfiguration.Configure(WebApiConfig.Register);
+            GlobalConfiguration.Configure(ServiceConfig.Register);
             FilterConfig.RegisterGlobalFilters(GlobalFilters.Filters);
-            RouteConfig.RegisterRoutes(RouteTable.Routes);
-            BundleConfig.RegisterBundles(BundleTable.Bundles);
+            // RouteConfig.RegisterRoutes(RouteTable.Routes);
+            // BundleConfig.RegisterBundles(BundleTable.Bundles);
         }
     }
 }

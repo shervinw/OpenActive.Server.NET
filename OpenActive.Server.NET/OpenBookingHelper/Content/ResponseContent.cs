@@ -66,6 +66,18 @@ namespace OpenActive.Server.NET.OpenBookingHelper
         // Summary:
         //     The intended HTTP status code of the response
         public HttpStatusCode StatusCode { get; internal set; } = HttpStatusCode.OK;
+        //
+        // Summary:
+        //     The default Open Booking API content type for the version of Open Booking supported by the SDK
+        public string ContentTypeName => this.ContentType.Split(';')[0];
+        //
+        // Summary:
+        //     The default Open Booking API content type parameter for the version of Open Booking supported by the SDK
+        public KeyValuePair<string, string> ContentTypeParameter => new KeyValuePair<string, string>(this.ContentType.Split(';')[1].Trim().Split('=')[0], this.ContentType.Split(';')[1].Trim().Split('=')[1]) ;
+        //
+        // Summary:
+        //     Whether the default Open Booking API content type for the version of Open Booking supported by the SDK contains parameters
+        public bool ContentTypeContainsParameters => this.ContentType.Contains(";");
 
         /// <summary>
         /// This is provided as a convenience to .NET Framework users, to create a standards compliant JSON output.

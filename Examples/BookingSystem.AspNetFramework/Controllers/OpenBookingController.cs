@@ -1,4 +1,6 @@
-﻿using OpenActive.Server.NET.OpenBookingHelper;
+﻿using BookingSystem.AspNetFramework.Helpers;
+using OpenActive.Server.NET;
+using OpenActive.Server.NET.OpenBookingHelper;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -12,18 +14,24 @@ namespace BookingSystem.AspNetFramework.Controllers
     [RoutePrefix("api/openbooking")]
     public class OpenBookingController : ApiController
     {
-        /*
+        private IBookingEngine _bookingEngine = null;
+
+        public OpenBookingController(IBookingEngine bookingEngine)
+        {
+            _bookingEngine = bookingEngine;
+        }
+
         /// <summary>
         /// OrderQuote Creation C1
         /// GET api/openbooking/order-quote-templates/ABCD1234
         /// </summary>
         [HttpPut]
         [Route("order-quote-template/{uuid}")]
-        public async Task<IHttpActionResult> OrderQuoteCreationC1([FromServices] IBookingEngine bookingEngine, string uuid, [FromBody] string orderQuote)
+        public async Task<HttpResponseMessage> OrderQuoteCreationC1(string uuid, [FromBody] string orderQuote)
         {
             try
             {
-                return bookingEngine.ProcessCheckpoint1(uuid, orderQuote).GetContentResult();
+                return _bookingEngine.ProcessCheckpoint1(uuid, orderQuote).GetContentResult();
             }
             catch (OpenBookingException obe)
             {
@@ -37,11 +45,11 @@ namespace BookingSystem.AspNetFramework.Controllers
         /// </summary>
         [HttpPut]
         [Route("order-quotes/{uuid}")]
-        public async Task<IHttpActionResult> OrderQuoteCreationC2([FromServices] IBookingEngine bookingEngine, string uuid, [FromBody] string orderQuote)
+        public async Task<HttpResponseMessage> OrderQuoteCreationC2(string uuid, [FromBody] string orderQuote)
         {
             try
             {
-                return bookingEngine.ProcessCheckpoint2(uuid, orderQuote).GetContentResult();
+                return _bookingEngine.ProcessCheckpoint2(uuid, orderQuote).GetContentResult();
             }
             catch (OpenBookingException obe)
             {
@@ -55,11 +63,11 @@ namespace BookingSystem.AspNetFramework.Controllers
         /// </summary>
         [HttpPut]
         [Route("orders/{uuid}")]
-        public async Task<IHttpActionResult> OrderCreationB([FromServices] IBookingEngine bookingEngine, string uuid, [FromBody] string order)
+        public async Task<HttpResponseMessage> OrderCreationB(string uuid, [FromBody] string order)
         {
             try
             {
-                return bookingEngine.ProcessOrderCreationB(uuid, order).GetContentResult();
+                return _bookingEngine.ProcessOrderCreationB(uuid, order).GetContentResult();
             }
             catch (OpenBookingException obe)
             {
@@ -73,12 +81,12 @@ namespace BookingSystem.AspNetFramework.Controllers
         /// </summary>
         [HttpDelete]
         [Route("orders/{uuid}")]
-        public IActionResult OrderDeletion([FromServices] IBookingEngine bookingEngine, string uuid)
+        public HttpResponseMessage OrderDeletion(string uuid)
         {
             try
             {
-                bookingEngine.DeleteOrder(uuid);
-                return NoContent();
+                _bookingEngine.DeleteOrder(uuid);
+                return Request.CreateResponse(System.Net.HttpStatusCode.NoContent);
             }
             catch (OpenBookingException obe)
             {
@@ -92,12 +100,12 @@ namespace BookingSystem.AspNetFramework.Controllers
         /// </summary>
         [HttpPatch]
         [Route("orders/{uuid}")]
-        public IActionResult OrderUpdate([FromServices] IBookingEngine bookingEngine, string uuid, [FromBody] string order)
+        public HttpResponseMessage OrderUpdate(string uuid, [FromBody] string order)
         {
             try
             {
-                bookingEngine.ProcessOrderUpdate(uuid, order);
-                return NoContent();
+                _bookingEngine.ProcessOrderUpdate(uuid, order);
+                return Request.CreateResponse(System.Net.HttpStatusCode.NoContent);
             }
             catch (OpenBookingException obe)
             {
@@ -108,20 +116,20 @@ namespace BookingSystem.AspNetFramework.Controllers
         // GET api/openbooking/orders-rpde
         [HttpGet]
         [Route("orders-rpde")]
-        public async Task<IHttpActionResult> Get([FromServices] IBookingEngine bookingEngine, int uuid)
+        public async Task<HttpResponseMessage> Get(int uuid)
         {
-            return Ok();
+            return Request.CreateResponse(System.Net.HttpStatusCode.OK);
         }
 
         // POST api/openbooking/test-interface/scheduled-sessions
         [HttpPost]
         [Route("test-interface/{type}")]
-        public IActionResult Post([FromServices] IBookingEngine bookingEngine, string type, [FromBody] string @event)
+        public HttpResponseMessage Post(string type, [FromBody] string @event)
         {
             try
             {
-                bookingEngine.CreateTestData(type, @event);
-                return NoContent();
+                _bookingEngine.CreateTestData(type, @event);
+                return Request.CreateResponse(System.Net.HttpStatusCode.NoContent);
             }
             catch (OpenBookingException obe)
             {
@@ -132,18 +140,18 @@ namespace BookingSystem.AspNetFramework.Controllers
         // DELETE api/openbooking/test-interface/scheduled-sessions/{name}
         [HttpDelete]
         [Route("test-interface/{type}/{name}")]
-        public IActionResult Delete([FromServices] IBookingEngine bookingEngine, string type, string name)
+        public HttpResponseMessage Delete(string type, string name)
         {
             try
             {
-                bookingEngine.DeleteTestData(type, name);
-                return NoContent();
+                _bookingEngine.DeleteTestData(type, name);
+                return Request.CreateResponse(System.Net.HttpStatusCode.NoContent);
             }
             catch (OpenBookingException obe)
             {
                 return obe.ErrorResponseContent.GetContentResult();
             }
         }
-        */
+
     }
 }

@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Net.Http;
 using System.Web.Http;
+using BookingSystem.AspNetCore.Helpers;
 using Microsoft.Owin.Security.OAuth;
 using Newtonsoft.Json.Serialization;
 
@@ -14,9 +15,9 @@ namespace BookingSystem.AspNetFramework
         {
             // Web API configuration and services
             // Configure Web API to use only bearer token authentication.
-            config.SuppressDefaultHostAuthentication();
-            config.Filters.Add(new HostAuthenticationFilter(OAuthDefaults.AuthenticationType));
-
+            // config.SuppressDefaultHostAuthentication();
+            // config.Filters.Add(new HostAuthenticationFilter(OAuthDefaults.AuthenticationType));
+            
             // Web API routes
             config.MapHttpAttributeRoutes();
 

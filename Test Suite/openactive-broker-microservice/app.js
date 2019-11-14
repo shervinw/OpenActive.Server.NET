@@ -21,7 +21,7 @@ function getRPDE(url, cb) {
     'headers': headers
   };
   request.get({ url }, function(error, response, body) { 
-    if (!error && response.statusCode == 200) { 
+    if (!error && response.statusCode === 200) { 
       cb(JSON.parse(body));
     } else {
       console.log("Error for RPDE page: " + error);
@@ -69,7 +69,7 @@ app.get('/get-match/:expression', function (req, res) {
   }
 });
 
-var nextUrl = 'https://localhost:44307/feeds/session-series';
+var nextUrl = 'http://localhost:49944/feeds/session-series';
 var pageNumber = 0;
 
 // Start processing first page
