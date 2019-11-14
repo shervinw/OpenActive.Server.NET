@@ -55,11 +55,11 @@
     <Reference Include="Newtonsoft.Json, Version=12.0.0.0, Culture=neutral, PublicKeyToken=30ad4fe6b2a6aeed, processorArchitecture=MSIL">
       <HintPath>..\..\packages\Newtonsoft.Json.12.0.2\lib\net45\Newtonsoft.Json.dll</HintPath>
     </Reference>
-    <Reference Include="OpenActive.DatasetSite.NET, Version=2.1.0.0, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>..\..\packages\OpenActive.DatasetSite.NET.2.1.0\lib\net45\OpenActive.DatasetSite.NET.dll</HintPath>
+    <Reference Include="OpenActive.DatasetSite.NET, Version=3.0.1.0, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\..\packages\OpenActive.DatasetSite.NET.3.0.1\lib\net45\OpenActive.DatasetSite.NET.dll</HintPath>
     </Reference>
-    <Reference Include="OpenActive.NET, Version=5.0.0.0, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>..\..\packages\OpenActive.NET.5.0.0\lib\netstandard2.0\OpenActive.NET.dll</HintPath>
+    <Reference Include="OpenActive.NET, Version=6.2.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\..\packages\OpenActive.NET.6.2.0\lib\netstandard2.0\OpenActive.NET.dll</HintPath>
     </Reference>
     <Reference Include="Schema.NET, Version=6.0.0.0, Culture=neutral, PublicKeyToken=fc5550082a9c642c, processorArchitecture=MSIL">
       <HintPath>..\..\packages\Schema.NET.6.0.0\lib\net461\Schema.NET.dll</HintPath>
@@ -211,6 +211,7 @@
     <Compile Include="Controllers\OpenBookingController.cs" />
     <Compile Include="Controllers\OpenDataController.cs" />
     <Compile Include="Feeds\FacilitiesFeeds.cs" />
+    <Compile Include="Feeds\OrderFeed.cs" />
     <Compile Include="Feeds\SessionsFeeds.cs" />
     <Compile Include="Global.asax.cs">
       <DependentUpon>Global.asax</DependentUpon>
@@ -223,6 +224,8 @@
     <Compile Include="Models\AccountViewModels.cs" />
     <Compile Include="Models\IdentityModels.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="SessionsStore\OrderStore.cs" />
+    <Compile Include="SessionsStore\SellerStore.cs" />
     <Compile Include="SessionsStore\SessionsStore.cs" />
     <Compile Include="Startup.cs" />
     <Compile Include="Utils\DependencyResolver.cs" />

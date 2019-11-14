@@ -1,7 +1,6 @@
 ﻿
 using BookingSystem.AspNetFramework.Helpers;
 using OpenActive.DatasetSite.NET;
-using OpenActive.NET;
 using OpenActive.Server.NET;
 using System;
 using System.Collections.Generic;

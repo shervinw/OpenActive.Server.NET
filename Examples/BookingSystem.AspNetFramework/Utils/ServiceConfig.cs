@@ -23,6 +23,7 @@ namespace BookingSystem.AspNetFramework.Utils
             var services = new ServiceCollection();
             services.AddTransient<DatasetSiteController>();
             services.AddTransient<OpenDataController>();
+            services.AddTransient<OpenBookingController>();
             services.AddSingleton<IBookingEngine>(sp => new StoreBookingEngine(
             new BookingEngineSettings
             {
@@ -119,18 +120,22 @@ namespace BookingSystem.AspNetFramework.Utils
                 },
 
                 JsonLdIdBaseUrl = new Uri("https://example.com/api/identifiers/"),
-                OrderBaseUrl = new Uri("https://example.com/api/orders/"),
-
                 // Note unlike other IDs this one needs to be resolvable
-                OrderIdTemplate = new SingleIdTemplate<OrderIdComponents>(
-                    "{+BaseUrl}api/{OrderType}/{OrderId}"
+                OrderBaseUrl = new Uri("https://localhost:44307/api/openbooking/orders/"),
+                OrderIdTemplate = new OrderIdTemplate(
+                    "{+BaseUrl}api/{OrderType}/{uuid}",
+                    "{+BaseUrl}api/{OrderType}/{uuid}#/orderedItems/{OrderItemIdString}"
                     ),
+
+                OrderFeedGenerator = new AcmeOrdersFeedRPDEGenerator(),
 
                 SellerIdTemplate = new SingleIdTemplate<SellerIdComponents>(
                     "{+BaseUrl}api/sellers/{SellerIdString}"
                     ),
 
-                OpenDataFeeds = new Dictionary<OpportunityType, IRPDEFeedGenerator> {
+                SellerStore = new AcmeSellerStore(),
+
+                OpenDataFeeds = new Dictionary<OpportunityType, IOpportunityDataRPDEFeedGenerator> {
                     {
                         OpportunityType.ScheduledSession, new AcmeScheduledSessionRPDEGenerator()
                     },
@@ -212,7 +217,7 @@ namespace BookingSystem.AspNetFramework.Utils
                 // List of _bookable_ opportunity types and which store to route to for each
                 OpenBookingStoreRouting = new Dictionary<IOpportunityStore, List<OpportunityType>> {
                     {
-                        new SessionsStore(), new List<OpportunityType> { OpportunityType.ScheduledSession }
+                        new SessionStore(), new List<OpportunityType> { OpportunityType.ScheduledSession }
                     }
                 }
             }));

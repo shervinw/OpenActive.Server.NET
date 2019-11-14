@@ -8,8 +8,6 @@ using Microsoft.Owin.Security.Cookies;
 using Microsoft.Owin.Security.Google;
 using Microsoft.Owin.Security.OAuth;
 using Owin;
-using BookingSystem.AspNetFramework.Providers;
-using BookingSystem.AspNetFramework.Models;
 
 namespace BookingSystem.AspNetFramework
 {

@@ -6,9 +6,6 @@ using System.Threading.Tasks;
 using System.Web.Http;
 using BookingSystem.AspNetCore.Helpers;
 using BookingSystem.AspNetFramework.Helpers;
-using OpenActive.NET;
-using OpenActive.NET.Rpde;
-using OpenActive.NET.Rpde.Version1;
 using OpenActive.Server.NET;
 using OpenActive.Server.NET.OpenBookingHelper;
 

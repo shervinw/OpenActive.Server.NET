@@ -14,13 +14,12 @@ using OpenActive.Server.NET.OpenBookingHelper;
 
 namespace BookingSystem.AspNetFramework
 {
-
     /// <summary>
     /// TODO: Move to BookingSystem.AspNetCore
     /// </summary>
-    class SessionsStore : OpportunityStore<SessionOpportunity>, IOpportunityStore
+    public class SessionStore : OpportunityStore<SessionOpportunity>, IOpportunityStore
     {
-        
+
         public override void CreateTestDataItem(OpportunityType opportunityType, Event @event)
         {
             // Note assume that if it's been routed here, it will be possible to cast it to type Event
@@ -33,7 +32,7 @@ namespace BookingSystem.AspNetFramework
         }
 
         // Similar to the RPDE logic, this needs to render and return an OrderItem from the database
-        protected override OrderItem GetOrderItem<TOrder>(SessionOpportunity opportunityOfferId, StoreBookingFlowContext<TOrder> context)
+        protected override OrderItem GetOrderItem(SessionOpportunity opportunityOfferId, /* Person attendeeDetails, */ StoreBookingFlowContext context)
         {
             var query = from occurances in FakeBookingSystem.Database.Occurrences
                         join classes in FakeBookingSystem.Database.Classes on occurances.ClassId equals classes.Id
@@ -55,7 +54,7 @@ namespace BookingSystem.AspNetFramework
                                 } : null,
                             AcceptedOffer = new Offer
                             {
-                                // Note this should always use RenderOfferId with the supplied SessionOpportunity, to take into account inheritance
+                                // Note this should always use RenderOfferId with the supplied SessionOpportunity, to take into account inheritance and OfferType
                                 Id = this.RenderOfferId(opportunityOfferId),
                                 Price = classes.Price,
                                 PriceCurrency = "GBP"
@@ -66,7 +65,6 @@ namespace BookingSystem.AspNetFramework
                                 Id = this.RenderOpportunityId(new SessionOpportunity
                                 {
                                     OpportunityType = OpportunityType.ScheduledSession,
-                                    BaseUrl = this.JsonLdIdBaseUrl,
                                     SessionSeriesId = occurances.ClassId,
                                     ScheduledSessionId = occurances.Id
                                 }),
@@ -75,7 +73,6 @@ namespace BookingSystem.AspNetFramework
                                     Id = this.RenderOpportunityId(new SessionOpportunity
                                     {
                                         OpportunityType = OpportunityType.SessionSeries,
-                                        BaseUrl = this.JsonLdIdBaseUrl,
                                         SessionSeriesId = occurances.ClassId
                                     }),
                                     Name = classes.Title

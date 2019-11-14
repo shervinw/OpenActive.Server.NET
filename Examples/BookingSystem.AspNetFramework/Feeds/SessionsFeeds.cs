@@ -12,15 +12,14 @@ namespace BookingSystem.AspNetFramework
     public class AcmeScheduledSessionRPDEGenerator : RPDEFeedModifiedTimestampAndIDLong<SessionOpportunity>
     {
         //public override string FeedPath { get; protected set; } = "example path override";
-
         protected override List<RpdeItem> GetRPDEItems(long? afterTimestamp, long? afterId)
         {
             var query = from occurances in FakeBookingSystem.Database.Occurrences
                         orderby occurances.Modified, occurances.Id
                         where !afterTimestamp.HasValue && !afterId.HasValue ||
-                              occurances.Modified.ToUnixTimeMilliseconds() > afterTimestamp ||  
+                              occurances.Modified.ToUnixTimeMilliseconds() > afterTimestamp ||
                               (occurances.Modified.ToUnixTimeMilliseconds() == afterTimestamp && occurances.Id > afterId)
-                        
+
                         select new RpdeItem
                         {
                             Kind = RpdeKind.ScheduledSession,
@@ -35,14 +34,12 @@ namespace BookingSystem.AspNetFramework
                                 Id = this.RenderOpportunityId(new SessionOpportunity
                                 {
                                     OpportunityType = OpportunityType.ScheduledSession,
-                                    BaseUrl = this.JsonLdIdBaseUrl,
                                     SessionSeriesId = occurances.ClassId,
                                     ScheduledSessionId = occurances.Id
                                 }),
                                 SuperEvent = this.RenderOpportunityId(new SessionOpportunity
                                 {
                                     OpportunityType = OpportunityType.SessionSeries,
-                                    BaseUrl = this.JsonLdIdBaseUrl,
                                     SessionSeriesId = occurances.ClassId
                                 }),
                                 StartDate = (DateTimeOffset)occurances.Start,
@@ -74,10 +71,9 @@ namespace BookingSystem.AspNetFramework
                                 // QUESTION: Should the this.IdTemplate and this.BaseUrl be passed in each time rather than set on
                                 // the parent class? Current thinking is it's more extensible on parent class as function signature remains
                                 // constant as power of configuration through underlying class grows (i.e. as new properties are added)
-                                Id = this.RenderOpportunityId( new SessionOpportunity
+                                Id = this.RenderOpportunityId(new SessionOpportunity
                                 {
                                     OpportunityType = OpportunityType.SessionSeries,
-                                    BaseUrl = this.JsonLdIdBaseUrl,
                                     SessionSeriesId = @class.Id
                                 }),
                                 Name = @class.Title,
@@ -86,12 +82,11 @@ namespace BookingSystem.AspNetFramework
                                         Id = this.RenderOfferId(new SessionOpportunity
                                         {
                                             OfferOpportunityType = OpportunityType.SessionSeries,
-                                            BaseUrl = this.JsonLdIdBaseUrl,
                                             SessionSeriesId = @class.Id,
                                             OfferId = 0
                                         }),
                                         Price = @class.Price
-                                    } 
+                                    }
                                 }
                             }
                         };
@@ -99,5 +94,4 @@ namespace BookingSystem.AspNetFramework
             return items;
         }
     }
-
 }
