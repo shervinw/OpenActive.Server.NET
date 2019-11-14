@@ -26,15 +26,27 @@ namespace OpenActive.Server.NET.StoreBooking
         /// <param name="store">Store used exclusively by the StoreBookingEngine</param>
         public StoreBookingEngine(BookingEngineSettings settings, DatasetSiteGeneratorSettings datasetSettings, StoreBookingEngineSettings storeBookingEngineSettings) : base(settings, datasetSettings)
         {
+            if (settings == null) throw new ArgumentNullException(nameof(settings));
+            if (datasetSettings == null) throw new ArgumentNullException(nameof(datasetSettings));
+            if (storeBookingEngineSettings == null) throw new ArgumentNullException(nameof(storeBookingEngineSettings));
+
             this.stores = storeBookingEngineSettings.OpenBookingStoreRouting.Keys.ToList();
             this.storeBookingEngineSettings = storeBookingEngineSettings;
 
             // TODO: Add test to ensure there are not two or more at FirstOrDefault step, in case of configuration error 
-            storeRouting = storeBookingEngineSettings.OpenBookingStoreRouting.Select(t => t.Value.Select(y => new
+            this.storeRouting = storeBookingEngineSettings.OpenBookingStoreRouting.Select(t => t.Value.Select(y => new
             {
                 store = t.Key,
                 opportunityType = y
-            })).SelectMany(x => x.ToList()).GroupBy(g => g.opportunityType).ToDictionary(k => k.Key, v => v.Select(a => a.store).FirstOrDefault());
+            })).SelectMany(x => x.ToList()).GroupBy(g => g.opportunityType).ToDictionary(k => k.Key, v => v.Select(a => a.store).SingleOrDefault());
+
+            // Setup each store with the relevant settings, including the relevant IdTemplate inferred from the config
+            var storeConfig = storeBookingEngineSettings.OpenBookingStoreRouting
+                .ToDictionary(k => k.Key, v => v.Value.Select(y => base.OpportunityTemplateLookup[y]).Distinct().Single());
+            foreach (var store in storeConfig)
+            {
+                store.Key.SetConfiguration(store.Value);
+            }
         }
 
         private readonly List<IOpportunityStore> stores;
@@ -60,45 +72,87 @@ namespace OpenActive.Server.NET.StoreBooking
 
 
 
-        public override TOrder ProcessFlowRequest<TOrder>(BookingFlowContext<TOrder> request)
+        public override TOrder ProcessFlowRequest<TOrder>(BookingFlowContext request, TOrder order)
         {
-            StoreBookingFlowContext<TOrder> context = new StoreBookingFlowContext<TOrder> { FlowContext = request };
+            StoreBookingFlowContext context = new StoreBookingFlowContext(request);
 
             // Reflect back only those customer fields that are supported
-           
-            if (context.FlowContext.Order.Customer.Value1.Type == nameof(Organization)) //TODO: Add HasValue to OA.NET to make this more robust
+            switch (order.Customer.Value)
             {
-                context.Customer = context.FlowContext.Order.Customer.Value1
-                    .FilterProperties(storeBookingEngineSettings.CustomerOrganizationSupportedFields);
-            }
-            else if (context.FlowContext.Order.Customer.Value2.Type == nameof(Person))  //TODO: Add HasValue to OA.NET to make this more robust
-            {
-                context.Customer = context.FlowContext.Order.Customer.Value2
-                    .FilterProperties(storeBookingEngineSettings.CustomerPersonSupportedFields);
+                case Organization organization:
+                    context.Customer = organization.FilterProperties(storeBookingEngineSettings.CustomerOrganizationSupportedFields);
+                    break;
+
+                case Person person:
+                    context.Customer = person.FilterProperties(storeBookingEngineSettings.CustomerPersonSupportedFields);
+                    break;
             }
 
             // Reflect back only those broker fields that are supported
-            context.Broker = context.FlowContext.Order.Broker.FilterProperties(storeBookingEngineSettings.BrokerSupportedFields);
+            context.Broker = order.Broker.FilterProperties(storeBookingEngineSettings.BrokerSupportedFields);
+            
+            // Add broker role to context for completeness
+            context.BrokerRole = order.BrokerRole;
 
             // Get static BookingService fields from settings
-            context.BookingSystem = storeBookingEngineSettings.BookingServiceDetails;
+            context.BookingService = storeBookingEngineSettings.BookingServiceDetails;
 
-            // TODO: Organization seller from a store
+            // TODO: GET Organization seller from a store
             context.SellerIdComponents = new SellerIdComponents();
 
             // Resolve each OrderItem via a store, then augment the result with errors based on validation conditions
-            var orderedItems = context.FlowContext.Order.OrderedItem.Select(orderItem =>
+            var orderedItems = order.OrderedItem.Select(orderItem =>
             {
                 IBookableIdComponents idComponents =
                     this.ResolveOpportunityID(orderItem.OrderedItem.Type, orderItem.OrderedItem.Id, orderItem.AcceptedOffer.Id);
 
-                return storeRouting[idComponents.OpportunityType.Value]
+                var rawOrderItem = storeRouting[idComponents.OpportunityType.Value]
                     .GetOrderItem(idComponents, context);
 
                 // TODO: Implement error logic for all types of item errors based on the results of this
-            });
 
-            throw new NotImplementedException();
+                
+
+                // QUESTION: Do we need to force them into include the seller twice??
+
+                
+
+                /*
+                switch (rawOrderItem?.OrderedItem) {
+                    case SessionSeries sessionSeries:
+                        sellerId = sessionSeries?.SuperEvent?.Organizer.Value1?.Id ?? sessionSeries?.SuperEvent?.Organizer.Value2?.Id;
+                        Seller seller2 = sessionSeries?.SuperEvent?.Organizer.Value1;
+                        Organization org = sessionSeries?.SuperEvent?.Organizer;
+                        seller2.WrappedValue
+                        break;
+                    case Slot slot:
+                        sellerId = slot?.FacilityUse.Value3?.Provider?.Id ?? slot?.FacilityUse.Value3?.Provider?.Id;
+                        break;
+                    case Event @event: // Should catch HeadlineEvent, Course, etc too
+                        sellerId = @event?.SuperEvent?.Organizer.Value1?.Id ?? @event?.SuperEvent?.Organizer.Value2?.Id
+                            ?? @event?.Organizer.Value1?.Id ?? @event?.Organizer.Value2?.Id;
+                        break;
+                    case null:
+                    default:
+                        throw new OpenBookingException(new OpenBookingError(), "Seller not provided in supplied OrderItem");
+                }
+                */
+
+                return rawOrderItem;
+            }).ToList();
+
+            TOrder responseOrder = new TOrder
+            {
+                Id = context.FlowContext.OrderIdTemplate.RenderOrderId(context.FlowContext.OrderIdComponents),
+                BrokerRole = context.BrokerRole,
+                Broker = context.Broker,
+                // Seller = context. TODO
+                Customer = (dynamic)(context.Customer as Organization) ?? (dynamic)(context.Customer as Person),
+                BookingService = context.BookingService,
+                OrderedItem = orderedItems
+            };
+
+            return responseOrder;
         }
 
         /*
@@ -115,9 +169,7 @@ namespace OpenActive.Server.NET.StoreBooking
       // Validate input OrderItem
       {
         if (x.acceptedOffer && x.orderedItem) {
-          
-
-          var fullOrderItem = getOrderItem(x, opportunityComponents, offerComponents, seller, taxPayeeRelationship, data);
+         
 
           var sellerId = fullOrderItem.organizer.id || fullOrderItem.superEvent.organizer.id || fullOrderItem.facilityUse.organizer.id || fullOrderItem.superEvent.superEvent.organizer.id;
 

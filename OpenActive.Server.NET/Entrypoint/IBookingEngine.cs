@@ -26,6 +26,7 @@ namespace OpenActive.Server.NET
         ResponseContent RenderDatasetSite();
         void CreateTestData(string opportunityType, string eventJson);
         void DeleteTestData(string opportunityType, string name);
-
+        ResponseContent GetOrdersRPDEPageForFeed(string authtoken, string afterTimestamp, string afterId, string afterChangeNumber);
+        ResponseContent GetOrdersRPDEPageForFeed(string authtoken, long? afterTimestamp, string afterId, long? afterChangeNumber);
     }
 }

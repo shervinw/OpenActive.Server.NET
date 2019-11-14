@@ -10,7 +10,6 @@ namespace OpenActive.Server.NET.Tests
     {
         public class SessionSeriesComponents : IBookableIdComponents
         {
-            public Uri BaseUrl { get; set; }
             public string EventType { get; set; }
             public string SessionSeriesId { get; set; }
             public long? ScheduledSessionId { get; set; }
@@ -24,13 +23,52 @@ namespace OpenActive.Server.NET.Tests
             var template = new SingleIdTemplate<SessionSeriesComponents>(
                 "{+BaseUrl}api/{EventType}/{SessionSeriesId}/events/{ScheduledSessionId}"
                 );
+            template.RequiredBaseUrl = new Uri("https://example.com/");
 
             var components = template.GetIdComponents(new Uri("https://example.com/api/session-series/asdf/events/123"));
 
-            Assert.Equal("https://example.com/", components.BaseUrl.ToString());
             Assert.Equal("session-series", components.EventType);
             Assert.Equal("asdf", components.SessionSeriesId);
             Assert.Equal(123, components.ScheduledSessionId);
+        }
+
+        [Fact]
+        public void SingleIdTemplate_GetIdComponents_IdToEnum()
+        {
+            var template = new OrderIdTemplate(
+                "{+BaseUrl}api/{OrderType}/{uuid}",
+                "{+BaseUrl}api/{OrderType}/{uuid}#/orderedItems/{OrderItemIdLong}"
+                );
+            template.RequiredBaseUrl = new Uri("https://example.com/");
+
+            var components = template.GetOrderItemIdComponents(new Uri("https://example.com/api/orders/asdf#/orderedItems/123"));
+
+            Assert.NotNull(components);
+            Assert.Equal(OrderType.Order, components.OrderType);
+            Assert.Equal("asdf", components.uuid);
+            Assert.Equal(123, components.OrderItemIdLong);
+        }
+
+        [Fact]
+        public void SingleIdTemplate_GetIdComponents_EnumToId()
+        {
+            var template = new OrderIdTemplate(
+                "{+BaseUrl}api/{OrderType}/{uuid}",
+                "{+BaseUrl}api/{OrderType}/{uuid}#/orderedItems/{OrderItemIdLong}"
+                );
+            template.RequiredBaseUrl = new Uri("https://example.com/");
+
+            OrderIdComponents components = new OrderIdComponents
+            {
+                uuid = "asdf",
+                OrderItemIdLong = 123,
+                OrderType = OrderType.Order
+            };
+
+            var id = template.RenderOrderItemId(components);
+
+            Assert.Equal(new Uri("https://example.com/api/orders/asdf#/orderedItems/123"), id);
+
         }
 
         [Fact]
@@ -39,6 +77,8 @@ namespace OpenActive.Server.NET.Tests
             var template = new SingleIdTemplate<SessionSeriesComponents>(
                 "{+BaseUrl}api/{EventType}/{SessionSeriesId}/events/{ScheduledSessionId}"
                 );
+
+            template.RequiredBaseUrl = new Uri("https://example.com/");
 
             var uri = new Uri("https://example.com/api/session-series/asdf/events/123");
 
@@ -63,12 +103,13 @@ namespace OpenActive.Server.NET.Tests
                             Bookable = true
                         });
 
+            template.RequiredBaseUrl = new Uri("https://example.com/");
+
             var components = template.GetIdComponents(
                 new Uri("https://example.com/api/session-series/asdf/events/123"),
                 new Uri("https://example.com/api/session-series/asdf/events/123#/offers/456")
                 );
 
-            Assert.Equal("https://example.com/", components.BaseUrl.ToString());
             Assert.Equal("session-series", components.EventType);
             Assert.Equal("asdf", components.SessionSeriesId);
             Assert.Equal(123, components.ScheduledSessionId);
@@ -83,6 +124,11 @@ namespace OpenActive.Server.NET.Tests
                 new Uri("https://example.com/api/session-series/asdf/events/123"),
                 new Uri("https://example.com/api/session-series/asdF/events/123#/offers/456")
                 ));
+
+            Assert.Throws<RequiredBaseUrlMismatchException>(() => template.GetIdComponents(
+                new Uri("https://example1.com/api/session-series/asdf/events/123"),
+                new Uri("https://example1.com/api/session-series/asdf/events/123#/offers/456")
+            ));
         }
     }
 }

@@ -7,12 +7,12 @@ using UriTemplate.Core;
 using OpenActive.NET;
 using OpenActive.DatasetSite.NET;
 using System.Collections;
+using System.Runtime.Serialization;
 
 namespace OpenActive.Server.NET.OpenBookingHelper
 {
     public interface IBookableIdComponents
     {
-        Uri BaseUrl { get; set; }
         OpportunityType? OpportunityType { get; set; }
     }
 
@@ -21,6 +21,22 @@ namespace OpenActive.Server.NET.OpenBookingHelper
         OpportunityType? OfferOpportunityType { get; set; }
     }
 
+    public class RequiredBaseUrlMismatchException : Exception
+    {
+        public RequiredBaseUrlMismatchException()
+        {
+        }
+
+        public RequiredBaseUrlMismatchException(string message)
+            : base(message)
+        {
+        }
+
+        public RequiredBaseUrlMismatchException(string message, Exception inner)
+            : base(message, inner)
+        {
+        }
+    }
 
     public class BookableOpportunityAndOfferMismatchException : Exception
     {
@@ -47,6 +63,8 @@ namespace OpenActive.Server.NET.OpenBookingHelper
         List<OpportunityIdConfiguration> IdConfigurations { get; }
 
         IBookableIdComponents GetOpportunityReference(Uri opportunityId, Uri offerId);
+
+        Uri RequiredBaseUrl { get; set; }
 
         //Uri RenderOfferId(OpportunityType opportunityType, IBookableIdComponents components);
         //Uri RenderOpportunityId(OpportunityType opportunityType, IBookableIdComponents components);
@@ -174,7 +192,6 @@ namespace OpenActive.Server.NET.OpenBookingHelper
         protected OpportunityIdConfiguration? GrandparentIdConfiguration { get; }
         public List<OpportunityIdConfiguration> IdConfigurations { get; }
 
-
         /// <summary>
         /// This is used by the booking engine to resolve an OrderItem to its components, using only opportunityId and Uri offerId
         /// </summary>
@@ -249,6 +266,8 @@ namespace OpenActive.Server.NET.OpenBookingHelper
 
         public Uri RenderOpportunityId(OpportunityType opportunityType, TBookableIdComponents components)
         {
+            if (components == null) throw new ArgumentNullException(nameof(components));
+
             if (opportunityType == OpportunityIdConfiguration.OpportunityType)
                 return RenderId(0, components, nameof(RenderOpportunityId), "opportunityUriTemplate");
             else if (opportunityType == ParentIdConfiguration?.OpportunityType)
@@ -310,6 +329,53 @@ namespace OpenActive.Server.NET.OpenBookingHelper
         
     }
 
+    public class OrderIdTemplate : IdTemplate<OrderIdComponents>
+    {
+        public OrderIdTemplate(string orderIdTemplate, string orderItemIdTemplate) : base(orderIdTemplate, orderItemIdTemplate)
+        {
+            if (orderIdTemplate == null) throw new ArgumentNullException(nameof(orderIdTemplate));
+            if (orderItemIdTemplate == null) throw new ArgumentNullException(nameof(orderItemIdTemplate));
+        }
+
+        public OrderIdComponents GetOrderIdComponents(Uri id)
+        {
+            return base.GetIdComponents(nameof(GetIdComponents), id, null);
+        }
+        public OrderIdComponents GetOrderItemIdComponents(Uri id)
+        {
+            return base.GetIdComponents(nameof(GetIdComponents), null, id);
+        }
+
+        // TODO: Later - check if RenderOrderId and RenderOrderItemId with multiple params can be moved back out to OrdersRPDEFeedGenerator?
+        public Uri RenderOrderId(OrderType orderType, string uuid)
+        {
+            return this.RenderOrderId(new OrderIdComponents { OrderType = orderType, uuid = uuid });
+        }
+
+        //TODO reduce duplication of the strings / logic below
+        public Uri RenderOrderItemId(OrderType orderType, string uuid, string orderItemId)
+        {
+            if (orderType != OrderType.Order) throw new ArgumentOutOfRangeException(nameof(orderType), "The Open Booking API 1.0 specification only permits OrderItem Ids to exist within Orders, not OrderQuotes or OrderProposals.");
+            return this.RenderOrderItemId(new OrderIdComponents { OrderType = orderType, uuid = uuid, OrderItemIdString = orderItemId });
+        }
+        public Uri RenderOrderItemId(OrderType orderType, string uuid, long orderItemId)
+        {
+            if (orderType != OrderType.Order) throw new ArgumentOutOfRangeException(nameof(orderType), "The Open Booking API 1.0 specification only permits OrderItem Ids to exist within Orders, not OrderQuotes or OrderProposals.");
+            return this.RenderOrderItemId(new OrderIdComponents { OrderType = orderType, uuid = uuid, OrderItemIdLong = orderItemId });
+        }
+
+
+        public Uri RenderOrderId(OrderIdComponents components)
+        {
+            return RenderId(0, components, nameof(RenderId), "orderIdTemplate");
+        }
+
+        public Uri RenderOrderItemId(OrderIdComponents components)
+        {
+            return RenderId(1, components, nameof(RenderId), "orderItemIdTemplate");
+        }
+    }
+
 
     public class SingleIdTemplate<T> : IdTemplate<T> where T : new()
     {
@@ -327,7 +393,6 @@ namespace OpenActive.Server.NET.OpenBookingHelper
         {
             return RenderId(0, components, nameof(RenderId), "uriTemplate");
         }
-
     }
 
     /// <summary>
@@ -336,11 +401,22 @@ namespace OpenActive.Server.NET.OpenBookingHelper
     public abstract class IdTemplate<T> where T : new()
     {
         private List<UriTemplate.Core.UriTemplate> uriTemplates;
+        private const string BaseUrlPlaceholder = "BaseUrl";
 
         protected IdTemplate(params string[] uriTemplate)
         {
             uriTemplates = uriTemplate.Select(t => t == null ? null : new UriTemplate.Core.UriTemplate(t)).ToList();
         }
+
+        protected IdTemplate(Uri requiredBaseUrl, params string[] uriTemplate) : this(uriTemplate)
+        {
+            RequiredBaseUrl = requiredBaseUrl;
+        }
+
+        /// <summary>
+        /// If the RequiredBaseUrl is set, an exception is thrown where the {BaseUrl} does not match this value.
+        /// </summary>
+        public Uri RequiredBaseUrl { get; set; } = null;
 
         /// <summary>
         /// 
@@ -371,14 +447,26 @@ namespace OpenActive.Server.NET.OpenBookingHelper
                 var match = uriTemplates[index].Match(ids[index]);
 
                 // If ID does match template, return null
-                if (match.Bindings.Count == 0) return default(T);
+                if (match == null || match.Bindings == null || match.Bindings.Count == 0) return default(T);
 
                 // Set matching components in supplied POCO based on property name
                 foreach (var binding in match.Bindings)
                 {
-                    if (componentsType.GetProperty(binding.Key) == null) throw new ArgumentException("Supplied UriTemplates must match supplied component type properties");
-
-                    if (componentsType.GetProperty(binding.Key).PropertyType == typeof(long?))
+                    
+                    if (binding.Key == BaseUrlPlaceholder && this.RequiredBaseUrl != null)
+                    {
+                        //Special behaviour for BaseUrl
+                        var newValue = (binding.Value.Value as string).ParseUrlOrNull();
+                        if (newValue != this.RequiredBaseUrl)
+                        {
+                            throw new RequiredBaseUrlMismatchException("Base Url of the supplied Ids do not match expected default");
+                        }
+                    }
+                    else if (componentsType.GetProperty(binding.Key) == null)
+                    {
+                        throw new ArgumentException("Supplied UriTemplates must match supplied component type properties");
+                    }
+                    else if (componentsType.GetProperty(binding.Key).PropertyType == typeof(long?))
                     {
                         if (long.TryParse(binding.Value.Value as string, out long newValue))
                         {
@@ -414,14 +502,64 @@ namespace OpenActive.Server.NET.OpenBookingHelper
                         }
                         componentsType.GetProperty(binding.Key).SetValue(components, newValue);
                     }
+                    else if (Nullable.GetUnderlyingType(componentsType.GetProperty(binding.Key).PropertyType).IsEnum)
+                    {
+                        object existingValue = componentsType.GetProperty(binding.Key).GetValue(components);
+                        object newValue = ToEnum(componentsType.GetProperty(binding.Key).PropertyType, binding.Value.Value as string);
+                        if (newValue == null)
+                        {
+                            throw new ArgumentException($"An enumeration in the template for binding {binding.Key} failed to parse.");
+                        }
+                        if (existingValue != newValue && existingValue != null)
+                        {
+                            throw new BookableOpportunityAndOfferMismatchException($"Supplied Ids do not match on component '{binding.Value.Key}'");
+                        }
+                        try
+                        {
+                            componentsType.GetProperty(binding.Key).SetValue(components, newValue);
+                        }
+                        catch (Exception ex)
+                        {
+                            throw new ArgumentException($"An enumeration in the template for binding {binding.Key} failed to parse.", ex);
+                        } 
+                    }
                     else
                     {
-                        throw new ArgumentException("Only types long?, Uri and string are supported within the component class used for IdTemplate.");
+                        throw new ArgumentException("Only types long?, Uri, enum? and string are supported within the component class used for IdTemplate.");
                     }
                 }
             }
 
             return components;
+        }
+
+        public object ToEnumStringIfEnum(PropertyInfo prop, object value)
+        {
+            if (value == null) return null;
+            if (prop.PropertyType == typeof(OpportunityType)) return value; // To optimise render, ignore this particular enum
+            var enumType = Nullable.GetUnderlyingType(prop.PropertyType);
+            if (enumType != null && enumType.IsEnum)
+            {
+                var name = Enum.GetName(enumType, value);
+                var enumMemberAttribute = ((EnumMemberAttribute[])enumType.GetField(name).GetCustomAttributes(typeof(EnumMemberAttribute), true)).SingleOrDefault();
+                return enumMemberAttribute?.Value ?? name;
+            }
+            else
+            {
+                return value;
+            }
+        }
+
+        private static object ToEnum(Type nullableEnumType, string str)
+        {
+            Type enumType = Nullable.GetUnderlyingType(nullableEnumType);
+            foreach (var name in Enum.GetNames(enumType))
+            {
+                var enumMemberAttribute = ((EnumMemberAttribute[])enumType.GetField(name).GetCustomAttributes(typeof(EnumMemberAttribute), true)).Single();
+                if (enumMemberAttribute.Value == str) return Enum.Parse(enumType, name);
+            }
+            //throw exception or whatever handling you want or
+            return null;
         }
 
         protected Uri RenderId(int index, T components, string method, string param)
@@ -433,7 +571,9 @@ namespace OpenActive.Server.NET.OpenBookingHelper
 
             var componentDictionary = components.GetType()
                 .GetProperties(BindingFlags.Instance | BindingFlags.Public)
-                     .ToDictionary(prop => prop.Name, prop => prop.GetValue(components, null));
+                     .ToDictionary(prop => prop.Name, prop => ToEnumStringIfEnum(prop, prop.GetValue(components, null)));
+
+            if (this.RequiredBaseUrl != null) componentDictionary[BaseUrlPlaceholder] = RequiredBaseUrl;
 
             return uriTemplates[index].BindByName(componentDictionary);
         }

@@ -31,9 +31,9 @@ namespace BookingSystem.AspNetCore.Controllers
                 // They are all provided here for the bookingEngine to choose the correct endpoint
                 return bookingEngine.GetOpenDataRPDEPageForFeed(feedname, afterTimestamp, afterId, afterChangeNumber).GetContentResult();
             }
-            catch (KeyNotFoundException kn)
+            catch (OpenBookingException obe)
             {
-                return NotFound();
+                return obe.ErrorResponseContent.GetContentResult();
             }
         }
 

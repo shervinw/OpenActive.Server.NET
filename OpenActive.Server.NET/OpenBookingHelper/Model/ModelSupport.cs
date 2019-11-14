@@ -8,14 +8,11 @@ namespace OpenActive.Server.NET.OpenBookingHelper
 {
     public class ModelSupport<TComponents> where TComponents : class, IBookableIdComponents, new()
     {
-        public Uri JsonLdIdBaseUrl { get; private set; }
         private BookablePairIdTemplate<TComponents> IdTemplate { get; set; }
 
-        protected internal void SetConfiguration(Uri jsonLdIdBaseUrl, BookablePairIdTemplate<TComponents> template)
+        protected internal void SetConfiguration(BookablePairIdTemplate<TComponents> template)
         {
             this.IdTemplate = template;
-
-            this.JsonLdIdBaseUrl = jsonLdIdBaseUrl;
         }
 
         /// <summary>

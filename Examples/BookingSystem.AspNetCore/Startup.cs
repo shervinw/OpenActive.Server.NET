@@ -145,18 +145,28 @@ namespace BookingSystem.AspNetCore
                 },
 
                 JsonLdIdBaseUrl = new Uri("https://example.com/api/identifiers/"),
-                OrderBaseUrl = new Uri("https://example.com/api/orders/"),
+
+                // QUESTION: Would it be useful to have the Base URL auto-populated from the controller here?
+
+                // Note unlike IDs this one needs to match URL of the feed, from whatever is in the controller
+                OrdersFeedUrl = new Uri("https://localhost:44307/api/openbooking/orders-rpde"),
 
                 // Note unlike other IDs this one needs to be resolvable
-                OrderIdTemplate = new SingleIdTemplate<OrderIdComponents>(
-                    "{+BaseUrl}api/{OrderType}/{OrderId}"
+                OrderBaseUrl = new Uri("https://localhost:44307/api/openbooking/orders/"),
+                OrderIdTemplate = new OrderIdTemplate(
+                    "{+BaseUrl}api/{OrderType}/{uuid}",
+                    "{+BaseUrl}api/{OrderType}/{uuid}#/orderedItems/{OrderItemIdString}"
                     ),
+
+                OrderFeedGenerator = new AcmeOrdersFeedRPDEGenerator(),
 
                 SellerIdTemplate = new SingleIdTemplate<SellerIdComponents>(
                     "{+BaseUrl}api/sellers/{SellerIdString}"
                     ),
 
-                OpenDataFeeds = new Dictionary<OpportunityType, IRPDEFeedGenerator> {
+                SellerStore = new AcmeSellerStore(),
+
+                OpenDataFeeds = new Dictionary<OpportunityType, IOpportunityDataRPDEFeedGenerator> {
                     {
                         OpportunityType.ScheduledSession, new AcmeScheduledSessionRPDEGenerator()
                     },
@@ -174,6 +184,7 @@ namespace BookingSystem.AspNetCore
             },
             new DatasetSiteGeneratorSettings
             {
+                // QUESTION: Do the Base URLs need to come from config, or should they be detected from the request?
                 OpenDataFeedBaseUrl = "https://localhost:44307/feeds/".ParseUrlOrNull(),
                 DatasetSiteUrl = "https://localhost:44307/openactive/".ParseUrlOrNull(),
                 DatasetDiscussionUrl = "https://github.com/gll-better/opendata".ParseUrlOrNull(),
@@ -238,7 +249,7 @@ namespace BookingSystem.AspNetCore
                 // List of _bookable_ opportunity types and which store to route to for each
                 OpenBookingStoreRouting = new Dictionary<IOpportunityStore, List<OpportunityType>> {
                     {
-                        new SessionsStore(), new List<OpportunityType> { OpportunityType.ScheduledSession }
+                        new SessionStore(), new List<OpportunityType> { OpportunityType.ScheduledSession }
                     }
                 }
             }));

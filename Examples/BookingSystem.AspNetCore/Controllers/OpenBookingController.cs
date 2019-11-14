@@ -32,7 +32,7 @@ namespace BookingSystem.AspNetCore.Controllers
         /// OrderQuote Creation C1
         /// GET api/openbooking/order-quote-templates/ABCD1234
         /// </summary>
-        [HttpPut("order-quote-template/{uuid}")]
+        [HttpPut("order-quote-templates/{uuid}")]
         public ContentResult OrderQuoteCreationC1([FromServices] IBookingEngine bookingEngine, string uuid, [FromBody] string orderQuote)
         {
             try
@@ -115,12 +115,24 @@ namespace BookingSystem.AspNetCore.Controllers
             }
         }
 
+
         // GET api/openbooking/orders-rpde
         [HttpGet("orders-rpde")]
-        public ContentResult Get([FromServices] IBookingEngine bookingEngine, int uuid)
+        public IActionResult GetOrdersFeed([FromServices] IBookingEngine bookingEngine, long? afterTimestamp, string afterId, long? afterChangeNumber)
         {
-            throw new NotImplementedException();
+            try
+            {
+                // Note only a subset of these parameters will be supplied when this endpoints is called
+                // They are all provided here for the bookingEngine to choose the correct endpoint
+                // The auth token must also be provided from the associated authentication method
+                return bookingEngine.GetOrdersRPDEPageForFeed("<insert auth token>", afterTimestamp, afterId, afterChangeNumber).GetContentResult();
+            }
+            catch (OpenBookingException obe)
+            {
+                return obe.ErrorResponseContent.GetContentResult();
+            }
         }
+
 
         // POST api/openbooking/test-interface/scheduled-sessions
         [HttpPost("test-interface/{type}")]

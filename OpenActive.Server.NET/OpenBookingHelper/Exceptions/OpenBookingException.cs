@@ -74,7 +74,7 @@ namespace OpenActive.Server.NET.OpenBookingHelper
         {
             get
             {
-                if (this.OpenBookingError != null)
+                if (this.OpenBookingError == null)
                 {
                     throw new NullReferenceException("An instance of OpenBookingException does not have an associated OpenBookingError");
                 }

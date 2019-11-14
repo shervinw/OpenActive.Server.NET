@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Runtime.Serialization;
 using System.Text;
+using OpenActive.NET;
 
 namespace OpenActive.Server.NET.OpenBookingHelper
 {
@@ -8,18 +10,29 @@ namespace OpenActive.Server.NET.OpenBookingHelper
 
     public class SellerIdComponents
     {
-        public Uri BaseUrl { get; set; }
-        public string SellerIdString { get; set; }
         public long? SellerIdLong { get; set; }
+        public string SellerIdString { get; set; }
     }
 
     public class OrderIdComponents
     {
-        public Uri BaseUrl { get; set; }
-        public OrderType OrderType { get; set; }
+        public OrderType? OrderType { get; set; }
         public string uuid { get; set; }
+        public long? OrderItemIdLong { get; set; }
+        public string OrderItemIdString { get; set; }
     }
 
     // TODO: Add resolve Order ID via enumeration, and add paths (e.g. 'order-quote-template') to the below
-    public enum OrderType { OrderQuoteTemplate, OrderQuote, Order }
+    public enum OrderType {
+
+        [EnumMember(Value = "order-quote-templates")]
+        OrderQuoteTemplate,
+
+        [EnumMember(Value = "order-quotes")]
+        OrderQuote,
+
+        [EnumMember(Value = "orders")]
+        Order
+    }
+
 }
