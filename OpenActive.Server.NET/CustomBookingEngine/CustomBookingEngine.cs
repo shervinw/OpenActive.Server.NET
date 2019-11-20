@@ -282,17 +282,17 @@ namespace OpenActive.Server.NET.CustomBooking
         public ResponseContent ProcessCheckpoint1(string uuid, string orderQuoteJson)
         {
             OrderQuote orderQuote = OpenActiveSerializer.Deserialize<OrderQuote>(orderQuoteJson);
-            return ResponseContent.OpenBookingResponse(ValidateFlowRequest<OrderQuote>(FlowStage.C1, uuid, OrderType.OrderQuoteTemplate, orderQuote).ToOpenActiveString());
+            return ResponseContent.OpenBookingResponse(ValidateFlowRequest<OrderQuote>(FlowStage.C1, uuid, OrderType.OrderQuoteTemplate, orderQuote).ToString());
         }
         public ResponseContent ProcessCheckpoint2(string uuid, string orderQuoteJson)
         {
             OrderQuote orderQuote = OpenActiveSerializer.Deserialize<OrderQuote>(orderQuoteJson);
-            return ResponseContent.OpenBookingResponse(ValidateFlowRequest<OrderQuote>(FlowStage.C2, uuid, OrderType.OrderQuote, orderQuote).ToOpenActiveString());
+            return ResponseContent.OpenBookingResponse(ValidateFlowRequest<OrderQuote>(FlowStage.C2, uuid, OrderType.OrderQuote, orderQuote).ToString());
         }
         public ResponseContent ProcessOrderCreationB(string uuid, string orderJson)
         {
             Order order = OpenActiveSerializer.Deserialize<Order>(orderJson);
-            return ResponseContent.OpenBookingResponse(ValidateFlowRequest<Order>(FlowStage.B, uuid, OrderType.Order, order).ToOpenActiveString());
+            return ResponseContent.OpenBookingResponse(ValidateFlowRequest<Order>(FlowStage.B, uuid, OrderType.Order, order).ToString());
         }
         public void DeleteOrder(string uuid)
         {
@@ -307,7 +307,8 @@ namespace OpenActive.Server.NET.CustomBooking
         // Note opportunityType is required here to facilitate routing to the correct store to handle the request
         public void CreateTestData(string opportunityType, string eventJson)
         {
-            Event @event = OpenActiveSerializer.Deserialize<Event>(eventJson);
+            // Temporary hack while waiting for OpenActive.NET to deserialize subclasses correctly
+            ScheduledSession @event = OpenActiveSerializer.Deserialize<ScheduledSession>(eventJson);
             this.CreateTestDataItem((OpportunityType)Enum.Parse(typeof(OpportunityType), opportunityType, true), @event);
         }
 

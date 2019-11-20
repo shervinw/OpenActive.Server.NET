@@ -23,8 +23,8 @@
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
-    <PackageReference Include="OpenActive.DatasetSite.NET" Version="3.0.1" />
-    <PackageReference Include="OpenActive.NET" Version="6.3.0" />
+    <PackageReference Include="OpenActive.DatasetSite.NET" Version="3.0.2" />
+    <PackageReference Include="OpenActive.NET" Version="7.0.1" />
     <PackageReference Include="UriTemplate.Core" Version="1.0.2" />
   </ItemGroup>
 

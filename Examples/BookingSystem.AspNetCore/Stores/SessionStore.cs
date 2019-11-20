@@ -24,7 +24,16 @@ namespace BookingSystem.AspNetCore
         public override void CreateTestDataItem(OpportunityType opportunityType, Event @event)
         {
             // Note assume that if it's been routed here, it will be possible to cast it to type Event
-            FakeBookingSystem.Database.AddClass(@event.Name, ((Event)@event).Offers?.FirstOrDefault()?.Price);
+            switch (opportunityType)
+            {
+                case OpportunityType.ScheduledSession:
+                    var session = (ScheduledSession)@event;
+                    var superEvent = (SessionSeries)session.SuperEvent.GetClass<Event>();
+                    // Note temporary hack while waiting for OpenActive.NET accessors to work as expected
+                    FakeBookingSystem.Database.AddClass(superEvent.Name, superEvent.Offers?.FirstOrDefault()?.Price, (DateTimeOffset?)session.StartDate.Value ?? default, (DateTimeOffset?)session.EndDate.Value ?? default);
+                    break;
+            }
+            
         }
 
         public override void DeleteTestDataItem(OpportunityType opportunityType, string name)
@@ -42,7 +51,7 @@ namespace BookingSystem.AspNetCore
                         select new OrderItem
                         {
                             AllowCustomerCancellationFullRefund = true,
-                            UnitTaxSpecification = context.FlowContext.TaxPayeeRelationship == TaxPayeeRelationship.BusinessToConsumer ?
+                            UnitTaxSpecification = context.TaxPayeeRelationship == TaxPayeeRelationship.BusinessToConsumer ?
                                 new List<TaxChargeSpecification>
                                 {
                                     new TaxChargeSpecification

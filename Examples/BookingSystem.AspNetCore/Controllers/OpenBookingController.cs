@@ -134,7 +134,7 @@ namespace BookingSystem.AspNetCore.Controllers
         }
 
 
-        // POST api/openbooking/test-interface/scheduled-sessions
+        // POST api/openbooking/test-interface/scheduledsession
         [HttpPost("test-interface/{type}")]
         public IActionResult Post([FromServices] IBookingEngine bookingEngine, string type, [FromBody] string @event)
         {
@@ -149,7 +149,7 @@ namespace BookingSystem.AspNetCore.Controllers
             }
         }
 
-        // DELETE api/openbooking/test-interface/scheduled-sessions/{name}
+        // DELETE api/openbooking/test-interface/scheduledsession/{name}
         [HttpDelete("test-interface/{type}/{name}")]
         public IActionResult Delete([FromServices] IBookingEngine bookingEngine, string type, string name)
         {

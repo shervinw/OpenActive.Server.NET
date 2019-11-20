@@ -37,14 +37,25 @@ namespace BookingSystem.FakeDatabase
             public DateTimeOffset Modified { get; set; } = DateTimeOffset.Now;
         }
 
-        public void AddClass(string title, decimal? price)
+        public void AddClass(string title, decimal? price, DateTimeOffset startTime, DateTimeOffset endTime)
         {
+            var classId = nextId++;
+
             Classes.Add(new ClassTable
             {
-                Id = nextId++,
+                Id = classId,
                 Deleted = false,
                 Title = title,
                 Price = price
+            });
+
+            Occurrences.Add(new OccurrenceTable
+            {
+                Id = nextId++,
+                Deleted = false,
+                ClassId = classId,
+                Start = startTime.DateTime,
+                End = endTime.DateTime
             });
         }
 

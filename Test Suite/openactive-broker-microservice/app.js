@@ -1,6 +1,7 @@
 var express = require('express');
 var logger = require('morgan');
 var request = require('request');
+var nSQL = require("@nano-sql/core").nSQL;
  
 process.env["NODE_TLS_REJECT_UNAUTHORIZED"] = 0;
 process.env["PORT"] = 3000;
@@ -9,6 +10,49 @@ var app = express();
 
 app.use(logger('dev'));
 app.use(express.json());
+
+
+nSQL().createDatabase({
+  tables: [
+      {
+          name: "SessionSeries",
+          model: {
+            "id:int":{pk: true},
+            "modified:int":{},
+            "deleted:bool":{},
+            "jsonLdId:string":{},
+            "feedModified:int":{},
+            "jsonLd:obj":{}
+          },
+          indexes: {
+              "feedModified:int": {},
+              "jsonLdId:string": {},
+          }
+      },
+      {
+          name: "ScheduledSessions",
+          model: {
+            "id:int":{pk: true},
+            "modified:int":{},
+            "deleted:bool":{},
+            "jsonLdId:string":{},
+            "feedModified:int":{},
+            "jsonLd:obj":{},
+            "jsonLdParentId:string":{}
+          },
+          indexes: {
+              "jsonLdParentId:string":{
+                /*  foreignKey: { // foreign key property
+                      target: "SessionSeries.jsonLdId" // parent Table.column or Table.nested.column
+                  }*/
+              },
+              "feedModified:int": {},
+              "jsonLdId:string": {},
+          }
+      }
+  ]
+});
+
 
 function getRPDE(url, cb) {
   var headers = {
@@ -35,9 +79,82 @@ function getBaseUrl(url) {
   if (url.indexOf("//") > -1) {
     return url.substring(0, url.indexOf("/", url.indexOf("//") + 2));
   } else {
-    return ""
+    return "";
   }
 }
+
+
+app.get('/feeds/scheduled-sessions', function (req, res) {
+
+  var afterId = null;
+  var afterTimestamp = null;
+  if (req.query && req.query.afterId && req.query.afterTimestamp) {
+    afterId = req.query.afterId;
+    afterTimestamp = parseInt(req.query.afterTimestamp);
+  }
+
+  var baseUrl = 'http://localhost:3000/feeds/scheduled-sessions';
+  var PAGE_SIZE = 500;
+
+  nSQL("ScheduledSessions").query("select", 
+      [
+        "jsonLdId",
+        "deleted",
+        "feedModified",
+        "jsonLd",
+        "jsonLdParentId",
+       // "SessionSeries.jsonLd",
+       //"SessionSeries.jsonLdId",
+      ]
+    )
+  .where(
+    afterTimestamp != null ? [
+      [
+        [
+          ["feedModified", "=", afterTimestamp], "AND", ["jsonLdId", ">", afterId] // Should use jsonLdId for robustness, except nSQL doesn't support string comparison
+        ], "OR", ["feedModified", ">", afterTimestamp]
+      ],
+      "AND",
+      ["feedModified", "<=", Date.now()] // Only show items that have been updated and are ready for display
+    ] : true
+  )
+  .orderBy({'feedModified': 'asc', 'jsonLdId': 'asc'}).limit(PAGE_SIZE)
+  /*.join({
+    type: "left",
+    with: {table: "SessionSeries"},
+    on: ["jsonLdParentId","=","SessionSeries.jsonLdId"]
+  })*/
+  .exec().then((rows) => {
+    if (rows.length > 0) {
+      var aggregatedRows = [];
+      var lastId = rows[rows.length-1]['jsonLdId'];
+      var lastTimestamp = parseInt(rows[rows.length-1]['feedModified']);
+      res.json({
+        'next': baseUrl + '?afterTimestamp=' + lastTimestamp + '&afterId=' + encodeURIComponent(lastId),
+        'items': rows.map(row => ({
+          'state': row['deleted'] ? 'deleted' : 'updated',
+          'id': row['jsonLdId'],
+          'modified': row['feedModified'],
+          'data': Object.assign(
+            {}, 
+            row['jsonLd'], 
+            { superEvent: sessionSeriesMap[row['jsonLdParentId']] } // Note sessionSeriesMap used as much faster than nSQL join
+          ) 
+        })),
+        'license': 'https://creativecommons.org/licenses/by/4.0/'
+      });
+      res.end();
+    } else {
+      res.json({
+        'next': baseUrl + (afterTimestamp == null ? '' : '?afterTimestamp=' + afterTimestamp + '&afterId=' + encodeURIComponent(afterId)),
+        'items': [],
+        'license': 'https://creativecommons.org/licenses/by/4.0/'
+      });
+      res.end();
+    }
+  });
+});
+
 
 var responses = {
   /* Keyed by expression =*/
@@ -69,25 +186,83 @@ app.get('/get-match/:expression', function (req, res) {
   }
 });
 
-var nextUrl = 'http://localhost:49944/feeds/session-series';
-var pageNumber = 0;
 
-// Start processing first page
-getRPDE(nextUrl, processPage);
+//setupDataStore().then(() => {
+  // Start processing first pages of external feeds
+  getRPDE('https://localhost:44307/feeds/session-series', ingestSessionSeriesPage);
+  getRPDE('https://localhost:44307/feeds/scheduled-sessions', ingestScheduledSessionPage);
 
-function processPage(rpde) {
-  pageNumber++;
+  // Start monitoring first page of internal feed
+  getRPDE('http://localhost:3000/feeds/scheduled-sessions', monitorPage); 
+//});
 
-  console.log(`RPDE page: ${pageNumber}, length: ${rpde.items.length}, next: '${rpde.next}'`);
+// nSQL joins appear to be slow, even with indexes. This is an optimisation pending further investigation
+sessionSeriesMap = {};
 
-  rpde.items.forEach((item) => {
-    // TODO: make this regex loop (note ignore deleted items)
-    if (item.data && responses[item.data.name]) {
-      responses[item.data.name].send(item);
+function ingestSessionSeriesPage(rpde, pageNumber) {
+  console.log(`RPDE kind: SessionSeries, page: ${pageNumber+1 || 0}, length: ${rpde.items.length}, next: '${rpde.next}'`);
+
+  var newItems = rpde.items.map(item => ({
+    id: item.id,
+    modified: item.modified,
+    deleted: item.state == 'deleted',
+    feedModified: Date.now() + 1000, // 1 second in the future
+    jsonLdId: item.state == 'deleted' ? null : item.data['@id'],
+    jsonLd: item.state == 'deleted' ? null : item.data
+  }));
+
+  newItems.forEach(item => {
+    if (item.deleted) {
+      delete sessionSeriesMap[item.jsonLdId];
+    } else {
+      sessionSeriesMap[item.jsonLdId] = item.jsonLd;
     }
   });
 
-  setTimeout(x => getRPDE(rpde.next, processPage), 200);
+  nSQL("SessionSeries")
+    .query("upsert", newItems)
+    .exec().then(() => {
+      // Update any children that reference this parent
+      nSQL("ScheduledSessions")
+      .query("upsert", {
+        feedModified: Date.now() + 1000 // 1 second in the future
+      })
+      .where(["jsonLdParentId","IN",rpde.items.filter(item => item.state != 'deleted').map(item => item.data['@id'])])
+      .exec().then(() => {
+        setTimeout(x => getRPDE(rpde.next, x => ingestSessionSeriesPage(x, pageNumber+1 || 0)), 200);
+      });
+    });
+}
+
+function ingestScheduledSessionPage(rpde, pageNumber) {
+  console.log(`RPDE kind: ScheduledSession, page: ${pageNumber+1 || 0}, length: ${rpde.items.length}, next: '${rpde.next}'`);
+
+  nSQL("ScheduledSessions")
+    .query("upsert", rpde.items.map(item => ({
+      id: item.id,
+      modified: item.modified,
+      deleted: item.state == 'deleted',
+      feedModified: Date.now() + 1000, // 1 second in the future,
+      jsonLdId: item.state == 'deleted' ? null : item.data['@id'],
+      jsonLd: item.state == 'deleted' ? null : item.data,
+      jsonLdParentId: item.state == 'deleted' ? null : item.data.superEvent
+    })))
+    .exec().then(() => {
+      setTimeout(x => getRPDE(rpde.next, x => ingestScheduledSessionPage(x, pageNumber+1 || 0)), 200);
+    });
+}
+
+function monitorPage(rpde, pageNumber) {
+  console.log(`RPDE kind: Monitoring, length: ${rpde.items.length}, next: '${rpde.next}'`);
+
+  rpde.items.forEach((item) => {
+    // TODO: make this regex loop (note ignore deleted items)
+    if (item.data && item.data.superEvent && responses[item.data.superEvent.name]) {
+      responses[item.data.superEvent.name].send(item);
+    }
+  });
+
+  setTimeout(x => getRPDE(rpde.next, monitorPage), 200);
 }
 
 app.listen(3000, '127.0.0.1');

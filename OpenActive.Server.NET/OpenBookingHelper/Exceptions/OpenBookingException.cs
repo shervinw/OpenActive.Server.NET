@@ -80,7 +80,7 @@ namespace OpenActive.Server.NET.OpenBookingHelper
                 }
                 else
                 {
-                    return this.OpenBookingError.ToOpenActiveString();
+                    return OpenActiveSerializer.Serialize(this.OpenBookingError);
                 }
             }
         }

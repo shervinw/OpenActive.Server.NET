@@ -36,14 +36,21 @@ describe("Create test event", function() {
     var apiResponse;
 
     var testEvent = {
-        "@type": "Event",
-        name: "Testevent2",
-        "offers": [
-            {
-                "@type": "Offer",
-                "price": 2,
-            }
-        ]
+        "@context": "https://openactive.io/",
+        "@type": "ScheduledSession",
+        "superEvent": {
+            "@type": "SessionSeries",
+            "name": "Testevent2",
+            "offers": [
+                {
+                    "@type": "Offer",
+                    "@id": "https://example.com/api/identifiers/api/session-series/100#/offers/0",
+                    "price": 14.95
+                }
+            ]
+        },
+        "startDate": "2019-11-20T17:26:16.0731663+00:00",
+        "endDate": "2019-11-20T19:12:16.0731663+00:00"
     };
 
     before(function () {
@@ -59,7 +66,7 @@ describe("Create test event", function() {
     });
 
     after(function () {
-        var name = testEvent.name;
+        var name = testEvent.superEvent.name;
         return chakram.delete("https://localhost:44307/api/openbooking/test-interface/scheduledsession/" + encodeURIComponent(name), {
             headers: {
                 'Content-Type': 'application/vnd.openactive.booking+json; version=1'
@@ -73,16 +80,16 @@ describe("Create test event", function() {
 
     it("should return newly created event", function () {
         expect(apiResponse).to.have.json('data.@type', 'ScheduledSession');
-        expect(apiResponse).to.have.json('data.name', 'Testevent2');
+        expect(apiResponse).to.have.json('data.superEvent.name', 'Testevent2');
         return chakram.wait();
     });
 
     it("should have one offer", function () {
-        return expect(apiResponse).to.have.schema('data.offers', {minItems: 1, maxItems: 1});
+        return expect(apiResponse).to.have.schema('data.superEvent.offers', {minItems: 1, maxItems: 1});
     });
     
-    it("offer should have price of 2", function () {
-        return expect(apiResponse).to.have.json('data.offers[0].price', 2);
+    it("offer should have price of 14.95", function () {
+        return expect(apiResponse).to.have.json('data.superEvent.offers[0].price', 14.95);
     });
 
 });
@@ -92,14 +99,21 @@ describe("Basic end-to-end booking", function() {
     this.timeout(10000);
 
     var testEvent = {
-        "@type": "Event",
-        name: "Testevent2",
-        "offers": [
-            {
-                "@type": "Offer",
-                "price": 2,
-            }
-        ]
+        "@context": "https://openactive.io/",
+        "@type": "ScheduledSession",
+        "superEvent": {
+            "@type": "SessionSeries",
+            "name": "Testevent2",
+            "offers": [
+                {
+                    "@type": "Offer",
+                    "@id": "https://example.com/api/identifiers/api/session-series/100#/offers/0",
+                    "price": 14.95
+                }
+            ]
+        },
+        "startDate": "2019-11-20T17:26:16.0731663+00:00",
+        "endDate": "2019-11-20T19:12:16.0731663+00:00"
     };
 
     var apiResponse;
@@ -118,8 +132,8 @@ describe("Basic end-to-end booking", function() {
             console.log("\n\n** RPDE excerpt **: \n\n" + JSON.stringify(rpdeItem, null, 2));
 
             opportunityId = rpdeItem.data['@id']; // TODO : Support duel feeds: .subEvent[0]
-            offerId = rpdeItem.data.offers[0]['@id'];
-            sellerId = rpdeItem.data.organizer['@id'];
+            offerId = rpdeItem.data.superEvent.offers[0]['@id'];
+            sellerId = rpdeItem.data.superEvent.organizer['@id'];
             uuid = uuidv5(sellerId, uuidv5.URL); //uuid v5 based on Seller ID
 
             console.log(`opportunityId: ${opportunityId}; offerId: ${offerId}`)
@@ -175,7 +189,7 @@ describe("Basic end-to-end booking", function() {
     });
 
     after(function () {
-        var name = testEvent.name;
+        var name = testEvent.superEvent.name;
         return chakram.delete("https://localhost:44307/api/openbooking/test-interface/scheduledsession/" + encodeURIComponent(name), {
             headers: {
                 'Content-Type': 'application/vnd.openactive.booking+json; version=1'
@@ -195,22 +209,15 @@ describe("Basic end-to-end booking", function() {
     });
 
     it("should return newly created event", function () {
-        expect(apiResponse).to.have.json('orderedItem[0].orderedItem.@type', 'ScheduledSession');
-        expect(apiResponse).to.have.json('orderedItem[0].orderedItem.superEvent.name', 'Testevent2');
-        return chakram.wait();
-    });
-
-    it("should have one offer", function () {
-        expect(c1Response).to.have.schema('data.offers', {minItems: 1, maxItems: 1});
-        expect(c2Response).to.have.schema('data.offers', {minItems: 1, maxItems: 1});
-        expect(bResponse).to.have.schema('data.offers', {minItems: 1, maxItems: 1});
+        expect(c1Response).to.have.json('orderedItem[0].orderedItem.@type', 'ScheduledSession');
+        expect(c1Response).to.have.json('orderedItem[0].orderedItem.superEvent.name', 'Testevent2');
         return chakram.wait();
     });
     
-    it("offer should have price of 2", function () {
-        expect(c1Response).to.have.json('orderedItem[0].acceptedOffer.price', 2);
-        expect(c2Response).to.have.json('orderedItem[0].acceptedOffer.price', 2);
-        expect(bResponse).to.have.json('orderedItem[0].acceptedOffer.price', 2);
+    it("offer should have price of 14.95", function () {
+        expect(c1Response).to.have.json('orderedItem[0].acceptedOffer.price', 14.95);
+        expect(c2Response).to.have.json('orderedItem[0].acceptedOffer.price', 14.95);
+        expect(bResponse).to.have.json('orderedItem[0].acceptedOffer.price', 14.95);
         return chakram.wait();
     });
 

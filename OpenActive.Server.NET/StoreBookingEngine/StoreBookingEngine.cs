@@ -166,11 +166,12 @@ namespace OpenActive.Server.NET.StoreBooking
 
             TOrder responseOrder = new TOrder
             {
-                Id = context.FlowContext.OrderIdTemplate.RenderOrderId(context.FlowContext.OrderIdComponents),
+                Id = context.OrderIdTemplate.RenderOrderId(context.OrderIdComponents),
                 BrokerRole = context.BrokerRole,
                 Broker = context.Broker,
                 // Seller = context. TODO
-                Customer = (dynamic)(context.Customer as Organization) ?? (dynamic)(context.Customer as Person),
+                // Cast the ILegalEntity into either an Organization or a Person
+                Customer = (SingleValues<Organization, Person>?)(context.Customer as Organization) ?? (SingleValues<Organization, Person>?)(context.Customer as Person) ?? default,
                 BookingService = context.BookingService,
                 OrderedItem = orderedItems
             };

@@ -115,7 +115,7 @@ namespace OpenActive.Server.NET.OpenBookingHelper
         // Note this method exists just for type conversion to work as this is not C# 8.0
         private IBookableIdComponents GetIdComponentsWithOpportunityTypeAndInheritanceExt(OpportunityType? opportunityType, OpportunityType? orderOpportunityType, params Uri[] ids)
         {
-            return this.GetIdComponentsWithOpportunityType(opportunityType, ids);
+            return this.GetIdComponentsWithOpportunityTypeAndInheritance(opportunityType, orderOpportunityType, ids);
         }
 
         protected TBookableIdComponents GetIdComponentsWithOpportunityTypeAndInheritance(OpportunityType? opportunityType, OpportunityType? orderOpportunityType, params Uri[] ids)

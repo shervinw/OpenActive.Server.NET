@@ -20,7 +20,6 @@ namespace OpenActive.Server.NET.StoreBooking
             base.Payer = bookingFlowContext.Payer;
         }
 
-        public BookingFlowContext FlowContext { get; set; }
         public SellerIdComponents SellerIdComponents { get; set; }
         public ILegalEntity Customer { get; set; }
         public Organization Broker { get; internal set; }
