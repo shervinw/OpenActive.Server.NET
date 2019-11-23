@@ -63,6 +63,23 @@ namespace BookingSystem.AspNetCore.Controllers
         }
 
         /// <summary>
+        /// OrderQuote Deletion
+        /// DELETE api/openbooking/orders-quotes/ABCD1234
+        /// </summary>
+        [HttpDelete("orders-quotes/{uuid}")]
+        public IActionResult OrderQuoteDeletion([FromServices] IBookingEngine bookingEngine, string uuid)
+        {
+            try
+            {
+                return bookingEngine.DeleteOrderQuote(uuid).GetContentResult();
+            }
+            catch (OpenBookingException obe)
+            {
+                return obe.ErrorResponseContent.GetContentResult();
+            }
+        }
+
+        /// <summary>
         /// Order Creation B
         /// GET api/openbooking/orders/ABCD1234
         /// </summary>
@@ -88,8 +105,7 @@ namespace BookingSystem.AspNetCore.Controllers
         {
             try
             {
-                bookingEngine.DeleteOrder(uuid);
-                return NoContent();
+                return bookingEngine.DeleteOrder(uuid).GetContentResult();
             }
             catch (OpenBookingException obe)
             {
@@ -106,8 +122,7 @@ namespace BookingSystem.AspNetCore.Controllers
         {
             try
             {
-                bookingEngine.ProcessOrderUpdate(uuid, order);
-                return NoContent();
+                return bookingEngine.ProcessOrderUpdate(uuid, order).GetContentResult();
             }
             catch (OpenBookingException obe)
             {
@@ -140,8 +155,7 @@ namespace BookingSystem.AspNetCore.Controllers
         {
             try
             {
-                bookingEngine.CreateTestData(type, @event);
-                return NoContent();
+                return bookingEngine.CreateTestData(type, @event).GetContentResult();
             }
             catch (OpenBookingException obe)
             {
@@ -155,8 +169,7 @@ namespace BookingSystem.AspNetCore.Controllers
         {
             try
             {
-                bookingEngine.DeleteTestData(type, name);
-                return NoContent();
+                return bookingEngine.DeleteTestData(type, name).GetContentResult();
             }
             catch (OpenBookingException obe)
             {

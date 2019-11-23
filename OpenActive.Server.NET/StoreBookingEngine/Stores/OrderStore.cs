@@ -6,9 +6,65 @@ using System.Text;
 
 namespace OpenActive.Server.NET.StoreBooking
 {
-    
-    public abstract class OrderStore
+    public interface IOrderStore
     {
+        dynamic BeginOrderTransaction(FlowStage stage);
+        void CompleteOrderTransaction(dynamic databaseTransaction);
+        void RollbackOrderTransaction(dynamic databaseTransaction);
+        Lease CreateLease(OrderQuote responseOrderQuote, StoreBookingFlowContext context, dynamic dbTransaction);
+        void CreateOrder(Order responseOrder, StoreBookingFlowContext context, dynamic dbTransaction);
+        void CancelOrderItemByCustomer(OrderIdTemplate orderIdTemplate, OrderIdComponents orderId, List<OrderIdComponents> orderItemIds);
+        void DeleteOrder(OrderIdComponents orderId);
+        void DeleteLease(OrderIdComponents orderId);
+    }
+
+    public abstract class OrderStore<TDatabaseTransaction> : IOrderStore
+    {
+        public abstract Lease CreateLease(OrderQuote responseOrderQuote, StoreBookingFlowContext context, TDatabaseTransaction databaseTransaction);
+        public abstract void CreateOrder(Order responseOrder, StoreBookingFlowContext context, TDatabaseTransaction databaseTransaction);
+
+        public Lease CreateLease(OrderQuote responseOrderQuote, StoreBookingFlowContext context, dynamic dbTransaction)
+        {
+            return CreateLease(responseOrderQuote, context, (TDatabaseTransaction)dbTransaction);
+        }
+
+        public void CreateOrder(Order responseOrder, StoreBookingFlowContext context, dynamic dbTransaction)
+        {
+            CreateOrder(responseOrder, context, (TDatabaseTransaction)dbTransaction);
+        }
+
+
+
+        /// <summary>
+        /// Stage is provided as it depending on the implementation (e.g. what level of leasing is applied)
+        /// it might not be appropriate to create transactions for all stages.
+        /// Null can be returned in the case that a transaction has not been created.
+        /// </summary>
+        /// <param name="stage"></param>
+        /// <returns></returns>
+        protected abstract TDatabaseTransaction BeginOrderTransaction(FlowStage stage);
+        protected abstract void CompleteOrderTransaction(TDatabaseTransaction databaseTransaction);
+        protected abstract void RollbackOrderTransaction(TDatabaseTransaction databaseTransaction);
+
+        dynamic IOrderStore.BeginOrderTransaction(FlowStage stage)
+        {
+            return BeginOrderTransaction(stage);
+        }
+
+        void IOrderStore.CompleteOrderTransaction(dynamic databaseTransaction)
+        {
+            CompleteOrderTransaction((TDatabaseTransaction)databaseTransaction);
+        }
+
+        void IOrderStore.RollbackOrderTransaction(dynamic databaseTransaction)
+        {
+            RollbackOrderTransaction((TDatabaseTransaction)databaseTransaction);
+        }
+
+        public abstract void CancelOrderItemByCustomer(OrderIdTemplate orderIdTemplate, OrderIdComponents orderId, List<OrderIdComponents> orderItemIds);
+        public abstract void DeleteOrder(OrderIdComponents orderId);
+        public abstract void DeleteLease(OrderIdComponents orderId);
+
         /*
         public OrderItem CreateOrder<TOrder>(IBookableIdComponents opportunityOfferId, StoreBookingFlowContext<TOrder> context)
         {

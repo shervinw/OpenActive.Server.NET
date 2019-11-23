@@ -111,7 +111,7 @@ app.get('/feeds/scheduled-sessions', function (req, res) {
     afterTimestamp != null ? [
       [
         [
-          ["feedModified", "=", afterTimestamp], "AND", ["jsonLdId", ">", afterId] // Should use jsonLdId for robustness, except nSQL doesn't support string comparison
+          ["feedModified", "=", afterTimestamp], "AND", ["jsonLdId", ">", afterId] 
         ], "OR", ["feedModified", ">", afterTimestamp]
       ],
       "AND",

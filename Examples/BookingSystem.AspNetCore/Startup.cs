@@ -243,12 +243,22 @@ namespace BookingSystem.AspNetCore
                         }
                     }
                 },
+                // A list of the supported fields that are accepted by your system for payment details
+                // These are reflected back to the broker
+                PaymentSupportedFields = o => new Payment
+                {
+                    Name = o.Name,
+                    Identifier = o.Identifier,
+                    AccountId = o.AccountId,
+                    PaymentProviderId = o.PaymentProviderId
+                },
                 // List of _bookable_ opportunity types and which store to route to for each
                 OpenBookingStoreRouting = new Dictionary<IOpportunityStore, List<OpportunityType>> {
                     {
                         new SessionStore(), new List<OpportunityType> { OpportunityType.ScheduledSession }
                     }
-                }
+                },
+                OrderStore = new AcmeOrderStore(),
             }));
         }
 

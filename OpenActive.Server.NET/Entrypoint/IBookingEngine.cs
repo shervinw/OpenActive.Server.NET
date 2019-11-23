@@ -16,16 +16,17 @@ namespace OpenActive.Server.NET
     /// </summary>
     public interface IBookingEngine
     {
-        void DeleteOrder(string uuid);
+        ResponseContent DeleteOrder(string uuid);
+        ResponseContent DeleteOrderQuote(string uuid);
         ResponseContent GetOpenDataRPDEPageForFeed(string feedname, long? afterTimestamp, string afterId, long? afterChangeNumber);
         ResponseContent GetOpenDataRPDEPageForFeed(string feedname, string afterTimestamp, string afterId, string afterChangeNumber);
         ResponseContent ProcessOrderCreationB(string uuid, string orderJson);
         ResponseContent ProcessCheckpoint1(string uuid, string orderQuoteJson);
         ResponseContent ProcessCheckpoint2(string uuid, string orderQuoteJson);
-        void ProcessOrderUpdate(string uuid, string orderJson);
+        ResponseContent ProcessOrderUpdate(string uuid, string orderJson);
         ResponseContent RenderDatasetSite();
-        void CreateTestData(string opportunityType, string eventJson);
-        void DeleteTestData(string opportunityType, string name);
+        ResponseContent CreateTestData(string opportunityType, string eventJson);
+        ResponseContent DeleteTestData(string opportunityType, string name);
         ResponseContent GetOrdersRPDEPageForFeed(string authtoken, string afterTimestamp, string afterId, string afterChangeNumber);
         ResponseContent GetOrdersRPDEPageForFeed(string authtoken, long? afterTimestamp, string afterId, long? afterChangeNumber);
     }

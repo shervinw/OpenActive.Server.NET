@@ -109,30 +109,31 @@ namespace BookingSystem.FakeDatabase
 
         }
 
-        public List<BookingTable> Bookings { get; set; } = new List<BookingTable>();
-        public class BookingTable : Table
-        {
-            public string Firstname { get; set; }
-            public string Surname { get; set; }
-            public string Email { get; set; }
-        }
-
         public List<OrderItemsTable> OrderItems { get; set; } = new List<OrderItemsTable>();
         public class OrderItemsTable : Table
         {
-
+            public int OrderItemId { get; set; }
+            public int OrderId { get; set; }
+            public int ClassId { get; set; }
         }
 
         public List<OrderTable> Orders { get; set; } = new List<OrderTable>();
         public class OrderTable : Table
         {
+            public int OrderId { get; set; }
+            public int ClassId { get; set; }
+            public int SellerId { get; set; }
 
+            public string Firstname { get; set; }
+            public string Surname { get; set; }
+            public string Email { get; set; }
 
         }
 
         public List<SellerTable> Sellers { get; set; } = new List<SellerTable>();
         public class SellerTable : Table
         {
+            public int SellerId { get; set; }
             public string Name { get; set; }
 
         }

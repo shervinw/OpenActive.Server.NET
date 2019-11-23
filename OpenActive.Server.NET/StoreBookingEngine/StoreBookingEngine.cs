@@ -72,12 +72,33 @@ namespace OpenActive.Server.NET.StoreBooking
 
 
 
+        public override void ProcessCustomerCancellation(OrderIdTemplate orderIdTemplate, OrderIdComponents orderId, List<OrderIdComponents> orderItemIds)
+        {
+            storeBookingEngineSettings.OrderStore.CancelOrderItemByCustomer(orderIdTemplate, orderId, orderItemIds);
+        }
+
+        protected override void ProcessOrderDeletion(OrderIdComponents orderId)
+        {
+            storeBookingEngineSettings.OrderStore.DeleteOrder(orderId);
+        }
+
+        protected override void ProcessOrderQuoteDeletion(OrderIdComponents orderId)
+        {
+            storeBookingEngineSettings.OrderStore.DeleteLease(orderId);
+        }
+
         public override TOrder ProcessFlowRequest<TOrder>(BookingFlowContext request, TOrder order)
         {
             StoreBookingFlowContext context = new StoreBookingFlowContext(request);
 
+            // Throw error on incomplete customer details
+            if (order.Customer == null || string.IsNullOrWhiteSpace(order.Customer.Email))
+            {
+                throw new OpenBookingException(new IncompleteCustomerDetailsError());
+            }
+
             // Reflect back only those customer fields that are supported
-            switch (order.Customer.Value)
+            switch (order.Customer)
             {
                 case Organization organization:
                     context.Customer = storeBookingEngineSettings.CustomerOrganizationSupportedFields(organization);
@@ -88,30 +109,34 @@ namespace OpenActive.Server.NET.StoreBooking
                     break;
             }
 
+            // Throw error on incomplete broker details
+            if (order.BrokerRole != BrokerType.NoBroker && (order.Broker == null || string.IsNullOrWhiteSpace(order.Broker.Name)))
+            {
+                throw new OpenBookingException(new IncompleteBrokerDetailsError());
+            }
+
             // Reflect back only those broker fields that are supported
             context.Broker = storeBookingEngineSettings.BrokerSupportedFields(order.Broker);
-            
+
+            // Reflect back only those broker fields that are supported
+            context.Payment = order.Payment == null ? null : storeBookingEngineSettings.PaymentSupportedFields(order.Payment);
+
             // Add broker role to context for completeness
             context.BrokerRole = order.BrokerRole;
 
             // Get static BookingService fields from settings
             context.BookingService = storeBookingEngineSettings.BookingServiceDetails;
 
-            // TODO: GET Organization seller from a store
-            context.SellerIdComponents = new SellerIdComponents();
-
-            // Resolve each OrderItem via a store, then augment the result with errors based on validation conditions
-            var orderedItems = order.OrderedItem.Select(orderItem =>
-            {
+            // Resolve the ID of each OrderItem via a store, then augment the result with errors based on validation conditions
+            var orderItemGroups = order.OrderedItem.Select(orderItem => {
+                // Error if this group of types is not recognised
                 if (!base.IsOpportunityTypeRecognised(orderItem.OrderedItem.Type))
                 {
                     // TODO: Update data model to throw actual error for all occurances of OpenBookingError
-                    throw new OpenBookingException(new OpenBookingError(), $"The type of opportunity specified is not recognised as bookable: '{orderItem.OrderedItem.Type}'.");
+                    throw new OpenBookingException(new OpenBookingError(), $"The type of opportunity specified is not configured as bookable: '{orderItem.OrderedItem.Type}'.");
                 }
 
-                IBookableIdComponents idComponents =
-                    base.ResolveOpportunityID(orderItem.OrderedItem.Type, orderItem.OrderedItem.Id, orderItem.AcceptedOffer.Id);
-
+                var idComponents = base.ResolveOpportunityID(orderItem.OrderedItem.Type, orderItem.OrderedItem.Id, orderItem.AcceptedOffer.Id);
                 if (idComponents == null)
                 {
                     // TODO: Update data model to throw actual error for all occurances of OpenBookingError
@@ -122,78 +147,191 @@ namespace OpenActive.Server.NET.StoreBooking
                 {
                     throw new EngineConfigurationException("OpportunityType must be configured for each IdComponent entry in the settings.");
                 }
+                return idComponents;
+            })
+            // Group by OpportunityType for processing
+            .GroupBy(idComponents => idComponents.OpportunityType.Value)
 
-                var store = storeRouting[idComponents.OpportunityType.Value];
-
+            // Get OrderItems first, to check no conflicts exist and that all items are valid
+            .Select(idComponentsGroup =>
+            {
+                var opportunityType = idComponentsGroup.Key;
+                var idComponentsList = idComponentsGroup.ToList();
+                var store = storeRouting[opportunityType];
                 if (store == null)
                 {
-                    throw new EngineConfigurationException($"Store is not defined for {idComponents.OpportunityType.Value}");
+                    throw new EngineConfigurationException($"Store is not defined for {opportunityType}");
                 }
 
-                var rawOrderItem = store.GetOrderItem(idComponents, context);
+                // QUESTION: Should GetOrderItems occur within the transaction?
+                // Currently this is optimised for the transaction to have minimal query coverage (i.e. write-only)
 
-                // TODO: Implement error logic for all types of item errors based on the results of this
+                return new
+                {
+                    OpportunityType = opportunityType,
+                    IdComponentsList = idComponentsList,
+                    Store = store,
+                    // TODO: Implement error logic for all types of item errors based on the results of this
+                    OrderItems = store.GetOrderItems(idComponentsList, context)
+                };
+            });
 
-                
-
-                // QUESTION: Do we need to force them into include the seller twice??
-
-                
-
-                /*
-                switch (rawOrderItem?.OrderedItem) {
-                    case SessionSeries sessionSeries:
-                        sellerId = sessionSeries?.SuperEvent?.Organizer.Value1?.Id ?? sessionSeries?.SuperEvent?.Organizer.Value2?.Id;
-                        Seller seller2 = sessionSeries?.SuperEvent?.Organizer.Value1;
-                        Organization org = sessionSeries?.SuperEvent?.Organizer;
-                        seller2.WrappedValue
-                        break;
-                    case Slot slot:
-                        sellerId = slot?.FacilityUse.Value3?.Provider?.Id ?? slot?.FacilityUse.Value3?.Provider?.Id;
-                        break;
-                    case Event @event: // Should catch HeadlineEvent, Course, etc too
-                        sellerId = @event?.SuperEvent?.Organizer.Value1?.Id ?? @event?.SuperEvent?.Organizer.Value2?.Id
-                            ?? @event?.Organizer.Value1?.Id ?? @event?.Organizer.Value2?.Id;
-                        break;
-                    case null:
-                    default:
-                        throw new OpenBookingException(new OpenBookingError(), "Seller not provided in supplied OrderItem");
-                }
-                */
-
-                return rawOrderItem;
-            }).ToList();
-
-            TOrder responseOrder = new TOrder
+            TOrder responseGenericOrder = new TOrder
             {
-                Id = context.OrderIdTemplate.RenderOrderId(context.OrderIdComponents),
+                Id = context.OrderIdTemplate.RenderOrderId(context.OrderId),
                 BrokerRole = context.BrokerRole,
                 Broker = context.Broker,
-                // Seller = context. TODO
-                // Cast the ILegalEntity into either an Organization or a Person
-                Customer = (SingleValues<Organization, Person>?)(context.Customer as Organization) ?? (SingleValues<Organization, Person>?)(context.Customer as Person) ?? default,
+                Seller = context.Seller,
+                Customer = context.Customer,
                 BookingService = context.BookingService,
-                OrderedItem = orderedItems
+                Payment = context.Payment,
+                OrderedItem = orderItemGroups.SelectMany(x => x.OrderItems).ToList()
             };
 
-            return responseOrder;
+            // Add totals to the resulting Order
+            OrderCalculations.AugmentOrderWithTotals(responseGenericOrder);
+
+            switch (responseGenericOrder)
+            {
+                case OrderQuote responseOrderQuote:
+                    if (!(context.Stage == FlowStage.C1 || context.Stage == FlowStage.C2))
+                        throw new OpenBookingException(new OpenBookingError(), "Unexpected Order type provided");
+
+                    // Note behaviour here is to lease those items that are available to be leased, and return errors for everything else
+                    // Leasing is optimistic, booking is atomic
+                    using (dynamic dbTransaction = storeBookingEngineSettings.OrderStore.BeginOrderTransaction(context.Stage))
+                    {
+                        try
+                        {
+                            responseOrderQuote.Lease = storeBookingEngineSettings.OrderStore.CreateLease(responseOrderQuote, context, dbTransaction);
+
+                            // Lease the OrderItems
+                            responseOrderQuote.OrderedItem = orderItemGroups.Select(g =>
+                            {
+                                // Errors produced by LeaseOrderItem are in the same order as the items provided
+                                // This interface encourages implementers not to make any alterations to the OrderItems at the lease stage
+                                List<List<OpenBookingError>> leaseResults = g.Store.LeaseOrderItems(g.IdComponentsList, context, dbTransaction);
+
+                                // Combine the resulting errors with the existing errors
+                                return g.OrderItems.Zip(leaseResults, (orderItem, errors) =>
+                                {
+                                    if (orderItem.Error == null)
+                                    {
+                                        orderItem.Error = errors;
+                                    }
+                                    else
+                                    {
+                                        orderItem.Error.AddRange(errors);
+                                    }
+                                    return orderItem;
+                                });
+                            })
+                            .SelectMany(x => x)
+                            .ToList();
+
+                            storeBookingEngineSettings.OrderStore.CompleteOrderTransaction(dbTransaction);
+                        }
+                        catch
+                        {
+                            storeBookingEngineSettings.OrderStore.RollbackOrderTransaction(dbTransaction);
+                            throw;
+                        }
+                    }
+                    break;
+
+                case Order responseOrder:
+                    if (context.Stage != FlowStage.B)
+                        throw new OpenBookingException(new OpenBookingError(), "Unexpected Order type provided");
+
+                    // Throw error on incomplete broker details
+                    if (order.TotalPaymentDue != responseOrder.TotalPaymentDue)
+                    {
+                        throw new OpenBookingException(new TotalPaymentDueMismatchError());
+                    }
+
+                    // Booking is atomic
+                    using (dynamic dbTransaction = storeBookingEngineSettings.OrderStore.BeginOrderTransaction(context.Stage))
+                    {
+                        try
+                        {
+                            // Create the parent Order
+                            storeBookingEngineSettings.OrderStore.CreateOrder(responseOrder, context, dbTransaction);
+
+                            // Book the OrderItems (which also creates the OrderItems against the Order)
+                            responseOrder.OrderedItem = orderItemGroups.Select(g =>
+                            {
+                                // Booking is atomic, so this will succeed or throw an exception that will cause the whole transaction to fail
+                                List<OrderIdComponents> orderItemIds = g.Store.BookOrderItems(g.IdComponentsList, g.OrderItems, context, dbTransaction);
+
+                                // Combine the resulting errors with the existing errors
+                                return g.OrderItems.Zip(orderItemIds, (orderItem, orderItemId) =>
+                                {
+                                    orderItem.Id = context.OrderIdTemplate.RenderOrderItemId(orderItemId);
+                                    return orderItem;
+                                });
+                            })
+                            .SelectMany(x => x)
+                            .ToList();
+
+                            storeBookingEngineSettings.OrderStore.CompleteOrderTransaction(dbTransaction);
+                        }
+                        catch
+                        {
+                            storeBookingEngineSettings.OrderStore.RollbackOrderTransaction(dbTransaction);
+                            throw;
+                        }
+                    }
+                    break;
+
+                default:
+                    throw new OpenBookingException(new OpenBookingError(), "Unexpected Order type provided");
+            }
+
+            return responseGenericOrder;
+
+
+
+
+            // QUESTION: Do we need to force them into include the seller twice??
+
+
+
+            /*
+            switch (rawOrderItem?.OrderedItem) {
+                case SessionSeries sessionSeries:
+                    sellerId = sessionSeries?.SuperEvent?.Organizer.Value1?.Id ?? sessionSeries?.SuperEvent?.Organizer.Value2?.Id;
+                    Seller seller2 = sessionSeries?.SuperEvent?.Organizer.Value1;
+                    Organization org = sessionSeries?.SuperEvent?.Organizer;
+                    seller2.WrappedValue
+                    break;
+                case Slot slot:
+                    sellerId = slot?.FacilityUse.Value3?.Provider?.Id ?? slot?.FacilityUse.Value3?.Provider?.Id;
+                    break;
+                case Event @event: // Should catch HeadlineEvent, Course, etc too
+                    sellerId = @event?.SuperEvent?.Organizer.Value1?.Id ?? @event?.SuperEvent?.Organizer.Value2?.Id
+                        ?? @event?.Organizer.Value1?.Id ?? @event?.Organizer.Value2?.Id;
+                    break;
+                case null:
+                default:
+                    throw new OpenBookingException(new OpenBookingError(), "Seller not provided in supplied OrderItem");
+            }
+            */
+
+            //    return rawOrderItem;
+            //}).ToList();
+
         }
+
+
+
+
 
         /*
          * 
-        // Get seller info (note Id has already been validated in Abstract
-        var seller = store.GetSeller(authKey, orderQuote.Seller.Id, data);
-
-
 
         // The below goes into RpdeBase
 
-    // Map all requested OrderedItems to their full details, and validate any details provided if at C2
-    var orderedItems = orderQuote.orderedItem.Select(x => 
-      // Validate input OrderItem
-      {
-        if (x.acceptedOffer && x.orderedItem) {
-         
+
 
           var sellerId = fullOrderItem.organizer.id || fullOrderItem.superEvent.organizer.id || fullOrderItem.facilityUse.organizer.id || fullOrderItem.superEvent.superEvent.organizer.id;
 

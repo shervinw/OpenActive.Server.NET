@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net;
 using System.Net.Http;
 using System.Text;
 using OpenActive.DatasetSite.NET;
@@ -281,43 +282,95 @@ namespace OpenActive.Server.NET.CustomBooking
 
         public ResponseContent ProcessCheckpoint1(string uuid, string orderQuoteJson)
         {
-            OrderQuote orderQuote = OpenActiveSerializer.Deserialize<OrderQuote>(orderQuoteJson);
-            return ResponseContent.OpenBookingResponse(ValidateFlowRequest<OrderQuote>(FlowStage.C1, uuid, OrderType.OrderQuoteTemplate, orderQuote).ToString());
+            return ProcessCheckpoint(uuid, orderQuoteJson, FlowStage.C1, OrderType.OrderQuoteTemplate);
         }
         public ResponseContent ProcessCheckpoint2(string uuid, string orderQuoteJson)
         {
+            return ProcessCheckpoint(uuid, orderQuoteJson, FlowStage.C2, OrderType.OrderQuote);
+        }
+        private ResponseContent ProcessCheckpoint(string uuid, string orderQuoteJson, FlowStage flowStage, OrderType orderType)
+        {
             OrderQuote orderQuote = OpenActiveSerializer.Deserialize<OrderQuote>(orderQuoteJson);
-            return ResponseContent.OpenBookingResponse(ValidateFlowRequest<OrderQuote>(FlowStage.C2, uuid, OrderType.OrderQuote, orderQuote).ToString());
+            var orderResponse = ValidateFlowRequest<Order>(flowStage, uuid, orderType, orderQuote);
+            // Return a 409 status code if any OrderItem level errors exist
+            return ResponseContent.OpenBookingResponse(orderResponse.ToString(),
+                orderResponse.OrderedItem.Exists(x => x.Error?.Count > 0) ? HttpStatusCode.Conflict : HttpStatusCode.OK);
         }
         public ResponseContent ProcessOrderCreationB(string uuid, string orderJson)
         {
+            // Note B will never contain OrderItem level errors, and any issues that occur will be thrown as exceptions.
+            // If C1 and C2 are used correctly, B should not fail except in very exceptional cases.
             Order order = OpenActiveSerializer.Deserialize<Order>(orderJson);
-            return ResponseContent.OpenBookingResponse(ValidateFlowRequest<Order>(FlowStage.B, uuid, OrderType.Order, order).ToString());
+            return ResponseContent.OpenBookingResponse(ValidateFlowRequest<Order>(FlowStage.B, uuid, OrderType.Order, order).ToString(), HttpStatusCode.OK);
         }
-        public void DeleteOrder(string uuid)
+        public ResponseContent DeleteOrder(string uuid)
         {
-            throw new NotImplementedException();
+            ProcessOrderDeletion(new OrderIdComponents { OrderType = OrderType.Order, uuid = uuid });
+
+            return ResponseContent.OpenBookingNoContentResponse();
         }
 
-        public void ProcessOrderUpdate(string uuid, string orderJson)
+        protected abstract void ProcessOrderDeletion(OrderIdComponents orderIdComponents);
+
+        public ResponseContent DeleteOrderQuote(string uuid)
         {
-            throw new NotImplementedException();
+            ProcessOrderQuoteDeletion(new OrderIdComponents { OrderType = OrderType.OrderQuote, uuid = uuid });
+
+            return ResponseContent.OpenBookingNoContentResponse();
         }
+
+        protected abstract void ProcessOrderQuoteDeletion(OrderIdComponents orderIdComponents);
+
+        public ResponseContent ProcessOrderUpdate(string uuid, string orderJson)
+        {
+            Order order = OpenActiveSerializer.Deserialize<Order>(orderJson);
+
+            // Check for PatchContainsExcessiveProperties
+            Order orderWithOnlyAllowedProperties = new Order
+            {
+                OrderedItem = order.OrderedItem.Select(x => new OrderItem { Id = x.Id, OrderItemStatus = x.OrderItemStatus }).ToList()
+            };
+            if (OpenActiveSerializer.Serialize<Order>(order) != OpenActiveSerializer.Serialize<Order>(orderWithOnlyAllowedProperties)) {
+                throw new OpenBookingException(new PatchContainsExcessiveProperties());
+            }
+
+            // Check for PatchNotAllowedOnProperty
+            if (!order.OrderedItem.TrueForAll(x => x.OrderItemStatus == OrderItemStatus.CustomerCancelled))
+            {
+                throw new OpenBookingException(new PatchNotAllowedOnProperty(), "Only 'https://openactive.io/CustomerCancelled' is permitted for this property.");
+            }
+
+            var orderItemIds = order.OrderedItem.Select(x => settings.OrderIdTemplate.GetOrderItemIdComponents(x.Id)).ToList();
+
+            // Check for mismatching UUIDs
+            if (!orderItemIds.TrueForAll(x => x.OrderType == OrderType.Order && x.uuid == uuid))
+            {
+                throw new OpenBookingException(new OpenBookingError(), "The UUID for each OrderItem specified must match the UUID of the Order being PATCHed.");
+            }
+
+            ProcessCustomerCancellation(settings.OrderIdTemplate, new OrderIdComponents { OrderType = OrderType.Order, uuid = uuid }, orderItemIds);
+
+            return ResponseContent.OpenBookingNoContentResponse();
+        }
+
+        public abstract void ProcessCustomerCancellation(OrderIdTemplate orderIdTemplate, OrderIdComponents orderId, List<OrderIdComponents> orderItemIds);
 
         // Note opportunityType is required here to facilitate routing to the correct store to handle the request
-        public void CreateTestData(string opportunityType, string eventJson)
+        public ResponseContent CreateTestData(string opportunityType, string eventJson)
         {
             // Temporary hack while waiting for OpenActive.NET to deserialize subclasses correctly
             ScheduledSession @event = OpenActiveSerializer.Deserialize<ScheduledSession>(eventJson);
             this.CreateTestDataItem((OpportunityType)Enum.Parse(typeof(OpportunityType), opportunityType, true), @event);
+            return ResponseContent.OpenBookingNoContentResponse();
         }
 
         protected abstract void CreateTestDataItem(OpportunityType opportunityType, Event @event);
 
         // Note opportunityType is required here to facilitate routing to the correct store to handle the request
-        public void DeleteTestData(string opportunityType, string name)
+        public ResponseContent DeleteTestData(string opportunityType, string name)
         {
             this.DeleteTestDataItem((OpportunityType)Enum.Parse(typeof(OpportunityType), opportunityType, true), name);
+            return ResponseContent.OpenBookingNoContentResponse();
         }
 
         protected abstract void DeleteTestDataItem(OpportunityType opportunityType, string name);
@@ -334,7 +387,7 @@ namespace OpenActive.Server.NET.CustomBooking
 
             // TODO: Add more request validation rules here
 
-            var sellerID = orderQuote.Seller.GetClass<Organization>()?.Id ?? orderQuote.Seller.GetClass<Person>()?.Id;
+            var sellerID = orderQuote.Seller.Id;
 
             // Check that taxMode is set in Seller
             if (sellerID == null)
@@ -366,19 +419,23 @@ namespace OpenActive.Server.NET.CustomBooking
             }
 
             TaxPayeeRelationship taxPayeeRelationship = orderQuote.BrokerRole == BrokerType.ResellerBroker
-                || orderQuote.Customer.HasValueOfType<Organization>() ? TaxPayeeRelationship.BusinessToBusiness : TaxPayeeRelationship.BusinessToConsumer;
+                || orderQuote.Customer.IsOrganization ? TaxPayeeRelationship.BusinessToBusiness : TaxPayeeRelationship.BusinessToConsumer;
 
             var payer = orderQuote.BrokerRole == BrokerType.ResellerBroker ? orderQuote.Broker : orderQuote.Customer;
 
             return ProcessFlowRequest<O>(new BookingFlowContext {
                 Stage = stage,
-                OrderIdComponents = orderIdComponents,
+                OrderId = orderIdComponents,
                 OrderIdTemplate = settings.OrderIdTemplate,
+                Seller = seller,
+                SellerId = sellerIdComponents,
                 TaxPayeeRelationship = taxPayeeRelationship,
-                Payer = payer }, orderQuote);
+                Payer = payer 
+            }, orderQuote);
         }
 
         public abstract TOrder ProcessFlowRequest<TOrder>(BookingFlowContext request, TOrder order) where TOrder : Order, new();
+
 
     }
 }

@@ -24,13 +24,23 @@ namespace OpenActive.Server.NET.OpenBookingHelper
             };
         }
 
-        public static ResponseContent OpenBookingResponse (string content)
+        public static ResponseContent OpenBookingResponse (string content, HttpStatusCode httpStatusCode)
         {
             return new ResponseContent
             {
                 Content = content,
                 ContentType = MediaTypeNames.OpenBooking.Version1,
-                StatusCode = HttpStatusCode.OK
+                StatusCode = httpStatusCode
+            };
+        }
+
+        public static ResponseContent OpenBookingNoContentResponse()
+        {
+            return new ResponseContent
+            {
+                Content = null,
+                ContentType = MediaTypeNames.OpenBooking.Version1,
+                StatusCode = HttpStatusCode.NoContent
             };
         }
 

@@ -11,6 +11,7 @@ using static BookingSystem.FakeDatabase.FakeDatabase;
 using OpenActive.DatasetSite.NET;
 using OpenActive.Server.NET.StoreBooking;
 using OpenActive.Server.NET.OpenBookingHelper;
+using System.Data.Common;
 
 namespace BookingSystem.AspNetCore
 {
@@ -18,7 +19,7 @@ namespace BookingSystem.AspNetCore
     /// <summary>
     /// TODO: Move to BookingSystem.AspNetCore
     /// </summary>
-    class SessionStore : OpportunityStore<SessionOpportunity>, IOpportunityStore
+    class SessionStore : OpportunityStore<SessionOpportunity, DbTransaction>
     {
         
         public override void CreateTestDataItem(OpportunityType opportunityType, Event @event)
@@ -41,12 +42,16 @@ namespace BookingSystem.AspNetCore
             FakeBookingSystem.Database.DeleteClass(name);
         }
 
+
         // Similar to the RPDE logic, this needs to render and return an OrderItem from the database
-        protected override OrderItem GetOrderItem(SessionOpportunity opportunityOfferId, /* Person attendeeDetails, */ StoreBookingFlowContext context)
+        protected override List<OrderItem> GetOrderItem(List<SessionOpportunity> opportunityOfferIds, /* Person attendeeDetails, */ StoreBookingFlowContext context)
         {
+
+            // Note the implementation of this method must also check that this OrderItem is from the Seller specified by context.SellerIdComponents
+            
             var query = from occurances in FakeBookingSystem.Database.Occurrences
                         join classes in FakeBookingSystem.Database.Classes on occurances.ClassId equals classes.Id
-                        where occurances.Id == opportunityOfferId.ScheduledSessionId
+                        join opportunityOfferId in opportunityOfferIds on occurances.Id equals opportunityOfferId.ScheduledSessionId
                         // and offers.id = opportunityOfferId.OfferId
                         select new OrderItem
                         {
@@ -91,7 +96,17 @@ namespace BookingSystem.AspNetCore
                                 EndDate = (DateTimeOffset)occurances.End
                             }
                         };
-            return query.First();
+            return query.ToList();
+        }
+
+        protected override List<List<OpenBookingError>> LeaseOrderItem(List<SessionOpportunity> opportunityOfferId, StoreBookingFlowContext context, DbTransaction dbTransaction)
+        {
+            throw new NotImplementedException();
+        }
+
+        protected override List<OrderIdComponents> BookOrderItem(List<SessionOpportunity> opportunityOfferId, List<OrderItem> orderItems, StoreBookingFlowContext context, DbTransaction dbTransaction)
+        {
+            throw new NotImplementedException();
         }
     }
 
