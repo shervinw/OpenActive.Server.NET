@@ -4,7 +4,7 @@ using OpenActive.Server.NET;
 using System.Data;
 using System.Linq;
 using Xunit.Abstractions;
-using BookingSystem.FakeDatabase;
+using OpenActive.FakeDatabase.NET;
 
 namespace OpenActive.Server.NET.Tests
 {

@@ -23,7 +23,7 @@ Project("{9092AA53-FB77-4645-B42D-1CCCA6BD08BD}") = "openactive-broker-microserv
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Fakes", "Fakes", "{1AA583F8-863F-47D4-9FDF-C43664DAAF6E}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "OpenActive.Faker.NET", "Fakes\BookingSystem.FakeDatabase\OpenActive.Faker.NET.csproj", "{2956659B-7F1F-4405-B34F-16C361BF0393}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "OpenActive.FakeDatabase.NET", "Fakes\BookingSystem.FakeDatabase\OpenActive.FakeDatabase.NET.csproj", "{2956659B-7F1F-4405-B34F-16C361BF0393}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

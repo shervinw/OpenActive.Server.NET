@@ -10,12 +10,15 @@ namespace OpenActive.Server.NET.OpenBookingHelper
     public abstract class OrdersRPDEFeedGenerator : IRPDEFeedGenerator
     {
         public int RPDEPageSize { get; private set; }
-        private OrderIdTemplate IdTemplate { get; set; }
+        private OrderIdTemplate OrderIdTemplate { get; set; }
+        private SingleIdTemplate<SellerIdComponents> SellerIdTemplate { get; set; }
         protected Uri FeedUrl { get; private set; }
 
-        internal void SetConfiguration(int rpdePageSize, OrderIdTemplate template,  Uri offersFeedUrl)
+        internal void SetConfiguration(int rpdePageSize, OrderIdTemplate orderIdTemplate, SingleIdTemplate<SellerIdComponents> sellerIdTemplate, Uri offersFeedUrl)
         {
-            this.IdTemplate = template;
+            this.OrderIdTemplate = orderIdTemplate;
+
+            this.SellerIdTemplate = sellerIdTemplate;
 
             this.RPDEPageSize = rpdePageSize;
 
@@ -25,17 +28,41 @@ namespace OpenActive.Server.NET.OpenBookingHelper
 
         protected Uri RenderOrderId(OrderType orderType, string uuid)
         {
-            return this.RenderOrderId(orderType, uuid);
+            return this.OrderIdTemplate.RenderOrderId(orderType, uuid);
         }
 
         //TODO reduce duplication of the strings / logic below
         protected Uri RenderOrderItemId(OrderType orderType, string uuid, string orderItemId)
         {
-            return this.RenderOrderItemId(orderType, uuid, orderItemId);
+            return this.OrderIdTemplate.RenderOrderItemId(orderType, uuid, orderItemId);
         }
         protected Uri RenderOrderItemId(OrderType orderType, string uuid, long orderItemId)
         {
-            return this.RenderOrderItemId(orderType, uuid, orderItemId);
+            return this.OrderIdTemplate.RenderOrderItemId(orderType, uuid, orderItemId);
+        }
+
+        protected Uri RenderSellerId(SellerIdComponents sellerIdComponents)
+        {
+            return this.SellerIdTemplate.RenderId(sellerIdComponents);
+        }
+
+        protected static Event RenderOpportunityWithOnlyId(string jsonLdType, Uri id)
+        {
+            switch (jsonLdType)
+            {
+                case nameof(Event):
+                    return new Event { Id = id };
+                case nameof(ScheduledSession):
+                    return new ScheduledSession { Id = id };
+                case nameof(HeadlineEvent):
+                    return new HeadlineEvent { Id = id };
+                case nameof(Slot):
+                    return new Slot { Id = id };
+                case nameof(CourseInstance):
+                    return new CourseInstance { Id = id };
+                default:
+                    return null;
+            }
         }
 
         /// <summary>

@@ -82,7 +82,7 @@ namespace OpenActive.Server.NET.CustomBooking
                 kv.Value.SetConfiguration(OpportunityTypes.Configurations[kv.Key], settings.JsonLdIdBaseUrl, settings.RPDEPageSize, this.feedAssignedTemplates[kv.Key], settings.SellerIdTemplate, openDataFeedBaseUrl);
             }
 
-            settings.OrderFeedGenerator.SetConfiguration(settings.RPDEPageSize, settings.OrderIdTemplate, settings.OrdersFeedUrl);
+            settings.OrderFeedGenerator.SetConfiguration(settings.RPDEPageSize, settings.OrderIdTemplate, settings.SellerIdTemplate, settings.OrdersFeedUrl);
 
             settings.SellerStore.SetConfiguration(settings.SellerIdTemplate);
 

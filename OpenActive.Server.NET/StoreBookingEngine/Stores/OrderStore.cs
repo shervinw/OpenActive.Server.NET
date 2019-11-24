@@ -11,26 +11,26 @@ namespace OpenActive.Server.NET.StoreBooking
         dynamic BeginOrderTransaction(FlowStage stage);
         void CompleteOrderTransaction(dynamic databaseTransaction);
         void RollbackOrderTransaction(dynamic databaseTransaction);
-        Lease CreateLease(OrderQuote responseOrderQuote, StoreBookingFlowContext context, dynamic dbTransaction);
-        void CreateOrder(Order responseOrder, StoreBookingFlowContext context, dynamic dbTransaction);
-        void CancelOrderItemByCustomer(OrderIdTemplate orderIdTemplate, OrderIdComponents orderId, List<OrderIdComponents> orderItemIds);
+        Lease CreateLease(FlowStage flowStage, OrderQuote orderQuote, StoreBookingFlowContext context, dynamic dbTransaction);
+        void CreateOrder(Order order, StoreBookingFlowContext context, dynamic dbTransaction);
+        bool CustomerCancelOrderItems(OrderIdTemplate orderIdTemplate, OrderIdComponents orderId, List<OrderIdComponents> orderItemIds);
         void DeleteOrder(OrderIdComponents orderId);
         void DeleteLease(OrderIdComponents orderId);
     }
 
     public abstract class OrderStore<TDatabaseTransaction> : IOrderStore
     {
-        public abstract Lease CreateLease(OrderQuote responseOrderQuote, StoreBookingFlowContext context, TDatabaseTransaction databaseTransaction);
-        public abstract void CreateOrder(Order responseOrder, StoreBookingFlowContext context, TDatabaseTransaction databaseTransaction);
+        public abstract Lease CreateLease(FlowStage flowStage, OrderQuote orderQuote, StoreBookingFlowContext context, TDatabaseTransaction databaseTransaction);
+        public abstract void CreateOrder(Order order, StoreBookingFlowContext context, TDatabaseTransaction databaseTransaction);
 
-        public Lease CreateLease(OrderQuote responseOrderQuote, StoreBookingFlowContext context, dynamic dbTransaction)
+        public Lease CreateLease(FlowStage flowStage, OrderQuote orderQuote, StoreBookingFlowContext context, dynamic dbTransaction)
         {
-            return CreateLease(responseOrderQuote, context, (TDatabaseTransaction)dbTransaction);
+            return CreateLease(flowStage, orderQuote, context, (TDatabaseTransaction)dbTransaction);
         }
 
-        public void CreateOrder(Order responseOrder, StoreBookingFlowContext context, dynamic dbTransaction)
+        public void CreateOrder(Order order, StoreBookingFlowContext context, dynamic dbTransaction)
         {
-            CreateOrder(responseOrder, context, (TDatabaseTransaction)dbTransaction);
+            CreateOrder(order, context, (TDatabaseTransaction)dbTransaction);
         }
 
 
@@ -61,7 +61,7 @@ namespace OpenActive.Server.NET.StoreBooking
             RollbackOrderTransaction((TDatabaseTransaction)databaseTransaction);
         }
 
-        public abstract void CancelOrderItemByCustomer(OrderIdTemplate orderIdTemplate, OrderIdComponents orderId, List<OrderIdComponents> orderItemIds);
+        public abstract bool CustomerCancelOrderItems(OrderIdTemplate orderIdTemplate, OrderIdComponents orderId, List<OrderIdComponents> orderItemIds);
         public abstract void DeleteOrder(OrderIdComponents orderId);
         public abstract void DeleteLease(OrderIdComponents orderId);
 

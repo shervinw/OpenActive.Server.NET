@@ -15,7 +15,7 @@ namespace OpenActive.Server.NET.StoreBooking
         */
 
         List<OrderItem> GetOrderItems(List<IBookableIdComponents> opportunityOfferId, StoreBookingFlowContext context);
-        List<List<OpenBookingError>> LeaseOrderItems(List<IBookableIdComponents> opportunityOfferId, StoreBookingFlowContext context, dynamic databaseTransactionContext);
+        List<OpenBookingError> LeaseOrderItems(List<IBookableIdComponents> opportunityOfferId, StoreBookingFlowContext context, dynamic databaseTransactionContext);
         List<OrderIdComponents> BookOrderItems(List<IBookableIdComponents> opportunityOfferId, List<OrderItem> orderItems, StoreBookingFlowContext context, dynamic databaseTransactionContext);
 
         void CreateTestDataItem(OpportunityType opportunityType, Event @event);
@@ -45,7 +45,7 @@ namespace OpenActive.Server.NET.StoreBooking
             return GetOrderItem(opportunityOfferId.ConvertAll<TComponents>(x => (TComponents)x), context);
         }
 
-        public List<List<OpenBookingError>> LeaseOrderItems(List<IBookableIdComponents> opportunityOfferId, StoreBookingFlowContext context, dynamic databaseTransactionContext)
+        public List<OpenBookingError> LeaseOrderItems(List<IBookableIdComponents> opportunityOfferId, StoreBookingFlowContext context, dynamic databaseTransactionContext)
         {
             CheckOpportunityTypeMatch(opportunityOfferId);
 
@@ -76,7 +76,7 @@ namespace OpenActive.Server.NET.StoreBooking
         /// <param name="opportunityOfferId"></param>
         /// <param name="context"></param>
         /// <returns></returns>
-        protected abstract List<List<OpenBookingError>> LeaseOrderItem(List<TComponents> opportunityOfferId, StoreBookingFlowContext context, TDatabaseTransaction databaseTransactionContext);
+        protected abstract List<OpenBookingError> LeaseOrderItem(List<TComponents> opportunityOfferId, StoreBookingFlowContext context, TDatabaseTransaction databaseTransactionContext);
 
         public abstract void CreateTestDataItem(OpportunityType opportunityType, Event @event);
         public abstract void DeleteTestDataItem(OpportunityType opportunityType, string name);

@@ -74,7 +74,10 @@ namespace OpenActive.Server.NET.StoreBooking
 
         public override void ProcessCustomerCancellation(OrderIdTemplate orderIdTemplate, OrderIdComponents orderId, List<OrderIdComponents> orderItemIds)
         {
-            storeBookingEngineSettings.OrderStore.CancelOrderItemByCustomer(orderIdTemplate, orderId, orderItemIds);
+            if (!storeBookingEngineSettings.OrderStore.CustomerCancelOrderItems(orderIdTemplate, orderId, orderItemIds))
+            {
+                throw new OpenBookingException(new NotFoundError(), "Order not found");
+            }
         }
 
         protected override void ProcessOrderDeletion(OrderIdComponents orderId)
@@ -172,7 +175,7 @@ namespace OpenActive.Server.NET.StoreBooking
                     IdComponentsList = idComponentsList,
                     Store = store,
                     // TODO: Implement error logic for all types of item errors based on the results of this
-                    OrderItems = store.GetOrderItems(idComponentsList, context)
+                    OrderItems = store.GetOrderItems(idComponentsList, context).OrderBy(x => x.OrderedItem.Id).ToList()
                 };
             });
 
@@ -191,11 +194,19 @@ namespace OpenActive.Server.NET.StoreBooking
             // Add totals to the resulting Order
             OrderCalculations.AugmentOrderWithTotals(responseGenericOrder);
 
+
+
             switch (responseGenericOrder)
             {
                 case OrderQuote responseOrderQuote:
                     if (!(context.Stage == FlowStage.C1 || context.Stage == FlowStage.C2))
                         throw new OpenBookingException(new OpenBookingError(), "Unexpected Order type provided");
+
+                    // If "payment" has been supplied unnecessarily, simply do not return it
+                    if (responseOrderQuote.Payment != null && responseOrderQuote.TotalPaymentDue.Price.Value == 0)
+                    {
+                        responseOrderQuote.Payment = null;
+                    }
 
                     // Note behaviour here is to lease those items that are available to be leased, and return errors for everything else
                     // Leasing is optimistic, booking is atomic
@@ -203,7 +214,7 @@ namespace OpenActive.Server.NET.StoreBooking
                     {
                         try
                         {
-                            responseOrderQuote.Lease = storeBookingEngineSettings.OrderStore.CreateLease(responseOrderQuote, context, dbTransaction);
+                            responseOrderQuote.Lease = storeBookingEngineSettings.OrderStore.CreateLease(context.Stage, responseOrderQuote, context, dbTransaction);
 
                             // Lease the OrderItems
                             responseOrderQuote.OrderedItem = orderItemGroups.Select(g =>
@@ -242,6 +253,12 @@ namespace OpenActive.Server.NET.StoreBooking
                 case Order responseOrder:
                     if (context.Stage != FlowStage.B)
                         throw new OpenBookingException(new OpenBookingError(), "Unexpected Order type provided");
+
+                    // If "payment" has been supplied unnecessarily, throw an error
+                    if (responseOrder.Payment != null && responseOrder.TotalPaymentDue.Price.Value == 0)
+                    {
+                        throw new OpenBookingException(new OpenBookingError(), "UnnecessarilyPaymentDetailsSupplied: Payment details were erroneously supplied for a free Order.");
+                    }
 
                     // Throw error on incomplete broker details
                     if (order.TotalPaymentDue != responseOrder.TotalPaymentDue)
