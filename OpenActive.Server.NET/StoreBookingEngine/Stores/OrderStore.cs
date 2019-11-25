@@ -18,7 +18,7 @@ namespace OpenActive.Server.NET.StoreBooking
         void DeleteLease(OrderIdComponents orderId);
     }
 
-    public abstract class OrderStore<TDatabaseTransaction> : IOrderStore
+    public abstract class OrderStore<TDatabaseTransaction> : IOrderStore where TDatabaseTransaction : IDisposable
     {
         public abstract Lease CreateLease(FlowStage flowStage, OrderQuote orderQuote, StoreBookingFlowContext context, TDatabaseTransaction databaseTransaction);
         public abstract void CreateOrder(Order order, StoreBookingFlowContext context, TDatabaseTransaction databaseTransaction);

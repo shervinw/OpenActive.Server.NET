@@ -8,6 +8,30 @@ namespace OpenActive.Server.NET.OpenBookingHelper
 {
     public static class OrderCalculations
     {
+        public static void ValidateAttendeeDetails(OrderItem requestOrderItem, OrderItem responseOrderItem)
+        {
+            // TODO: Add attendee errors
+        }
+
+        public static Event RenderOpportunityWithOnlyId(string jsonLdType, Uri id)
+        {
+            switch (jsonLdType)
+            {
+                case nameof(Event):
+                    return new Event { Id = id };
+                case nameof(ScheduledSession):
+                    return new ScheduledSession { Id = id };
+                case nameof(HeadlineEvent):
+                    return new HeadlineEvent { Id = id };
+                case nameof(Slot):
+                    return new Slot { Id = id };
+                case nameof(CourseInstance):
+                    return new CourseInstance { Id = id };
+                default:
+                    return null;
+            }
+        }
+
         public static TaxChargeSpecification AddTaxes(TaxChargeSpecification x, TaxChargeSpecification y)
         {
             // If one is null, return the other. If both are null, return null.
@@ -68,10 +92,19 @@ namespace OpenActive.Server.NET.OpenBookingHelper
                     }
 
                     // Add the taxes to the map
-                    foreach (TaxChargeSpecification taxChargeSpecification in orderedItem.UnitTaxSpecification)
+                    if (orderedItem.UnitTaxSpecification != null)
                     {
-                        totalPaymentTaxMap[taxChargeSpecification.Name] =
-                            AddTaxes(totalPaymentTaxMap[taxChargeSpecification.Name], taxChargeSpecification);
+                        foreach (TaxChargeSpecification taxChargeSpecification in orderedItem.UnitTaxSpecification)
+                        {
+                            if (totalPaymentTaxMap.TryGetValue(taxChargeSpecification.Name, out TaxChargeSpecification currentTaxValue))
+                            {
+                                totalPaymentTaxMap[taxChargeSpecification.Name] = AddTaxes(currentTaxValue, taxChargeSpecification);
+                            }
+                            else
+                            {
+                                totalPaymentTaxMap[taxChargeSpecification.Name] = taxChargeSpecification;
+                            }
+                        }
                     }
                 }
             }

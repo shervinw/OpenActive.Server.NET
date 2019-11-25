@@ -16,18 +16,23 @@ namespace OpenActive.Server.NET
     /// </summary>
     public interface IBookingEngine
     {
-        ResponseContent DeleteOrder(string uuid);
-        ResponseContent DeleteOrderQuote(string uuid);
+        // These endpoints are fully open
+        ResponseContent RenderDatasetSite();
         ResponseContent GetOpenDataRPDEPageForFeed(string feedname, long? afterTimestamp, string afterId, long? afterChangeNumber);
         ResponseContent GetOpenDataRPDEPageForFeed(string feedname, string afterTimestamp, string afterId, string afterChangeNumber);
-        ResponseContent ProcessOrderCreationB(string uuid, string orderJson);
-        ResponseContent ProcessCheckpoint1(string uuid, string orderQuoteJson);
-        ResponseContent ProcessCheckpoint2(string uuid, string orderQuoteJson);
-        ResponseContent ProcessOrderUpdate(string uuid, string orderJson);
-        ResponseContent RenderDatasetSite();
-        ResponseContent CreateTestData(string opportunityType, string eventJson);
-        ResponseContent DeleteTestData(string opportunityType, string name);
-        ResponseContent GetOrdersRPDEPageForFeed(string authtoken, string afterTimestamp, string afterId, string afterChangeNumber);
-        ResponseContent GetOrdersRPDEPageForFeed(string authtoken, long? afterTimestamp, string afterId, long? afterChangeNumber);
+
+        // These endpoints are authenticated by seller credentials (OAuth Authorization Code Grant)
+        ResponseContent ProcessCheckpoint1(string authPartySellerToken, string uuid, string orderQuoteJson);
+        ResponseContent ProcessCheckpoint2(string authPartySellerToken, string uuid, string orderQuoteJson);
+        ResponseContent ProcessOrderCreationB(string authPartySellerToken, string uuid, string orderJson);
+        ResponseContent DeleteOrder(string authPartySellerToken, string uuid);
+        ResponseContent DeleteOrderQuote(string authPartySellerToken, string uuid);
+        ResponseContent ProcessOrderUpdate(string authPartySellerToken, string uuid, string orderJson);
+
+        // These endpoints are authenticated by client credentials (OAuth Client Credentials Grant)
+        ResponseContent CreateTestData(string authPartyClientToken, string opportunityType, string eventJson);
+        ResponseContent DeleteTestData(string authPartyClientToken, string opportunityType, string name);
+        ResponseContent GetOrdersRPDEPageForFeed(string authPartyClientToken, string afterTimestamp, string afterId, string afterChangeNumber);
+        ResponseContent GetOrdersRPDEPageForFeed(string authPartyClientToken, long? afterTimestamp, string afterId, long? afterChangeNumber);
     }
 }

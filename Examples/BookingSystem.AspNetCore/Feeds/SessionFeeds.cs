@@ -56,6 +56,7 @@ namespace BookingSystem.AspNetCore
         protected override List<RpdeItem<SessionSeries>> GetRPDEItems(long? afterTimestamp, long? afterId)
         {
             var query = from @class in FakeBookingSystem.Database.Classes
+                        join seller in FakeBookingSystem.Database.Sellers on @class.SellerId equals seller.Id
                         orderby @class.Modified, @class.Id
                         where !afterTimestamp.HasValue && !afterId.HasValue ||
                               @class.Modified.ToUnixTimeMilliseconds() > afterTimestamp ||
@@ -78,11 +79,16 @@ namespace BookingSystem.AspNetCore
                                     SessionSeriesId = @class.Id
                                 }),
                                 Name = @class.Title,
-                                Organizer = new Organization
+                                Organizer = seller.IsIndividual ? (ILegalEntity)new Person
                                 {
-                                    // If there is only one seller, no component values need be supplied
-                                    // Id = RenderSellerId(new SellerIdComponents()) 
-                                    Id = RenderSellerId(new SellerIdComponents { SellerIdLong = 0 }) 
+                                    Id = this.RenderSellerId(new SellerIdComponents { SellerIdLong = seller.Id }),
+                                    Name = seller.Name,
+                                    TaxMode = TaxMode.TaxGross
+                                } : (ILegalEntity)new Organization
+                                {
+                                    Id = this.RenderSellerId(new SellerIdComponents { SellerIdLong = seller.Id }),
+                                    Name = seller.Name,
+                                    TaxMode = TaxMode.TaxGross
                                 },
                                 Offers = new List<Offer> { new Offer
                                     {

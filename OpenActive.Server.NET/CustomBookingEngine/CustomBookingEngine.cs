@@ -217,11 +217,11 @@ namespace OpenActive.Server.NET.CustomBooking
         /// <param name="afterId">The "afterId" parameter from the URL</param>
         /// <param name="afterChangeNumber">The "afterChangeNumber" parameter from the URL</param>
         /// <returns></returns>
-        public ResponseContent GetOrdersRPDEPageForFeed(string authtoken, string afterTimestamp, string afterId, string afterChangeNumber)
+        public ResponseContent GetOrdersRPDEPageForFeed(string authPartyClientToken, string afterTimestamp, string afterId, string afterChangeNumber)
         {
             return ResponseContent.RpdeResponse(
                 RenderOrdersRPDEPageForFeed(
-                    authtoken,
+                    authPartyClientToken,
                     RpdeOrderingStrategyRouter.ConvertStringToLongOrThrow(afterTimestamp, nameof(afterTimestamp)),
                     afterId,
                     RpdeOrderingStrategyRouter.ConvertStringToLongOrThrow(afterChangeNumber, nameof(afterChangeNumber))
@@ -237,9 +237,9 @@ namespace OpenActive.Server.NET.CustomBooking
         /// <param name="afterId">The "afterId" parameter from the URL</param>
         /// <param name="afterChangeNumber">The "afterChangeNumber" parameter from the URL</param>
         /// <returns></returns>
-        public ResponseContent GetOrdersRPDEPageForFeed(string authtoken, long? afterTimestamp, string afterId, long? afterChangeNumber)
+        public ResponseContent GetOrdersRPDEPageForFeed(string authPartyClientToken, long? afterTimestamp, string afterId, long? afterChangeNumber)
         {
-            return ResponseContent.RpdeResponse(RenderOrdersRPDEPageForFeed(authtoken, afterTimestamp, afterId, afterChangeNumber).ToString());
+            return ResponseContent.RpdeResponse(RenderOrdersRPDEPageForFeed(authPartyClientToken, afterTimestamp, afterId, afterChangeNumber).ToString());
         }
 
         /// <summary>
@@ -250,12 +250,12 @@ namespace OpenActive.Server.NET.CustomBooking
         /// <param name="afterId">The "afterId" parameter from the URL</param>
         /// <param name="afterChangeNumber">The "afterChangeNumber" parameter from the URL</param>
         /// <returns></returns>
-        private RpdePage RenderOrdersRPDEPageForFeed(string authtoken, long? afterTimestamp, string afterId, long? afterChangeNumber)
+        private RpdePage RenderOrdersRPDEPageForFeed(string authPartyClientToken, long? afterTimestamp, string afterId, long? afterChangeNumber)
         {
             if (settings.OrderFeedGenerator != null)
             {
                 // Add lookup against authtoken and pass this into generator?
-                return settings.OrderFeedGenerator.GetRPDEPage(authtoken, afterTimestamp, afterId, afterChangeNumber);
+                return settings.OrderFeedGenerator.GetRPDEPage(authPartyClientToken, afterTimestamp, afterId, afterChangeNumber);
             }
             else
             {
@@ -280,48 +280,56 @@ namespace OpenActive.Server.NET.CustomBooking
                 .FirstOrDefault();
         }
 
-        public ResponseContent ProcessCheckpoint1(string uuid, string orderQuoteJson)
+        public ResponseContent ProcessCheckpoint1(string authPartySellerToken, string uuid, string orderQuoteJson)
         {
-            return ProcessCheckpoint(uuid, orderQuoteJson, FlowStage.C1, OrderType.OrderQuoteTemplate);
+            return ProcessCheckpoint(authPartySellerToken, uuid, orderQuoteJson, FlowStage.C1, OrderType.OrderQuoteTemplate);
         }
-        public ResponseContent ProcessCheckpoint2(string uuid, string orderQuoteJson)
+        public ResponseContent ProcessCheckpoint2(string authPartySellerToken, string uuid, string orderQuoteJson)
         {
-            return ProcessCheckpoint(uuid, orderQuoteJson, FlowStage.C2, OrderType.OrderQuote);
+            return ProcessCheckpoint(authPartySellerToken, uuid, orderQuoteJson, FlowStage.C2, OrderType.OrderQuote);
         }
-        private ResponseContent ProcessCheckpoint(string uuid, string orderQuoteJson, FlowStage flowStage, OrderType orderType)
+        private ResponseContent ProcessCheckpoint(string authPartySellerToken, string uuid, string orderQuoteJson, FlowStage flowStage, OrderType orderType)
         {
             OrderQuote orderQuote = OpenActiveSerializer.Deserialize<OrderQuote>(orderQuoteJson);
-            var orderResponse = ValidateFlowRequest<Order>(flowStage, uuid, orderType, orderQuote);
+            if (orderQuote == null || orderQuote.GetType() != typeof(OrderQuote))
+            {
+                throw new OpenBookingException(new OpenBookingError(), "OrderQuote is required for C1 and C2");
+            }
+            var orderResponse = ValidateFlowRequest<OrderQuote>(authPartySellerToken, flowStage, uuid, orderType, orderQuote);
             // Return a 409 status code if any OrderItem level errors exist
             return ResponseContent.OpenBookingResponse(orderResponse.ToString(),
                 orderResponse.OrderedItem.Exists(x => x.Error?.Count > 0) ? HttpStatusCode.Conflict : HttpStatusCode.OK);
         }
-        public ResponseContent ProcessOrderCreationB(string uuid, string orderJson)
+        public ResponseContent ProcessOrderCreationB(string authPartySellerToken, string uuid, string orderJson)
         {
             // Note B will never contain OrderItem level errors, and any issues that occur will be thrown as exceptions.
             // If C1 and C2 are used correctly, B should not fail except in very exceptional cases.
             Order order = OpenActiveSerializer.Deserialize<Order>(orderJson);
-            return ResponseContent.OpenBookingResponse(ValidateFlowRequest<Order>(FlowStage.B, uuid, OrderType.Order, order).ToString(), HttpStatusCode.OK);
+            if (order == null || order.GetType() != typeof(Order))
+            {
+                throw new OpenBookingException(new OpenBookingError(), "Order is required for B");
+            }
+            return ResponseContent.OpenBookingResponse(ValidateFlowRequest<Order>(authPartySellerToken, FlowStage.B, uuid, OrderType.Order, order).ToString(), HttpStatusCode.OK);
         }
-        public ResponseContent DeleteOrder(string uuid)
+        public ResponseContent DeleteOrder(string authPartySellerToken, string uuid)
         {
-            ProcessOrderDeletion(new OrderIdComponents { OrderType = OrderType.Order, uuid = uuid });
+            ProcessOrderDeletion(authPartySellerToken, new OrderIdComponents { OrderType = OrderType.Order, uuid = uuid });
 
             return ResponseContent.OpenBookingNoContentResponse();
         }
 
-        protected abstract void ProcessOrderDeletion(OrderIdComponents orderIdComponents);
+        protected abstract void ProcessOrderDeletion(string authPartySellerToken, OrderIdComponents orderIdComponents);
 
-        public ResponseContent DeleteOrderQuote(string uuid)
+        public ResponseContent DeleteOrderQuote(string authPartySellerToken, string uuid)
         {
-            ProcessOrderQuoteDeletion(new OrderIdComponents { OrderType = OrderType.OrderQuote, uuid = uuid });
+            ProcessOrderQuoteDeletion(authPartySellerToken, new OrderIdComponents { OrderType = OrderType.OrderQuote, uuid = uuid });
 
             return ResponseContent.OpenBookingNoContentResponse();
         }
 
-        protected abstract void ProcessOrderQuoteDeletion(OrderIdComponents orderIdComponents);
+        protected abstract void ProcessOrderQuoteDeletion(string authPartySellerToken, OrderIdComponents orderIdComponents);
 
-        public ResponseContent ProcessOrderUpdate(string uuid, string orderJson)
+        public ResponseContent ProcessOrderUpdate(string authPartySellerToken, string uuid, string orderJson)
         {
             Order order = OpenActiveSerializer.Deserialize<Order>(orderJson);
 
@@ -348,36 +356,36 @@ namespace OpenActive.Server.NET.CustomBooking
                 throw new OpenBookingException(new OpenBookingError(), "The UUID for each OrderItem specified must match the UUID of the Order being PATCHed.");
             }
 
-            ProcessCustomerCancellation(settings.OrderIdTemplate, new OrderIdComponents { OrderType = OrderType.Order, uuid = uuid }, orderItemIds);
+            ProcessCustomerCancellation(authPartySellerToken, settings.OrderIdTemplate, new OrderIdComponents { OrderType = OrderType.Order, uuid = uuid }, orderItemIds);
 
             return ResponseContent.OpenBookingNoContentResponse();
         }
 
-        public abstract void ProcessCustomerCancellation(OrderIdTemplate orderIdTemplate, OrderIdComponents orderId, List<OrderIdComponents> orderItemIds);
+        public abstract void ProcessCustomerCancellation(string authPartySellerToken, OrderIdTemplate orderIdTemplate, OrderIdComponents orderId, List<OrderIdComponents> orderItemIds);
 
         // Note opportunityType is required here to facilitate routing to the correct store to handle the request
-        public ResponseContent CreateTestData(string opportunityType, string eventJson)
+        public ResponseContent CreateTestData(string authPartyClientToken, string opportunityType, string eventJson)
         {
             // Temporary hack while waiting for OpenActive.NET to deserialize subclasses correctly
             ScheduledSession @event = OpenActiveSerializer.Deserialize<ScheduledSession>(eventJson);
-            this.CreateTestDataItem((OpportunityType)Enum.Parse(typeof(OpportunityType), opportunityType, true), @event);
+            this.CreateTestDataItem(authPartyClientToken, (OpportunityType)Enum.Parse(typeof(OpportunityType), opportunityType, true), @event);
             return ResponseContent.OpenBookingNoContentResponse();
         }
 
-        protected abstract void CreateTestDataItem(OpportunityType opportunityType, Event @event);
+        protected abstract void CreateTestDataItem(string authPartyClientToken, OpportunityType opportunityType, Event @event);
 
         // Note opportunityType is required here to facilitate routing to the correct store to handle the request
-        public ResponseContent DeleteTestData(string opportunityType, string name)
+        public ResponseContent DeleteTestData(string authPartyClientToken, string opportunityType, string name)
         {
-            this.DeleteTestDataItem((OpportunityType)Enum.Parse(typeof(OpportunityType), opportunityType, true), name);
+            this.DeleteTestDataItem(authPartyClientToken, (OpportunityType)Enum.Parse(typeof(OpportunityType), opportunityType, true), name);
             return ResponseContent.OpenBookingNoContentResponse();
         }
 
-        protected abstract void DeleteTestDataItem(OpportunityType opportunityType, string name);
+        protected abstract void DeleteTestDataItem(string authPartyClientToken, OpportunityType opportunityType, string name);
 
 
         //TODO: Should we move Seller into the Abstract level? Perhaps too much complexity
-        private O ValidateFlowRequest<O>(FlowStage stage, string uuid, OrderType orderType, O orderQuote) where O : Order, new()
+        private O ValidateFlowRequest<O>(string authPartySellerToken, FlowStage stage, string uuid, OrderType orderType, O orderQuote) where O : Order, new()
         {
             var orderIdComponents = new OrderIdComponents
             {
@@ -418,8 +426,12 @@ namespace OpenActive.Server.NET.CustomBooking
                 throw new OpenBookingException(new OpenBookingError(), "taxMode must always be set in the Seller");
             }
 
-            TaxPayeeRelationship taxPayeeRelationship = orderQuote.BrokerRole == BrokerType.ResellerBroker
-                || orderQuote.Customer.IsOrganization ? TaxPayeeRelationship.BusinessToBusiness : TaxPayeeRelationship.BusinessToConsumer;
+            // Default to BusinessToConsumer if no customer provided
+            TaxPayeeRelationship taxPayeeRelationship =
+                orderQuote.Customer == null ? 
+                    TaxPayeeRelationship.BusinessToConsumer :
+                    orderQuote.BrokerRole == BrokerType.ResellerBroker  || !orderQuote.Customer.IsOrganization
+                        ? TaxPayeeRelationship.BusinessToBusiness : TaxPayeeRelationship.BusinessToConsumer;
 
             var payer = orderQuote.BrokerRole == BrokerType.ResellerBroker ? orderQuote.Broker : orderQuote.Customer;
 

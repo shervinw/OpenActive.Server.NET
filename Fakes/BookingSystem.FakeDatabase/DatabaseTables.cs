@@ -32,6 +32,7 @@ namespace OpenActive.FakeDatabase.NET
         public DateTime Start { get; set; }
         public DateTime End { get; set; }
         public long TotalSpaces { get; set; }
+        public long LeasedSpaces { get; set; }
         public long RemainingSpaces { get; set; }
     }
 
@@ -65,9 +66,7 @@ namespace OpenActive.FakeDatabase.NET
 
     public class SellerTable : Table
     {
-        public long SellerId { get; set; }
         public string Name { get; set; }
-
         public bool IsIndividual { get; set; }
 
     }

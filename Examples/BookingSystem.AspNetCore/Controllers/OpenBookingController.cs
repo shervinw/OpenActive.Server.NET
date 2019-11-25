@@ -37,7 +37,7 @@ namespace BookingSystem.AspNetCore.Controllers
         {
             try
             {
-                return bookingEngine.ProcessCheckpoint1(uuid, orderQuote).GetContentResult();
+                return bookingEngine.ProcessCheckpoint1("<seller-credential>", uuid, orderQuote).GetContentResult();
             }
             catch (OpenBookingException obe)
             {
@@ -54,7 +54,7 @@ namespace BookingSystem.AspNetCore.Controllers
         {
             try
             {
-                return bookingEngine.ProcessCheckpoint2(uuid, orderQuote).GetContentResult();
+                return bookingEngine.ProcessCheckpoint2("<seller-credential>", uuid, orderQuote).GetContentResult();
             }
             catch (OpenBookingException obe)
             {
@@ -71,7 +71,7 @@ namespace BookingSystem.AspNetCore.Controllers
         {
             try
             {
-                return bookingEngine.DeleteOrderQuote(uuid).GetContentResult();
+                return bookingEngine.DeleteOrderQuote("<seller-credential>", uuid).GetContentResult();
             }
             catch (OpenBookingException obe)
             {
@@ -88,7 +88,7 @@ namespace BookingSystem.AspNetCore.Controllers
         {
             try
             {
-                return bookingEngine.ProcessOrderCreationB(uuid, order).GetContentResult();
+                return bookingEngine.ProcessOrderCreationB("<seller-credential>", uuid, order).GetContentResult();
             }
             catch (OpenBookingException obe)
             {
@@ -105,7 +105,7 @@ namespace BookingSystem.AspNetCore.Controllers
         {
             try
             {
-                return bookingEngine.DeleteOrder(uuid).GetContentResult();
+                return bookingEngine.DeleteOrder("<seller-credential>", uuid).GetContentResult();
             }
             catch (OpenBookingException obe)
             {
@@ -122,7 +122,7 @@ namespace BookingSystem.AspNetCore.Controllers
         {
             try
             {
-                return bookingEngine.ProcessOrderUpdate(uuid, order).GetContentResult();
+                return bookingEngine.ProcessOrderUpdate("<seller-credential>", uuid, order).GetContentResult();
             }
             catch (OpenBookingException obe)
             {
@@ -140,7 +140,7 @@ namespace BookingSystem.AspNetCore.Controllers
                 // Note only a subset of these parameters will be supplied when this endpoints is called
                 // They are all provided here for the bookingEngine to choose the correct endpoint
                 // The auth token must also be provided from the associated authentication method
-                return bookingEngine.GetOrdersRPDEPageForFeed("<insert auth token>", afterTimestamp, afterId, afterChangeNumber).GetContentResult();
+                return bookingEngine.GetOrdersRPDEPageForFeed("<client-credential>", afterTimestamp, afterId, afterChangeNumber).GetContentResult();
             }
             catch (OpenBookingException obe)
             {
@@ -155,7 +155,7 @@ namespace BookingSystem.AspNetCore.Controllers
         {
             try
             {
-                return bookingEngine.CreateTestData(type, @event).GetContentResult();
+                return bookingEngine.CreateTestData("<client-credential>", type, @event).GetContentResult();
             }
             catch (OpenBookingException obe)
             {
@@ -169,7 +169,7 @@ namespace BookingSystem.AspNetCore.Controllers
         {
             try
             {
-                return bookingEngine.DeleteTestData(type, name).GetContentResult();
+                return bookingEngine.DeleteTestData("<client-credential>", type, name).GetContentResult();
             }
             catch (OpenBookingException obe)
             {

@@ -14,6 +14,7 @@ var BOOKING_API_BASE = 'https://localhost:44307/api/openbooking/';
 var expect = chakram.expect;
 
 function bookingRequest(templateJson, replacementMap) {
+    if (replacementMap.totalPaymentDue) templateJson.totalPaymentDue.price = replacementMap.totalPaymentDue;
     var template = JSON.stringify(templateJson, null, 2);
 
     var req = mustache.render(template, replacementMap);
@@ -50,7 +51,8 @@ describe("Create test event", function() {
             ]
         },
         "startDate": "2019-11-20T17:26:16.0731663+00:00",
-        "endDate": "2019-11-20T19:12:16.0731663+00:00"
+        "endDate": "2019-11-20T19:12:16.0731663+00:00",
+        "maximumAttendeeCapacity": 5
     };
 
     before(function () {
@@ -113,7 +115,8 @@ describe("Basic end-to-end booking", function() {
             ]
         },
         "startDate": "2019-11-20T17:26:16.0731663+00:00",
-        "endDate": "2019-11-20T19:12:16.0731663+00:00"
+        "endDate": "2019-11-20T19:12:16.0731663+00:00",
+        "maximumAttendeeCapacity": 5
     };
 
     var apiResponse;
@@ -121,6 +124,7 @@ describe("Basic end-to-end booking", function() {
     var offerId;
     var sellerId;
     var uuid;
+    var totalPaymentDue;
 
     var c1Response;
     var c2Response;
@@ -149,7 +153,7 @@ describe("Basic end-to-end booking", function() {
         })).then(function(respObj) {
             c1Response = respObj;
             console.log("\n\n** C1 response: ** \n\n" + JSON.stringify(c1Response.body, null, 2));
-            //var total = c1Response.totalPaymentDue.price;
+            totalPaymentDue = c1Response.body.totalPaymentDue.price;
         }).then(x => chakram.put(BOOKING_API_BASE + 'order-quotes/' + uuid, bookingRequest(c2req, {
             opportunityId,
             offerId,
@@ -162,12 +166,13 @@ describe("Basic end-to-end booking", function() {
         })).then(function(respObj) {
             c2Response = respObj;
             console.log("\n\n** C2 response: ** \n\n" + JSON.stringify(c2Response.body, null, 2));
-            //var total = c2Response.totalPaymentDue.price;
+            totalPaymentDue = c2Response.body.totalPaymentDue.price;
         }).then(x => chakram.put(BOOKING_API_BASE + 'orders/' + uuid, bookingRequest(breq, {
             opportunityId,
             offerId,
             sellerId,
-            uuid
+            uuid,
+            totalPaymentDue
         }), {
             headers: {
                 'Content-Type': 'application/vnd.openactive.booking+json; version=1'
@@ -175,7 +180,7 @@ describe("Basic end-to-end booking", function() {
         })).then(function(respObj) {
             bResponse = respObj;
             console.log("\n\n** B response: **\n\n" + JSON.stringify(bResponse.body, null, 2));
-            //var total = bResponse.totalPaymentDue.price;
+            //var total = bResponse.body.totalPaymentDue.price;
         });
 
 

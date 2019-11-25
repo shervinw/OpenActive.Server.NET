@@ -161,7 +161,7 @@ namespace BookingSystem.AspNetCore
                 OrderFeedGenerator = new AcmeOrdersFeedRPDEGenerator(),
 
                 SellerIdTemplate = new SingleIdTemplate<SellerIdComponents>(
-                    "{+BaseUrl}api/sellers/{SellerIdString}"
+                    "{+BaseUrl}api/sellers/{SellerIdLong}"
                     ),
 
                 SellerStore = new AcmeSellerStore(),

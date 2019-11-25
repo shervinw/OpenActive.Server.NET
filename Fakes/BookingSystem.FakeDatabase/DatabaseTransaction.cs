@@ -5,7 +5,7 @@ using System.Text;
 
 namespace OpenActive.FakeDatabase.NET
 {
-    public class DatabaseTransaction
+    public class DatabaseTransaction : IDisposable
     {
         public DatabaseTransaction(FakeDatabase database)
         {
@@ -66,7 +66,6 @@ namespace OpenActive.FakeDatabase.NET
                     Id = x.Id,
                     Deleted = x.Deleted,
                     Modified = x.Modified,
-                    SellerId = x.SellerId,
                     Name = x.Name
                 }).ToList(),
             };
@@ -79,6 +78,11 @@ namespace OpenActive.FakeDatabase.NET
             sourceDatabase.OrderItems = this.Database.OrderItems;
             sourceDatabase.Orders = this.Database.Orders;
             sourceDatabase.Sellers = this.Database.Sellers;
+        }
+
+        public void Dispose()
+        {
+            // No implementation required if not disposable
         }
 
         private FakeDatabase sourceDatabase;

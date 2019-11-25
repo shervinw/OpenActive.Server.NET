@@ -20,7 +20,7 @@ namespace OpenActive.FakeDatabase.NET
         /// 
         /// TODO: Move this initialisation data into an embedded string to increase portability / ease of installation
         /// </summary>
-        public static FakeDatabase Database { get; } = new FakeDatabase();// JsonConvert.DeserializeObject<FakeBookingSystem>(File.ReadAllText($"../../../../fakedata.json"));
+        public static FakeDatabase Database { get; } = FakeDatabase.GetPrepopulatedFakeDatabase();// JsonConvert.DeserializeObject<FakeBookingSystem>(File.ReadAllText($"../../../../fakedata.json"));
     }
 
 
@@ -98,12 +98,12 @@ namespace OpenActive.FakeDatabase.NET
         public bool LeaseOrderItemsForClassOccurrence(string uuid, long occurrenceId, string opportunityJsonLdId, string offerJsonLdId, long numberOfSpaces)
         {
             var thisOccurrence = Occurrences.FirstOrDefault(x => x.Id == occurrenceId && !x.Deleted);
-            var thisClass = Classes.FirstOrDefault(x => x.Id == thisOccurrence.ClassId && !x.Deleted);
+            var thisClass = Classes.FirstOrDefault(x => x.Id == thisOccurrence?.ClassId && !x.Deleted);
 
             if (thisOccurrence != null && thisClass != null)
             {
                 // Only lease if all spaces requested are available
-                if (thisOccurrence.RemainingSpaces >= numberOfSpaces)
+                if (thisOccurrence.RemainingSpaces - thisOccurrence.LeasedSpaces >= numberOfSpaces)
                 {
                     for (int i = 0; i < numberOfSpaces; i++)
                     {
@@ -118,8 +118,8 @@ namespace OpenActive.FakeDatabase.NET
 
                     // Update number of spaces remianing for the opportunity
                     var occurrence = Occurrences.Single(x => x.Id == occurrenceId);
-                    var totalSpacesTaken = OrderItems.Where(x => x.OccurrenceId == occurrenceId && (x.Status == BookingStatus.Confirmed || x.Status == BookingStatus.Attended)).Count();
-                    occurrence.RemainingSpaces = occurrence.TotalSpaces - totalSpacesTaken;
+                    var totalSpacesTaken = OrderItems.Where(x => Orders.Single(o => o.Id == x.OrderId).IsLease && x.OccurrenceId == occurrenceId).Count();
+                    occurrence.LeasedSpaces = totalSpacesTaken;
                     occurrence.Modified = DateTimeOffset.Now;
                     return true;
                 }
@@ -224,9 +224,16 @@ namespace OpenActive.FakeDatabase.NET
         public List<OrderTable> Orders { get; set; } = new List<OrderTable>();
         public List<SellerTable> Sellers { get; set; } = new List<SellerTable>();
 
+        public static FakeDatabase GetPrepopulatedFakeDatabase()
+        {
+            var db = new FakeDatabase();
+            db.CreateFakeClasses();
+            return db;
+        }
+
         public void CreateFakeClasses()
         {
-            Occurrences = Enumerable.Range(1, 10000)
+            Occurrences = Enumerable.Range(1, 1000)
             .Select(n => new {
                 id = n,
                 startDate = faker.Date.Soon()
@@ -241,7 +248,7 @@ namespace OpenActive.FakeDatabase.NET
             })
             .ToList();
 
-            Classes = Enumerable.Range(1, 1000)
+            Classes = Enumerable.Range(1, 100)
             .Select(id => new ClassTable
             {
                 Id = id,
@@ -258,7 +265,7 @@ namespace OpenActive.FakeDatabase.NET
             });
         }
 
-        public void AddClass(string title, decimal? price, DateTimeOffset startTime, DateTimeOffset endTime)
+        public void AddClass(string title, decimal? price, DateTimeOffset startTime, DateTimeOffset endTime, long totalSpaces)
         {
             var classId = nextId++;
 
@@ -267,7 +274,8 @@ namespace OpenActive.FakeDatabase.NET
                 Id = classId,
                 Deleted = false,
                 Title = title,
-                Price = price
+                Price = price,
+                SellerId = faker.Random.Long(0, 1)
             });
 
             Occurrences.Add(new OccurrenceTable
@@ -276,7 +284,9 @@ namespace OpenActive.FakeDatabase.NET
                 Deleted = false,
                 ClassId = classId,
                 Start = startTime.DateTime,
-                End = endTime.DateTime
+                End = endTime.DateTime,
+                TotalSpaces = totalSpaces,
+                RemainingSpaces = totalSpaces
             });
         }
 

@@ -48,21 +48,7 @@ namespace OpenActive.Server.NET.OpenBookingHelper
 
         protected static Event RenderOpportunityWithOnlyId(string jsonLdType, Uri id)
         {
-            switch (jsonLdType)
-            {
-                case nameof(Event):
-                    return new Event { Id = id };
-                case nameof(ScheduledSession):
-                    return new ScheduledSession { Id = id };
-                case nameof(HeadlineEvent):
-                    return new HeadlineEvent { Id = id };
-                case nameof(Slot):
-                    return new Slot { Id = id };
-                case nameof(CourseInstance):
-                    return new CourseInstance { Id = id };
-                default:
-                    return null;
-            }
+            return OrderCalculations.RenderOpportunityWithOnlyId(jsonLdType, id);
         }
 
         /// <summary>

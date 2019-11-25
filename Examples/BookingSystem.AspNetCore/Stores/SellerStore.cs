@@ -16,7 +16,7 @@ namespace BookingSystem.AspNetCore
             // For single-organization sellers, this may be hardcoded.
             // Otherwise it may be looked up based on supplied sellerIdComponents which are extacted from the sellerId.
 
-            var seller = FakeBookingSystem.Database.Sellers.SingleOrDefault(x => x.SellerId == sellerIdComponents.SellerIdLong);
+            var seller = FakeBookingSystem.Database.Sellers.SingleOrDefault(x => x.Id == sellerIdComponents.SellerIdLong);
             if (seller != null)
             {
                 return seller.IsIndividual ? (ILegalEntity) new Person

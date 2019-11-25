@@ -3,6 +3,7 @@ using OpenActive.NET;
 using OpenActive.Server.NET.OpenBookingHelper;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text;
 
 namespace OpenActive.Server.NET.StoreBooking
@@ -14,9 +15,9 @@ namespace OpenActive.Server.NET.StoreBooking
         OrderItem GetOrderItem(IBookableIdComponents opportunityOfferId, ISingleIdTemplate sellerId);
         */
 
-        List<OrderItem> GetOrderItems(List<IBookableIdComponents> opportunityOfferId, StoreBookingFlowContext context);
-        List<OpenBookingError> LeaseOrderItems(List<IBookableIdComponents> opportunityOfferId, StoreBookingFlowContext context, dynamic databaseTransactionContext);
-        List<OrderIdComponents> BookOrderItems(List<IBookableIdComponents> opportunityOfferId, List<OrderItem> orderItems, StoreBookingFlowContext context, dynamic databaseTransactionContext);
+        void GetOrderItems(List<IOrderItemContext> orderItemContexts, StoreBookingFlowContext flowContext);
+        void LeaseOrderItems(List<IOrderItemContext> orderItemContexts, StoreBookingFlowContext flowContext, dynamic databaseTransactionContext);
+        void BookOrderItems(List<IOrderItemContext> orderItemContexts, StoreBookingFlowContext flowContext, dynamic databaseTransactionContext);
 
         void CreateTestDataItem(OpportunityType opportunityType, Event @event);
         void DeleteTestDataItem(OpportunityType opportunityType, string name);
@@ -37,59 +38,84 @@ namespace OpenActive.Server.NET.StoreBooking
         }
 
 
-        public List<OrderItem> GetOrderItems(List<IBookableIdComponents> opportunityOfferId, StoreBookingFlowContext context)
+        public void GetOrderItems(List<IOrderItemContext> orderItemContexts, StoreBookingFlowContext context)
         {
-            CheckOpportunityTypeMatch(opportunityOfferId);
-
             // TODO: Include validation on the OrderItem created, to ensure it includes all the required fields
-            return GetOrderItem(opportunityOfferId.ConvertAll<TComponents>(x => (TComponents)x), context);
+            GetOrderItem(ConvertToSpecificComponents(orderItemContexts), context);
         }
 
-        public List<OpenBookingError> LeaseOrderItems(List<IBookableIdComponents> opportunityOfferId, StoreBookingFlowContext context, dynamic databaseTransactionContext)
+        public void LeaseOrderItems(List<IOrderItemContext> orderItemContexts, StoreBookingFlowContext context, dynamic databaseTransactionContext)
         {
-            CheckOpportunityTypeMatch(opportunityOfferId);
-
             // TODO: Include validation on the OrderItem created, to ensure it includes all the required fields
-            return LeaseOrderItem(opportunityOfferId.ConvertAll<TComponents>(x => (TComponents)x), context, (TDatabaseTransaction)databaseTransactionContext);
+            LeaseOrderItem(ConvertToSpecificComponents(orderItemContexts), context, (TDatabaseTransaction)databaseTransactionContext);
         }
 
-        public List<OrderIdComponents> BookOrderItems(List<IBookableIdComponents> opportunityOfferId, List<OrderItem> orderItems, StoreBookingFlowContext context, dynamic databaseTransactionContext)
+        public void BookOrderItems(List<IOrderItemContext> orderItemContexts, StoreBookingFlowContext context, dynamic databaseTransactionContext)
         {
-            CheckOpportunityTypeMatch(opportunityOfferId);
-
             // TODO: Include validation on the OrderItem created, to ensure it includes all the required fields
-            return BookOrderItem(opportunityOfferId.ConvertAll<TComponents>(x => (TComponents)x), orderItems, context, (TDatabaseTransaction)databaseTransactionContext);
+            BookOrderItem(ConvertToSpecificComponents(orderItemContexts), context, (TDatabaseTransaction)databaseTransactionContext);
         }
 
-        protected abstract List<OrderItem> GetOrderItem(List<TComponents> opportunityOfferId, StoreBookingFlowContext context);
+        protected abstract void GetOrderItem(List<OrderItemContext<TComponents>> orderItemContexts, StoreBookingFlowContext flowContext);
 
         /// <summary>
         /// BookOrderItem will always succeed or throw an error on failure.
-        /// Note that orderItems provided by GetOrderItems are supplied for cases where Sales Invoices or other audit records
+        /// Note that responseOrderItems provided by GetOrderItems are supplied for cases where Sales Invoices or other audit records
         /// need to be written that require prices. As GetOrderItems occurs outside of the transaction.
         /// 
         /// </summary>
-        protected abstract List<OrderIdComponents> BookOrderItem(List<TComponents> opportunityOfferId, List<OrderItem> orderItems, StoreBookingFlowContext context, TDatabaseTransaction databaseTransactionContext);
-        /// <summary>
-        /// Return null if leasing of the item failed
-        /// </summary>
-        /// <param name="opportunityOfferId"></param>
-        /// <param name="context"></param>
-        /// <returns></returns>
-        protected abstract List<OpenBookingError> LeaseOrderItem(List<TComponents> opportunityOfferId, StoreBookingFlowContext context, TDatabaseTransaction databaseTransactionContext);
+        protected abstract void BookOrderItem(List<OrderItemContext<TComponents>> orderItemContexts, StoreBookingFlowContext flowContext, TDatabaseTransaction databaseTransactionContext);
+
+        protected abstract void LeaseOrderItem(List<OrderItemContext<TComponents>> orderItemContexts, StoreBookingFlowContext flowContext, TDatabaseTransaction databaseTransactionContext);
 
         public abstract void CreateTestDataItem(OpportunityType opportunityType, Event @event);
         public abstract void DeleteTestDataItem(OpportunityType opportunityType, string name);
 
-        private void CheckOpportunityTypeMatch(List<IBookableIdComponents> opportunityOfferId)
-        {
-            if (opportunityOfferId == null) throw new ArgumentNullException(nameof(opportunityOfferId));
 
-            if (!(opportunityOfferId.TrueForAll(x => x.GetType() == typeof(TComponents))))
+        private List<OrderItemContext<TComponents>> ConvertToSpecificComponents(List<IOrderItemContext> orderItemContexts)
+        {
+            if (orderItemContexts == null) throw new ArgumentNullException(nameof(orderItemContexts));
+
+            if (!(orderItemContexts.Select(x => x.RequestBookableOpportunityOfferId).ToList().TrueForAll(x => x.GetType() == typeof(TComponents))))
             {
-                throw new NotSupportedException($"{opportunityOfferId.GetType().ToString()} does not match {typeof(BookablePairIdTemplate<TComponents>).ToString()}. All types of IBookableIdComponents (T) used for BookablePairIdTemplate<T> assigned to feeds via settings.IdConfiguration must match those used by the stores in storeSettings.OpenBookingStoreRouting.");
+                throw new NotSupportedException($"OpportunityIdComponents does not match {typeof(BookablePairIdTemplate<TComponents>).ToString()}. All types of IBookableIdComponents (T) used for BookablePairIdTemplate<T> assigned to feeds via settings.IdConfiguration must match those used by the stores in storeSettings.OpenBookingStoreRouting.");
             }
+
+            return orderItemContexts.ConvertAll<OrderItemContext<TComponents>>(x => (OrderItemContext<TComponents>)x);
         }
+
+        /*
+        private List<OrderItemContext<TComponents>> ConvertToSpecificComponents(List<IOrderItemContext> orderItemContexts)
+        {
+            if (orderItemContexts == null) throw new ArgumentNullException(nameof(orderItemContexts));
+
+            if (!(orderItemContexts.Select(x => x.OpportunityIdComponents).ToList().TrueForAll(x => x.GetType() == typeof(TComponents))))
+            {
+                throw new NotSupportedException($"OpportunityIdComponents does not match {typeof(BookablePairIdTemplate<TComponents>).ToString()}. All types of IBookableIdComponents (T) used for BookablePairIdTemplate<T> assigned to feeds via settings.IdConfiguration must match those used by the stores in storeSettings.OpenBookingStoreRouting.");
+            }
+
+            return orderItemContexts.ConvertAll<OrderItemContext<TComponents>>(x => new OrderItemContext<TComponents>
+            {
+                Index = x.Index,
+                OpportunityIdComponents = (TComponents)x.OpportunityIdComponents,
+                OrderIdComponents = x.OrderIdComponents,
+                requestOrderItem = x.requestOrderItem,
+                responseOrderItem = x.responseOrderItem
+            });
+        }
+
+        private List<IOrderItemContext> ConvertToGenericComponents(List<OrderItemContext<TComponents>> orderItemContexts)
+        {
+            return orderItemContexts.ConvertAll<IOrderItemContext>(x => new IOrderItemContext
+            {
+                Index = x.Index,
+                OpportunityIdComponents = (IBookableIdComponents)x.OpportunityIdComponents,
+                OrderIdComponents = x.OrderIdComponents,
+                requestOrderItem = x.requestOrderItem,
+                responseOrderItem = x.responseOrderItem
+            });
+        }
+        */
 
     }
 }

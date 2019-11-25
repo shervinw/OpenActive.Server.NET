@@ -18,6 +18,7 @@ namespace OpenActive.Server.NET.StoreBooking
             base.OrderId = bookingFlowContext.OrderId;
             base.TaxPayeeRelationship = bookingFlowContext.TaxPayeeRelationship;
             base.Payer = bookingFlowContext.Payer;
+            base.Seller = bookingFlowContext.Seller;
             base.SellerId = bookingFlowContext.SellerId;
         }
 
