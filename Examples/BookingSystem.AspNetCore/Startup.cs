@@ -155,7 +155,7 @@ namespace BookingSystem.AspNetCore
                 OrderBaseUrl = new Uri("https://localhost:44307/api/openbooking/orders/"),
                 OrderIdTemplate = new OrderIdTemplate(
                     "{+BaseUrl}api/{OrderType}/{uuid}",
-                    "{+BaseUrl}api/{OrderType}/{uuid}#/orderedItems/{OrderItemIdString}"
+                    "{+BaseUrl}api/{OrderType}/{uuid}#/orderedItems/{OrderItemIdLong}"
                     ),
 
                 OrderFeedGenerator = new AcmeOrdersFeedRPDEGenerator(),

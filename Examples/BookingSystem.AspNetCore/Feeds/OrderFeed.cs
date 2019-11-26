@@ -19,7 +19,7 @@ namespace BookingSystem.AspNetCore
             var query = from orders in FakeBookingSystem.Database.Orders
                         join seller in FakeBookingSystem.Database.Sellers on orders.SellerId equals seller.Id
                         join orderItems in FakeBookingSystem.Database.OrderItems on orders.Id equals orderItems.OrderId
-                        where !orders.IsLease && (!afterTimestamp.HasValue || orders.Modified.ToUnixTimeMilliseconds() > afterTimestamp ||
+                        where orders.VisibleInFeed && (!afterTimestamp.HasValue || orders.Modified.ToUnixTimeMilliseconds() > afterTimestamp ||
                         (orders.Modified.ToUnixTimeMilliseconds() == afterTimestamp && orders.Id.CompareTo(afterId) > 0))
                         group orderItems by new { orders, seller } into thisOrder
                         orderby thisOrder.Key.orders.Modified, thisOrder.Key.orders.Id

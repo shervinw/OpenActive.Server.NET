@@ -20,7 +20,7 @@ namespace BookingSystem.AspNetCore
             return FakeBookingSystem.Database.CancelOrderItem(orderId.uuid, orderItemIds.Select(x => x.OrderItemIdLong.Value).ToList(), true);
         }
 
-        public override Lease CreateLease(FlowStage flowStage, OrderQuote orderQuote, StoreBookingFlowContext context, DatabaseTransaction databaseTransaction)
+        public override Lease CreateLease(OrderQuote orderQuote, StoreBookingFlowContext context, DatabaseTransaction databaseTransaction)
         {
             if (orderQuote.TotalPaymentDue.PriceCurrency != "GBP")
             {
@@ -30,18 +30,21 @@ namespace BookingSystem.AspNetCore
             // Note if no lease support, simply return null always here instead
 
             // In this example leasing is only supported at C2
-            if (flowStage == FlowStage.C2)
+            if (context.Stage == FlowStage.C2)
             {
                 // TODO: Make the lease duration configurable
                 var leaseExpires = DateTimeOffset.Now + new TimeSpan(0, 5, 0);
 
-                databaseTransaction.Database.AddLease(
+                var result = databaseTransaction.Database.AddLease(
                     context.OrderId.uuid,
+                    context.BrokerRole == BrokerType.AgentBroker ? BrokerRole.AgentBroker : context.BrokerRole == BrokerType.ResellerBroker ? BrokerRole.ResellerBroker : BrokerRole.NoBroker,
                     context.Broker.Name,
                     context.SellerId.SellerIdLong.Value,
                     context.Customer.Email,
                     leaseExpires
                     );
+
+                if (!result) throw new OpenBookingException(new OrderAlreadyExistsError());
 
                 return new Lease
                 {
@@ -67,14 +70,16 @@ namespace BookingSystem.AspNetCore
                 throw new OpenBookingException(new OpenBookingError(), "Unsupported currency");
             }
 
-            databaseTransaction.Database.AddOrder(
+            var result = databaseTransaction.Database.AddOrder(
                 context.OrderId.uuid,
                 context.BrokerRole == BrokerType.AgentBroker ? BrokerRole.AgentBroker : context.BrokerRole == BrokerType.ResellerBroker ? BrokerRole.ResellerBroker : BrokerRole.NoBroker,
                 context.Broker.Name,
                 context.SellerId.SellerIdLong.Value,
                 context.Customer.Email,
-                context.Payment.Identifier,
+                context.Payment?.Identifier,
                 order.TotalPaymentDue.Price.Value);
+
+            if (!result) throw new OpenBookingException(new OrderAlreadyExistsError());
         }
 
         public override void DeleteOrder(OrderIdComponents orderId)

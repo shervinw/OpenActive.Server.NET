@@ -351,6 +351,12 @@ namespace OpenActive.Server.NET.CustomBooking
             var orderItemIds = order.OrderedItem.Select(x => settings.OrderIdTemplate.GetOrderItemIdComponents(x.Id)).ToList();
 
             // Check for mismatching UUIDs
+            if (!orderItemIds.TrueForAll(x => x != null))
+            {
+                throw new OpenBookingException(new OpenBookingError(), "Invalid OrderItem Id supplied.");
+            }
+
+            // Check for mismatching UUIDs
             if (!orderItemIds.TrueForAll(x => x.OrderType == OrderType.Order && x.uuid == uuid))
             {
                 throw new OpenBookingException(new OpenBookingError(), "The UUID for each OrderItem specified must match the UUID of the Order being PATCHed.");
@@ -430,7 +436,7 @@ namespace OpenActive.Server.NET.CustomBooking
             TaxPayeeRelationship taxPayeeRelationship =
                 orderQuote.Customer == null ? 
                     TaxPayeeRelationship.BusinessToConsumer :
-                    orderQuote.BrokerRole == BrokerType.ResellerBroker  || !orderQuote.Customer.IsOrganization
+                    orderQuote.BrokerRole == BrokerType.ResellerBroker || orderQuote.Customer.IsOrganization
                         ? TaxPayeeRelationship.BusinessToBusiness : TaxPayeeRelationship.BusinessToConsumer;
 
             var payer = orderQuote.BrokerRole == BrokerType.ResellerBroker ? orderQuote.Broker : orderQuote.Customer;

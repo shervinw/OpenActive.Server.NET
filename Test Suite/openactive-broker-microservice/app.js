@@ -2,6 +2,7 @@ var express = require('express');
 var logger = require('morgan');
 var request = require('request');
 var nSQL = require("@nano-sql/core").nSQL;
+const config = require('config');
  
 process.env["NODE_TLS_REJECT_UNAUTHORIZED"] = 0;
 process.env["PORT"] = 3000;
@@ -11,6 +12,9 @@ var app = express();
 app.use(logger('dev'));
 app.use(express.json());
 
+var PORT = 3000;
+var BOOKING_API_BASE = config.get('microservice.bookingApiBase');
+var FEED_BASE = config.get('microservice.openFeedBase');
 
 nSQL().createDatabase({
   tables: [
@@ -93,7 +97,7 @@ app.get('/feeds/scheduled-sessions', function (req, res) {
     afterTimestamp = parseInt(req.query.afterTimestamp);
   }
 
-  var baseUrl = 'http://localhost:3000/feeds/scheduled-sessions';
+  var baseUrl = 'http://localhost:' + PORT + '/feeds/scheduled-sessions';
   var PAGE_SIZE = 500;
 
   nSQL("ScheduledSessions").query("select", 
@@ -160,12 +164,9 @@ var responses = {
   /* Keyed by expression =*/
 };
 
-var requestCounter = 0;
-
 app.get('/get-match/:expression', function (req, res) {
   // respond with json
   if (req.params.expression) {
-    requestCounter += 1;
     var expression = req.params.expression;
 
     // Stash the response and reply later when an event comes through (kill any existing expression still waiting)
@@ -186,15 +187,45 @@ app.get('/get-match/:expression', function (req, res) {
   }
 });
 
+var orderResponses = {
+  /* Keyed by expression =*/
+};
+
+
+app.get('/get-order/:expression', function (req, res) {
+  // respond with json
+  if (req.params.expression) {
+    var expression = req.params.expression;
+
+    // Stash the response and reply later when an event comes through (kill any existing expression still waiting)
+    if (orderResponses[expression] && orderResponses[expression] !== null) orderResponses[expression].end();
+    orderResponses[expression] = {
+      send: function(json) {
+        orderResponses[expression] = null;
+        res.json(json);
+        res.end();
+      },
+      end: function() {
+        res.end();
+      },
+      res
+    };
+  } else {
+    res.send("Expression not valid");
+  }
+});
+
 
 //setupDataStore().then(() => {
   // Start processing first pages of external feeds
-  getRPDE('https://localhost:44307/feeds/session-series', ingestSessionSeriesPage);
-  getRPDE('https://localhost:44307/feeds/scheduled-sessions', ingestScheduledSessionPage);
+  getRPDE(FEED_BASE + 'session-series', ingestSessionSeriesPage);
+  getRPDE(FEED_BASE + 'scheduled-sessions', ingestScheduledSessionPage);
 
   // Start monitoring first page of internal feed
-  getRPDE('http://localhost:3000/feeds/scheduled-sessions', monitorPage); 
+  getRPDE('http://localhost:' + PORT + '/feeds/scheduled-sessions', monitorPage); 
 //});
+
+getRPDE(BOOKING_API_BASE + 'orders-rpde', monitorOrdersPage); 
 
 // nSQL joins appear to be slow, even with indexes. This is an optimisation pending further investigation
 sessionSeriesMap = {};
@@ -253,7 +284,7 @@ function ingestScheduledSessionPage(rpde, pageNumber) {
 }
 
 function monitorPage(rpde, pageNumber) {
-  console.log(`RPDE kind: Monitoring, length: ${rpde.items.length}, next: '${rpde.next}'`);
+  console.log(`RPDE kind: Opportunity Monitoring, length: ${rpde.items.length}, next: '${rpde.next}'`);
 
   rpde.items.forEach((item) => {
     // TODO: make this regex loop (note ignore deleted items)
@@ -265,5 +296,18 @@ function monitorPage(rpde, pageNumber) {
   setTimeout(x => getRPDE(rpde.next, monitorPage), 200);
 }
 
-app.listen(3000, '127.0.0.1');
-console.log('Node server running on port 3000');
+function monitorOrdersPage(rpde, pageNumber) {
+  console.log(`RPDE kind: Orders Monitoring, length: ${rpde.items.length}, next: '${rpde.next}'`);
+
+  rpde.items.forEach((item) => {
+    // TODO: make this regex loop (note ignore deleted items)
+    if (item.data && item.id && orderResponses[item.id]) {
+      orderResponses[item.id].send(item);
+    }
+  });
+
+  setTimeout(x => getRPDE(rpde.next, monitorOrdersPage), 200);
+}
+
+app.listen(PORT, '127.0.0.1');
+console.log('Node server running on port ' + PORT);

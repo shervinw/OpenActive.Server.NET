@@ -328,12 +328,15 @@ namespace OpenActive.Server.NET.StoreBooking
                     {
                         try
                         {
-                            responseOrderQuote.Lease = storeBookingEngineSettings.OrderStore.CreateLease(context.Stage, responseOrderQuote, context, dbTransaction);
+                            responseOrderQuote.Lease = storeBookingEngineSettings.OrderStore.CreateLease(responseOrderQuote, context, dbTransaction);
 
-                            // Book the OrderItems
-                            foreach (var g in orderItemGroups)
+                            // Lease the OrderItems, if a lease exists
+                            if (responseOrderQuote.Lease != null)
                             {
-                                g.Store.LeaseOrderItems(g.OrderItemContexts, context, dbTransaction);
+                                foreach (var g in orderItemGroups)
+                                {
+                                    g.Store.LeaseOrderItems(g.OrderItemContexts, context, dbTransaction);
+                                }
                             }
 
                             /*
@@ -396,6 +399,9 @@ namespace OpenActive.Server.NET.StoreBooking
                                     {
                                         throw new ArgumentException("SetOrderItemId must be called for each OrderItemContext in BookOrderItems");
                                     }
+
+                                    // Set the orderItemStatus to be https://openactive.io/OrderConfirmed (as it must always be so in the response of B)
+                                    ctx.ResponseOrderItem.OrderItemStatus = OrderItemStatus.OrderConfirmed;
                                 }
                             }
 

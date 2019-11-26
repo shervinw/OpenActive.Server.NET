@@ -249,7 +249,7 @@
     <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\..\Fakes\BookingSystem.FakeDatabase\OpenActive.Faker.NET.csproj">
+    <ProjectReference Include="..\..\Fakes\BookingSystem.FakeDatabase\OpenActive.FakeDatabase.NET.csproj">
       <Project>{2956659b-7f1f-4405-b34f-16c361bf0393}</Project>
       <Name>OpenActive.Faker.NET</Name>
     </ProjectReference>

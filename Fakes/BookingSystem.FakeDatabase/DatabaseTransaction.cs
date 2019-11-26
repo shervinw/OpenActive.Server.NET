@@ -18,7 +18,8 @@ namespace OpenActive.FakeDatabase.NET
                     Deleted = x.Deleted,
                     Modified = x.Modified,
                     Title = x.Title,
-                    Price = x.Price
+                    Price = x.Price,
+                    SellerId = x.SellerId
                 }).ToList(),
 
                 Occurrences = database.Occurrences.Select(x => new OccurrenceTable
@@ -28,7 +29,10 @@ namespace OpenActive.FakeDatabase.NET
                     Modified = x.Modified,
                     ClassId = x.ClassId,
                     Start = x.Start,
-                    End = x.End
+                    End = x.End,
+                    LeasedSpaces = x.LeasedSpaces,
+                    RemainingSpaces = x.RemainingSpaces,
+                    TotalSpaces = x.TotalSpaces
                 }).ToList(),
 
                 OrderItems = database.OrderItems.Select(x => new OrderItemsTable
@@ -58,7 +62,8 @@ namespace OpenActive.FakeDatabase.NET
                     IsLease = x.IsLease,
                     PaymentIdentifier = x.PaymentIdentifier,
                     SellerId = x.SellerId,
-                    TotalOrderPrice = x.TotalOrderPrice
+                    TotalOrderPrice = x.TotalOrderPrice,
+                    VisibleInFeed = x.VisibleInFeed
                 }).ToList(),
 
                 Sellers = database.Sellers.Select(x => new SellerTable
@@ -66,7 +71,8 @@ namespace OpenActive.FakeDatabase.NET
                     Id = x.Id,
                     Deleted = x.Deleted,
                     Modified = x.Modified,
-                    Name = x.Name
+                    Name = x.Name, 
+                    IsIndividual = x.IsIndividual
                 }).ToList(),
             };
         }

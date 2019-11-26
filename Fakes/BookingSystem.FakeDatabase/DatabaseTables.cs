@@ -61,6 +61,7 @@ namespace OpenActive.FakeDatabase.NET
         public decimal TotalOrderPrice { get; set; }
         public bool IsLease { get; set; }
         public DateTimeOffset LeaseExpires { get; set; }
+        public bool VisibleInFeed { get; set; }
     }
 
 
