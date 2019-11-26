@@ -4,6 +4,27 @@
     <TargetFrameworks>netstandard2.0;net45</TargetFrameworks>
     <AssemblyName>OpenActive.FakeDatabase.NET</AssemblyName>
     <RootNamespace>OpenActive.FakeDatabase.NET</RootNamespace>
+    <PackageId>OpenActive.FakeDatabase.NET</PackageId>
+    <Version>0.1.0</Version>
+    <Authors>OpenActive Community</Authors>
+    <Company>OpenActive</Company>
+    <Description>NOTICE: This library is not designed for production use.
+
+.NET fake booking system backend to aid OpenActive implementation.</Description>
+    <Copyright>OpenActive</Copyright>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <PackageProjectUrl>https://github.com/openactive/OpenActive.Server.NET/tree/master/Fakes/OpenActive.FakeDatabase.NET</PackageProjectUrl>
+    <PackageIconUrl>https://www.openactive.io/assets/openactive-icon-64x64.png</PackageIconUrl>
+    <RepositoryUrl>https://github.com/openactive/OpenActive.Server.NET/tree/master/Fakes/OpenActive.FakeDatabase.NET</RepositoryUrl>
+    <PackageTags>OpenActive booking</PackageTags>
+    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Debug|netstandard2.0|AnyCPU'">
+    <DefineConstants />
+    <TreatWarningsAsErrors>false</TreatWarningsAsErrors>
+    <WarningsAsErrors />
+    <DocumentationFile>C:\repos\OpenActive.Server.NET\Fakes\OpenActive.FakeDatabase.NET\OpenActive.FakeDatabase.NET.xml</DocumentationFile>
   </PropertyGroup>
 
   <ItemGroup>

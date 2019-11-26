@@ -16,7 +16,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\Fakes\BookingSystem.FakeDatabase\OpenActive.FakeDatabase.NET.csproj" />
+    <ProjectReference Include="..\..\Fakes\OpenActive.FakeDatabase.NET\OpenActive.FakeDatabase.NET.csproj" />
     <ProjectReference Include="..\..\OpenActive.Server.NET\OpenActive.Server.NET.csproj" />
   </ItemGroup>
 

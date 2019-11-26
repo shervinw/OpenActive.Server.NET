@@ -6,16 +6,21 @@
     <Company>OpenActive</Company>
     <Copyright>OpenActive</Copyright>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
-    <PackageProjectUrl>https://www.openactive.io/OpenActive.Server.NET</PackageProjectUrl>
+    <PackageProjectUrl>https://github.com/openactive/OpenActive.Server.NET</PackageProjectUrl>
     <PackageIconUrl>https://www.openactive.io/assets/openactive-icon-64x64.png</PackageIconUrl>
     <RepositoryUrl>https://github.com/openactive/OpenActive.Server.NET</RepositoryUrl>
-    <PackageTags>OpenActive schema rpde</PackageTags>
-    <PackageRequireLicenseAcceptance>true</PackageRequireLicenseAcceptance>
+    <PackageTags>OpenActive booking</PackageTags>
+    <PackageRequireLicenseAcceptance>false</PackageRequireLicenseAcceptance>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
-    <Version>0.0.0</Version>
+    <Version>0.1.0</Version>
     <Description>NOTICE: This library is not yet ready for production use.
 
 .NET server library for OpenActive implementation.</Description>
+    <PackageId>OpenActive.Server.NET</PackageId>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Debug|netstandard2.0|AnyCPU'">
+    <DocumentationFile>C:\repos\OpenActive.Server.NET\OpenActive.Server.NET\OpenActive.Server.NET.xml</DocumentationFile>
   </PropertyGroup>
 
   <ItemGroup>
