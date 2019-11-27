@@ -1,7 +1,5 @@
-﻿using System;
+﻿
 using Xunit;
-using OpenActive.Server.NET;
-using System.Data;
 using System.Linq;
 using Xunit.Abstractions;
 using OpenActive.FakeDatabase.NET;

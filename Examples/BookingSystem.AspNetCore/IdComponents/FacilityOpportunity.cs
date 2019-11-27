@@ -17,7 +17,6 @@ namespace BookingSystem.AspNetCore
     /// </summary>
     public class FacilityOpportunity : IBookableIdComponents
     {
-        public Uri BaseUrl { get; set; }
         public OpportunityType? OpportunityType { get; set; }
         public string FacilityUseId { get; set; }
         public long? SlotId { get; set; }

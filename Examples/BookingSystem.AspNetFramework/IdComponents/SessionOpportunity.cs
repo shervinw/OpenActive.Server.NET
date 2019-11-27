@@ -17,7 +17,6 @@ namespace BookingSystem.AspNetFramework
     /// </summary>
     public class SessionOpportunity : IBookableIdComponentsWithInheritance
     {
-        public Uri BaseUrl { get; set; }
         public OpportunityType? OpportunityType { get; set; }
         public OpportunityType? OfferOpportunityType { get; set; }
         public long? SessionSeriesId { get; set; }

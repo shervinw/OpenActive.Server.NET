@@ -16,7 +16,7 @@ namespace BookingSystem.AspNetCore.Controllers
     //[Authorize]
     [Route("api/openbooking")]
     [ApiController]
-    [Consumes(MediaTypeNames.OpenBooking.Version1)]
+    [Consumes(OpenActiveMediaTypes.OpenBooking.Version1)]
     public class OpenBookingController : ControllerBase
     {
         // Open Booking Errors must be handled as thrown exceptions and the ErrorResponseContent of the exception returned.

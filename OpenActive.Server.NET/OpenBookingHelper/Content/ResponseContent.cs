@@ -29,7 +29,7 @@ namespace OpenActive.Server.NET.OpenBookingHelper
             return new ResponseContent
             {
                 Content = content,
-                ContentType = MediaTypeNames.OpenBooking.Version1,
+                ContentType = OpenActiveMediaTypes.OpenBooking.Version1,
                 StatusCode = httpStatusCode
             };
         }
@@ -39,7 +39,7 @@ namespace OpenActive.Server.NET.OpenBookingHelper
             return new ResponseContent
             {
                 Content = null,
-                ContentType = MediaTypeNames.OpenBooking.Version1,
+                ContentType = OpenActiveMediaTypes.OpenBooking.Version1,
                 StatusCode = HttpStatusCode.NoContent
             };
         }
@@ -49,7 +49,7 @@ namespace OpenActive.Server.NET.OpenBookingHelper
             return new ResponseContent
             {
                 Content = content,
-                ContentType = MediaTypeNames.OpenBooking.Version1,
+                ContentType = OpenActiveMediaTypes.OpenBooking.Version1,
                 StatusCode = statusCode
             };
         }
@@ -59,7 +59,7 @@ namespace OpenActive.Server.NET.OpenBookingHelper
             return new ResponseContent
             {
                 Content = content,
-                ContentType = MediaTypeNames.RealtimePagedDataExchange.Version1,
+                ContentType = OpenActiveMediaTypes.RealtimePagedDataExchange.Version1,
                 StatusCode = HttpStatusCode.OK
             };
         }
@@ -71,38 +71,11 @@ namespace OpenActive.Server.NET.OpenBookingHelper
         //
         // Summary:
         //     The default Open Booking API content type for the version of Open Booking supported by the SDK
-        public string ContentType { get; internal set; } = MediaTypeNames.OpenBooking.Version1;
+        public string ContentType { get; internal set; } = OpenActiveMediaTypes.OpenBooking.Version1;
         //
         // Summary:
         //     The intended HTTP status code of the response
         public HttpStatusCode StatusCode { get; internal set; } = HttpStatusCode.OK;
-        //
-        // Summary:
-        //     The default Open Booking API content type for the version of Open Booking supported by the SDK
-        public string ContentTypeName => this.ContentType.Split(';')[0];
-        //
-        // Summary:
-        //     The default Open Booking API content type parameter for the version of Open Booking supported by the SDK
-        public KeyValuePair<string, string> ContentTypeParameter => new KeyValuePair<string, string>(this.ContentType.Split(';')[1].Trim().Split('=')[0], this.ContentType.Split(';')[1].Trim().Split('=')[1]) ;
-        //
-        // Summary:
-        //     Whether the default Open Booking API content type for the version of Open Booking supported by the SDK contains parameters
-        public bool ContentTypeContainsParameters => this.ContentType.Contains(";");
-
-        /// <summary>
-        /// This is provided as a convenience to .NET Framework users, to create a standards compliant JSON output.
-        /// </summary>
-        /// <example>
-        /// var resp = req.CreateResponse(HttpStatusCode.OK);
-        /// resp.Content = bookingEngine.{method}.ToStringContent();
-        /// </example>
-        public System.Net.Http.StringContent StringContent
-        {
-            get
-            {
-                return new StringContent(this.Content, Encoding.UTF8, this.ContentType);
-            }
-        }
 
         public override string ToString()
         {

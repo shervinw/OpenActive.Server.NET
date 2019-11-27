@@ -1,34 +1,49 @@
-﻿// using Microsoft.AspNetCore.Mvc.Formatters;
+﻿// using Microsoft.AspNetFramework.Mvc.Formatters;
 using OpenActive.NET;
 using OpenActive.Server.NET.OpenBookingHelper;
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Net.Http;
 using System.Net.Http.Formatting;
 using System.Net.Http.Headers;
 using System.Threading.Tasks;
 
-namespace BookingSystem.AspNetCore.Helpers
+namespace BookingSystem.AspNetFramework.Helpers
 {
     public class OpenBookingInputFormatter : MediaTypeFormatter
     {
         public OpenBookingInputFormatter()
         {
-            var mediaType = new MediaTypeHeaderValue(MediaTypeNames.OpenBooking.Version1Name);
-            mediaType.Parameters.Add(MediaTypeNames.OpenBooking.Version1Parameter);
-            this.SupportedMediaTypes.Add(mediaType);
+            this.SupportedMediaTypes.Add(MediaTypeHeaderValue.Parse(OpenActiveMediaTypes.OpenBooking.Version1));
+        }
+
+        public override Task<object> ReadFromStreamAsync(Type type, Stream readStream, HttpContent content, IFormatterLogger formatterLogger)
+        {
+            var taskCompletionSource = new TaskCompletionSource<object>();
+            try
+            {
+                var memoryStream = new MemoryStream();
+                readStream.CopyTo(memoryStream);
+                var s = System.Text.Encoding.UTF8.GetString(memoryStream.ToArray());
+                taskCompletionSource.SetResult(s);
+            }
+            catch (Exception e)
+            {
+                taskCompletionSource.SetException(e);
+            }
+            return taskCompletionSource.Task;
         }
 
         public override bool CanReadType(Type type)
         {
-            return false;
+            return type == typeof(string);
         }
 
         public override bool CanWriteType(Type type)
         {
-            return typeof(string) == type;
+            return false;
         }
-
     }
 }

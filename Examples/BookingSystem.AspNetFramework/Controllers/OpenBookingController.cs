@@ -26,12 +26,12 @@ namespace BookingSystem.AspNetFramework.Controllers
         /// GET api/openbooking/order-quote-templates/ABCD1234
         /// </summary>
         [HttpPut]
-        [Route("order-quote-template/{uuid}")]
-        public async Task<HttpResponseMessage> OrderQuoteCreationC1(string uuid, [FromBody] string orderQuote)
+        [Route("order-quote-templates/{uuid}")]
+        public HttpResponseMessage OrderQuoteCreationC1(string uuid, [FromBody] string orderQuote)
         {
             try
             {
-                return _bookingEngine.ProcessCheckpoint1(uuid, orderQuote).GetContentResult();
+                return _bookingEngine.ProcessCheckpoint1("<seller-credential>", uuid, orderQuote).GetContentResult();
             }
             catch (OpenBookingException obe)
             {
@@ -45,11 +45,11 @@ namespace BookingSystem.AspNetFramework.Controllers
         /// </summary>
         [HttpPut]
         [Route("order-quotes/{uuid}")]
-        public async Task<HttpResponseMessage> OrderQuoteCreationC2(string uuid, [FromBody] string orderQuote)
+        public HttpResponseMessage OrderQuoteCreationC2(string uuid, [FromBody] string orderQuote)
         {
             try
             {
-                return _bookingEngine.ProcessCheckpoint2(uuid, orderQuote).GetContentResult();
+                return _bookingEngine.ProcessCheckpoint2("<seller-credential>", uuid, orderQuote).GetContentResult();
             }
             catch (OpenBookingException obe)
             {
@@ -58,16 +58,35 @@ namespace BookingSystem.AspNetFramework.Controllers
         }
 
         /// <summary>
+        /// OrderQuote Deletion
+        /// DELETE api/openbooking/orders-quotes/ABCD1234
+        /// </summary>
+        [HttpDelete]
+        [Route("orders-quotes/{uuid}")]
+        public HttpResponseMessage OrderQuoteDeletion(string uuid)
+        {
+            try
+            {
+                return _bookingEngine.DeleteOrderQuote("<seller-credential>", uuid).GetContentResult();
+            }
+            catch (OpenBookingException obe)
+            {
+                return obe.ErrorResponseContent.GetContentResult();
+            }
+        }
+
+
+        /// <summary>
         /// Order Creation B
         /// GET api/openbooking/orders/ABCD1234
         /// </summary>
         [HttpPut]
         [Route("orders/{uuid}")]
-        public async Task<HttpResponseMessage> OrderCreationB(string uuid, [FromBody] string order)
+        public HttpResponseMessage OrderCreationB(string uuid, [FromBody] string order)
         {
             try
             {
-                return _bookingEngine.ProcessOrderCreationB(uuid, order).GetContentResult();
+                return _bookingEngine.ProcessOrderCreationB("<seller-credential>", uuid, order).GetContentResult();
             }
             catch (OpenBookingException obe)
             {
@@ -85,8 +104,7 @@ namespace BookingSystem.AspNetFramework.Controllers
         {
             try
             {
-                _bookingEngine.DeleteOrder(uuid);
-                return Request.CreateResponse(System.Net.HttpStatusCode.NoContent);
+                return _bookingEngine.DeleteOrder("<seller-credential>", uuid).GetContentResult();
             }
             catch (OpenBookingException obe)
             {
@@ -104,8 +122,7 @@ namespace BookingSystem.AspNetFramework.Controllers
         {
             try
             {
-                _bookingEngine.ProcessOrderUpdate(uuid, order);
-                return Request.CreateResponse(System.Net.HttpStatusCode.NoContent);
+                return _bookingEngine.ProcessOrderUpdate("<seller-credential>", uuid, order).GetContentResult();
             }
             catch (OpenBookingException obe)
             {
@@ -116,20 +133,29 @@ namespace BookingSystem.AspNetFramework.Controllers
         // GET api/openbooking/orders-rpde
         [HttpGet]
         [Route("orders-rpde")]
-        public async Task<HttpResponseMessage> Get(int uuid)
+        public HttpResponseMessage GetOrdersFeed(long? afterTimestamp = (long?)null, string afterId = null, long? afterChangeNumber = (long?)null)
         {
-            return Request.CreateResponse(System.Net.HttpStatusCode.OK);
+            try
+            {
+                // Note only a subset of these parameters will be supplied when this endpoints is called
+                // They are all provided here for the bookingEngine to choose the correct endpoint
+                // The auth token must also be provided from the associated authentication method
+                return _bookingEngine.GetOrdersRPDEPageForFeed("<client-credential>", afterTimestamp, afterId, afterChangeNumber).GetContentResult();
+            }
+            catch (OpenBookingException obe)
+            {
+                return obe.ErrorResponseContent.GetContentResult();
+            }
         }
 
-        // POST api/openbooking/test-interface/scheduled-sessions
+        // POST api/openbooking/test-interface/scheduledsession
         [HttpPost]
         [Route("test-interface/{type}")]
         public HttpResponseMessage Post(string type, [FromBody] string @event)
         {
             try
             {
-                _bookingEngine.CreateTestData(type, @event);
-                return Request.CreateResponse(System.Net.HttpStatusCode.NoContent);
+                return _bookingEngine.CreateTestData("<client-credential>", type, @event).GetContentResult();
             }
             catch (OpenBookingException obe)
             {
@@ -144,8 +170,7 @@ namespace BookingSystem.AspNetFramework.Controllers
         {
             try
             {
-                _bookingEngine.DeleteTestData(type, name);
-                return Request.CreateResponse(System.Net.HttpStatusCode.NoContent);
+                return _bookingEngine.DeleteTestData("<client-credential>", type, name).GetContentResult();
             }
             catch (OpenBookingException obe)
             {

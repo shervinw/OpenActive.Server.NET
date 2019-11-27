@@ -29,8 +29,7 @@ namespace BookingSystem.AspNetCore
                 case OpportunityType.ScheduledSession:
                     var session = (ScheduledSession)@event;
                     var superEvent = (SessionSeries)session.SuperEvent.GetClass<Event>();
-                    // Note temporary hack while waiting for OpenActive.NET accessors to work as expected
-                    FakeBookingSystem.Database.AddClass(superEvent.Name, superEvent.Offers?.FirstOrDefault()?.Price, (DateTimeOffset?)session.StartDate.Value ?? default, (DateTimeOffset?)session.EndDate.Value ?? default, session.MaximumAttendeeCapacity.Value);
+                    FakeBookingSystem.Database.AddClass(superEvent.Name, superEvent.Offers?.FirstOrDefault()?.Price, session.StartDate.GetPrimative<DateTimeOffset>() ?? default, session.EndDate.GetPrimative<DateTimeOffset>() ?? default, session.MaximumAttendeeCapacity.Value);
                     break;
             }
             

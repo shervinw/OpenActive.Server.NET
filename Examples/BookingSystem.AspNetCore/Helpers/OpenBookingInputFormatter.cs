@@ -13,7 +13,7 @@ namespace BookingSystem.AspNetCore.Helpers
     {
         public OpenBookingInputFormatter()
         {
-            this.SupportedMediaTypes.Add(MediaTypeNames.OpenBooking.Version1);
+            this.SupportedMediaTypes.Add(OpenActiveMediaTypes.OpenBooking.Version1);
         }
 
         public override async Task<InputFormatterResult> ReadRequestBodyAsync(InputFormatterContext context)

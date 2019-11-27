@@ -22,7 +22,7 @@ namespace BookingSystem.AspNetCore.Controllers
         /// GET feeds/{feedname}
         /// </summary>
         [HttpGet("{feedname}")]
-        [Consumes(MediaTypeNames.RealtimePagedDataExchange.Version1, System.Net.Mime.MediaTypeNames.Application.Json)] 
+        [Consumes(OpenActiveMediaTypes.RealtimePagedDataExchange.Version1, System.Net.Mime.MediaTypeNames.Application.Json)] 
         public IActionResult GetOpenDataFeed([FromServices] IBookingEngine bookingEngine, string feedname, long? afterTimestamp, string afterId, long? afterChangeNumber)
         {
             try

@@ -4,14 +4,13 @@ using System.Linq;
 using System.Net.Http;
 using System.Threading.Tasks;
 using System.Web.Http;
-using BookingSystem.AspNetCore.Helpers;
+using BookingSystem.AspNetFramework.Helpers;
 using BookingSystem.AspNetFramework.Helpers;
 using OpenActive.Server.NET;
 using OpenActive.Server.NET.OpenBookingHelper;
 
 namespace BookingSystem.AspNetFramework.Controllers
 {
-    //[RoutePrefix("feeds")]
     public class OpenDataController : ApiController
     {
         private IBookingEngine _bookingEngine = null;

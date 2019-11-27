@@ -4,8 +4,8 @@ using System.Linq;
 using OpenActive.Server.NET.OpenBookingHelper;
 using System.Threading.Tasks;
 using OpenActive.NET.Rpde.Version1;
-using BookingSystem.FakeDatabase;
 using OpenActive.NET;
+using OpenActive.FakeDatabase.NET;
 
 namespace BookingSystem.AspNetFramework
 {
@@ -16,28 +16,69 @@ namespace BookingSystem.AspNetFramework
         // TODO: Update to use fake orders database
         protected override List<RpdeItem> GetRPDEItems(long? afterTimestamp, string afterId)
         {
-            var query = from classes in FakeBookingSystem.Database.Classes
-                        join occurances in FakeBookingSystem.Database.Occurrences on classes.Id equals occurances.ClassId
-                        where !afterTimestamp.HasValue || classes.Modified.ToUnixTimeMilliseconds() > afterTimestamp ||
-                        (classes.Modified.ToUnixTimeMilliseconds() == afterTimestamp && classes.Id > long.Parse(afterId))
-                        group occurances by classes into thisClass
-                        orderby thisClass.Key.Modified, thisClass.Key.Id
+            var query = from orders in FakeBookingSystem.Database.Orders
+                        join seller in FakeBookingSystem.Database.Sellers on orders.SellerId equals seller.Id
+                        join orderItems in FakeBookingSystem.Database.OrderItems on orders.Id equals orderItems.OrderId
+                        where orders.VisibleInFeed && (!afterTimestamp.HasValue || orders.Modified.ToUnixTimeMilliseconds() > afterTimestamp ||
+                        (orders.Modified.ToUnixTimeMilliseconds() == afterTimestamp && orders.Id.CompareTo(afterId) > 0))
+                        group orderItems by new { orders, seller } into thisOrder
+                        orderby thisOrder.Key.orders.Modified, thisOrder.Key.orders.Id
                         select new RpdeItem
                         {
-                            Kind = RpdeKind.ScheduledSession,
-                            Id = thisClass.Key.Id,
-                            Modified = thisClass.Key.Modified.ToUnixTimeMilliseconds(),
-                            State = thisClass.Key.Deleted ? RpdeState.Deleted : RpdeState.Updated,
-                            Data = thisClass.Key.Deleted ? null : new Order
+                            Kind = RpdeKind.Order,
+                            Id = thisOrder.Key.orders.Id,
+                            Modified = thisOrder.Key.orders.Modified.ToUnixTimeMilliseconds(),
+                            State = thisOrder.Key.orders.Deleted ? RpdeState.Deleted : RpdeState.Updated,
+                            Data = thisOrder.Key.orders.Deleted ? null : new Order
                             {
-                                // QUESTION: Should the this.IdTemplate and this.BaseUrl be passed in each time rather than set on
-                                // the parent class? Current thinking is it's more extensible on parent class as function signature remains
-                                // constant as power of configuration through underlying class grows (i.e. as new properties are added)
-                                Id = this.RenderOrderId(OrderType.Order, thisClass.Key.Id.ToString()),
-                                Name = thisClass.Key.Title,
-                                OrderedItem = thisClass.Select(orderItem => new OrderItem
+                                Id = this.RenderOrderId(OrderType.Order, thisOrder.Key.orders.Id),
+                                Seller = thisOrder.Key.seller.IsIndividual ? (ILegalEntity)new Person
                                 {
-                                    Identifier = orderItem.Start.ToString()
+                                    Id = this.RenderSellerId(new SellerIdComponents { SellerIdLong = thisOrder.Key.seller.Id }),
+                                    Name = thisOrder.Key.seller.Name,
+                                    TaxMode = TaxMode.TaxGross
+                                } : (ILegalEntity)new Organization
+                                {
+                                    Id = this.RenderSellerId(new SellerIdComponents { SellerIdLong = thisOrder.Key.seller.Id }),
+                                    Name = thisOrder.Key.seller.Name,
+                                    TaxMode = TaxMode.TaxGross
+                                },
+                                Customer = thisOrder.Key.orders.CustomerIsOrganization ? (ILegalEntity)new Organization
+                                {
+                                    Email = thisOrder.Key.orders.CustomerEmail
+                                } : (ILegalEntity)new Person
+                                {
+                                    Email = thisOrder.Key.orders.CustomerEmail
+                                },
+                                BrokerRole = thisOrder.Key.orders.BrokerRole == BrokerRole.AgentBroker ? BrokerType.AgentBroker : thisOrder.Key.orders.BrokerRole == BrokerRole.ResellerBroker ? BrokerType.ResellerBroker : BrokerType.NoBroker,
+                                Broker = new Organization
+                                {
+                                    Name = thisOrder.Key.orders.BrokerName
+                                },
+                                Payment = new Payment
+                                {
+                                    Identifier = thisOrder.Key.orders.PaymentIdentifier
+                                },
+                                TotalPaymentDue = new PriceSpecification
+                                {
+                                    Price = thisOrder.Key.orders.TotalOrderPrice,
+                                    PriceCurrency = "GBP"
+                                },
+                                OrderedItem = thisOrder.Select(orderItem => new OrderItem
+                                {
+                                    Id = this.RenderOrderItemId(OrderType.Order, thisOrder.Key.orders.Id, orderItem.Id),
+                                    AcceptedOffer = new Offer
+                                    {
+                                        Id = new Uri(orderItem.OfferJsonLdId),
+                                        Price = orderItem.Price,
+                                        PriceCurrency = "GBP"
+                                    },
+                                    OrderedItem = RenderOpportunityWithOnlyId(orderItem.OpportunityJsonLdType, new Uri(orderItem.OpportunityJsonLdId)),
+                                    OrderItemStatus =
+                                        orderItem.Status == BookingStatus.Confirmed ? OrderItemStatus.OrderConfirmed :
+                                        orderItem.Status == BookingStatus.CustomerCancelled ? OrderItemStatus.CustomerCancelled :
+                                        orderItem.Status == BookingStatus.SellerCancelled ? OrderItemStatus.SellerCancelled :
+                                        orderItem.Status == BookingStatus.Attended ? OrderItemStatus.CustomerAttended : (OrderItemStatus?)null
 
                                 }).ToList()
                             }

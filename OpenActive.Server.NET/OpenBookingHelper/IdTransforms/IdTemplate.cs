@@ -275,7 +275,7 @@ namespace OpenActive.Server.NET.OpenBookingHelper
             else if (opportunityType == GrandparentIdConfiguration?.OpportunityType)
                 return RenderId(4, components, nameof(RenderOpportunityId), "parentOpportunityUriTemplate");
             else
-                throw new ArgumentOutOfRangeException(nameof(opportunityType), "OpportunityType was not found within this template");
+                throw new ArgumentOutOfRangeException(nameof(opportunityType), "OpportunityType was not found within this template. Please check it is appropriate for this feed or OrderItem.");
         }
 
         public string RenderOpportunityJsonLdType(TBookableIdComponents components)

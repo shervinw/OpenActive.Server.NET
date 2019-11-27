@@ -146,25 +146,9 @@ namespace BookingSystem.AspNetCore
 
                 JsonLdIdBaseUrl = new Uri("https://example.com/api/identifiers/"),
 
-                // QUESTION: Would it be useful to have the Base URL auto-populated from the controller here?
-
-                // Note unlike IDs this one needs to match URL of the feed, from whatever is in the controller
-                OrdersFeedUrl = new Uri("https://localhost:44307/api/openbooking/orders-rpde"),
-
-                // Note unlike other IDs this one needs to be resolvable
-                OrderBaseUrl = new Uri("https://localhost:44307/api/openbooking/orders/"),
-                OrderIdTemplate = new OrderIdTemplate(
-                    "{+BaseUrl}api/{OrderType}/{uuid}",
-                    "{+BaseUrl}api/{OrderType}/{uuid}#/orderedItems/{OrderItemIdLong}"
-                    ),
-
-                OrderFeedGenerator = new AcmeOrdersFeedRPDEGenerator(),
-
                 SellerIdTemplate = new SingleIdTemplate<SellerIdComponents>(
                     "{+BaseUrl}api/sellers/{SellerIdLong}"
                     ),
-
-                SellerStore = new AcmeSellerStore(),
 
                 OpenDataFeeds = new Dictionary<OpportunityType, IOpportunityDataRPDEFeedGenerator> {
                     {
@@ -180,7 +164,24 @@ namespace BookingSystem.AspNetCore
                     {
                         OpportunityType.FacilityUseSlot, new AcmeFacilityUseSlotRPDEGenerator()
                     }
-                }
+                },
+
+
+                // QUESTION: Would it be useful to have the Base URL auto-populated from the controller here?
+
+                // Note unlike IDs this one needs to match URL of the feed, from whatever is in the controller
+                OrdersFeedUrl = new Uri("https://localhost:44307/api/openbooking/orders-rpde"),
+
+                // Note unlike other IDs this one needs to be resolvable
+                OrderBaseUrl = new Uri("https://localhost:44307/api/openbooking/orders/"),
+                OrderIdTemplate = new OrderIdTemplate(
+                    "{+BaseUrl}api/{OrderType}/{uuid}",
+                    "{+BaseUrl}api/{OrderType}/{uuid}#/orderedItems/{OrderItemIdLong}"
+                    ),
+
+                OrderFeedGenerator = new AcmeOrdersFeedRPDEGenerator(),
+
+                SellerStore = new AcmeSellerStore()
             },
             new DatasetSiteGeneratorSettings
             {

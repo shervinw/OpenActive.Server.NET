@@ -1,5 +1,5 @@
-﻿using BookingSystem.FakeDatabase;
-using OpenActive.DatasetSite.NET;
+﻿using OpenActive.DatasetSite.NET;
+using OpenActive.FakeDatabase.NET;
 using OpenActive.NET;
 using OpenActive.NET.Rpde.Version1;
 using OpenActive.Server.NET.OpenBookingHelper;
@@ -9,10 +9,11 @@ using System.Linq;
 
 namespace BookingSystem.AspNetFramework
 {
-    public class AcmeScheduledSessionRPDEGenerator : RPDEFeedModifiedTimestampAndIDLong<SessionOpportunity>
+    public class AcmeScheduledSessionRPDEGenerator : RPDEFeedModifiedTimestampAndIDLong<SessionOpportunity, ScheduledSession>
     {
         //public override string FeedPath { get; protected set; } = "example path override";
-        protected override List<RpdeItem> GetRPDEItems(long? afterTimestamp, long? afterId)
+
+        protected override List<RpdeItem<ScheduledSession>> GetRPDEItems(long? afterTimestamp, long? afterId)
         {
             var query = from occurances in FakeBookingSystem.Database.Occurrences
                         orderby occurances.Modified, occurances.Id
@@ -20,7 +21,7 @@ namespace BookingSystem.AspNetFramework
                               occurances.Modified.ToUnixTimeMilliseconds() > afterTimestamp ||
                               (occurances.Modified.ToUnixTimeMilliseconds() == afterTimestamp && occurances.Id > afterId)
 
-                        select new RpdeItem
+                        select new RpdeItem<ScheduledSession>
                         {
                             Kind = RpdeKind.ScheduledSession,
                             Id = occurances.Id,
@@ -50,23 +51,24 @@ namespace BookingSystem.AspNetFramework
         }
     }
 
-    public class AcmeSessionSeriesRPDEGenerator : RPDEFeedModifiedTimestampAndIDLong<SessionOpportunity>
+    public class AcmeSessionSeriesRPDEGenerator : RPDEFeedModifiedTimestampAndIDLong<SessionOpportunity, SessionSeries>
     {
-        protected override List<RpdeItem> GetRPDEItems(long? afterTimestamp, long? afterId)
+        protected override List<RpdeItem<SessionSeries>> GetRPDEItems(long? afterTimestamp, long? afterId)
         {
             var query = from @class in FakeBookingSystem.Database.Classes
+                        join seller in FakeBookingSystem.Database.Sellers on @class.SellerId equals seller.Id
                         orderby @class.Modified, @class.Id
                         where !afterTimestamp.HasValue && !afterId.HasValue ||
                               @class.Modified.ToUnixTimeMilliseconds() > afterTimestamp ||
                               (@class.Modified.ToUnixTimeMilliseconds() == afterTimestamp && @class.Id > afterId)
 
-                        select new RpdeItem
+                        select new RpdeItem<SessionSeries>
                         {
                             Kind = RpdeKind.SessionSeries,
                             Id = @class.Id,
                             Modified = @class.Modified.ToUnixTimeMilliseconds(),
                             State = @class.Deleted ? RpdeState.Deleted : RpdeState.Updated,
-                            Data = @class.Deleted ? null : new ScheduledSession
+                            Data = @class.Deleted ? null : new SessionSeries
                             {
                                 // QUESTION: Should the this.IdTemplate and this.BaseUrl be passed in each time rather than set on
                                 // the parent class? Current thinking is it's more extensible on parent class as function signature remains
@@ -77,6 +79,17 @@ namespace BookingSystem.AspNetFramework
                                     SessionSeriesId = @class.Id
                                 }),
                                 Name = @class.Title,
+                                Organizer = seller.IsIndividual ? (ILegalEntity)new Person
+                                {
+                                    Id = this.RenderSellerId(new SellerIdComponents { SellerIdLong = seller.Id }),
+                                    Name = seller.Name,
+                                    TaxMode = TaxMode.TaxGross
+                                } : (ILegalEntity)new Organization
+                                {
+                                    Id = this.RenderSellerId(new SellerIdComponents { SellerIdLong = seller.Id }),
+                                    Name = seller.Name,
+                                    TaxMode = TaxMode.TaxGross
+                                },
                                 Offers = new List<Offer> { new Offer
                                     {
                                         Id = this.RenderOfferId(new SessionOpportunity
@@ -94,4 +107,5 @@ namespace BookingSystem.AspNetFramework
             return items;
         }
     }
+
 }
