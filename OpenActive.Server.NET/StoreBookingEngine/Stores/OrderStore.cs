@@ -11,8 +11,8 @@ namespace OpenActive.Server.NET.StoreBooking
         dynamic BeginOrderTransaction(FlowStage stage);
         void CompleteOrderTransaction(dynamic databaseTransaction);
         void RollbackOrderTransaction(dynamic databaseTransaction);
-        Lease CreateLease(OrderQuote orderQuote, StoreBookingFlowContext context, dynamic dbTransaction);
-        void CreateOrder(Order order, StoreBookingFlowContext context, dynamic dbTransaction);
+        Lease CreateLease(OrderQuote orderQuote, StoreBookingFlowContext flowContext, dynamic dbTransaction);
+        void CreateOrder(Order order, StoreBookingFlowContext flowContext, dynamic dbTransaction);
         bool CustomerCancelOrderItems(OrderIdTemplate orderIdTemplate, OrderIdComponents orderId, List<OrderIdComponents> orderItemIds);
         void DeleteOrder(OrderIdComponents orderId);
         void DeleteLease(OrderIdComponents orderId);
@@ -20,17 +20,17 @@ namespace OpenActive.Server.NET.StoreBooking
 
     public abstract class OrderStore<TDatabaseTransaction> : IOrderStore where TDatabaseTransaction : IDisposable
     {
-        public abstract Lease CreateLease(OrderQuote orderQuote, StoreBookingFlowContext context, TDatabaseTransaction databaseTransaction);
-        public abstract void CreateOrder(Order order, StoreBookingFlowContext context, TDatabaseTransaction databaseTransaction);
+        public abstract Lease CreateLease(OrderQuote orderQuote, StoreBookingFlowContext flowContext, TDatabaseTransaction databaseTransaction);
+        public abstract void CreateOrder(Order order, StoreBookingFlowContext flowContext, TDatabaseTransaction databaseTransaction);
 
-        public Lease CreateLease(OrderQuote orderQuote, StoreBookingFlowContext context, dynamic dbTransaction)
+        public Lease CreateLease(OrderQuote orderQuote, StoreBookingFlowContext flowContext, dynamic dbTransaction)
         {
-            return CreateLease(orderQuote, context, (TDatabaseTransaction)dbTransaction);
+            return CreateLease(orderQuote, flowContext, (TDatabaseTransaction)dbTransaction);
         }
 
-        public void CreateOrder(Order order, StoreBookingFlowContext context, dynamic dbTransaction)
+        public void CreateOrder(Order order, StoreBookingFlowContext flowContext, dynamic dbTransaction)
         {
-            CreateOrder(order, context, (TDatabaseTransaction)dbTransaction);
+            CreateOrder(order, flowContext, (TDatabaseTransaction)dbTransaction);
         }
 
 

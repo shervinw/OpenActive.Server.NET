@@ -49,6 +49,8 @@ namespace BookingSystem.AspNetCore
             //QUESTION: Should all these be configured here? Are we using the pattern correctly?
             //https://docs.microsoft.com/en-us/aspnet/core/mvc/controllers/dependency-injection?view=aspnetcore-3.0
 
+            const string BaseUrl = "https://localhost:44307/";
+
             services.AddSingleton<IBookingEngine>(sp => new StoreBookingEngine(
             new BookingEngineSettings
             {
@@ -170,10 +172,10 @@ namespace BookingSystem.AspNetCore
                 // QUESTION: Would it be useful to have the Base URL auto-populated from the controller here?
 
                 // Note unlike IDs this one needs to match URL of the feed, from whatever is in the controller
-                OrdersFeedUrl = new Uri("https://localhost:44307/api/openbooking/orders-rpde"),
+                OrdersFeedUrl = new Uri(BaseUrl + "api/openbooking/orders-rpde"),
 
                 // Note unlike other IDs this one needs to be resolvable
-                OrderBaseUrl = new Uri("https://localhost:44307/api/openbooking/orders/"),
+                OrderBaseUrl = new Uri(BaseUrl + "api/openbooking/orders/"),
                 OrderIdTemplate = new OrderIdTemplate(
                     "{+BaseUrl}api/{OrderType}/{uuid}",
                     "{+BaseUrl}api/{OrderType}/{uuid}#/orderedItems/{OrderItemIdLong}"
@@ -186,8 +188,8 @@ namespace BookingSystem.AspNetCore
             new DatasetSiteGeneratorSettings
             {
                 // QUESTION: Do the Base URLs need to come from config, or should they be detected from the request?
-                OpenDataFeedBaseUrl = "https://localhost:44307/feeds/".ParseUrlOrNull(),
-                DatasetSiteUrl = "https://localhost:44307/openactive/".ParseUrlOrNull(),
+                OpenDataFeedBaseUrl = (BaseUrl + "feeds/").ParseUrlOrNull(),
+                DatasetSiteUrl = (BaseUrl + "openactive/").ParseUrlOrNull(),
                 DatasetDiscussionUrl = "https://github.com/gll-better/opendata".ParseUrlOrNull(),
                 DatasetDocumentationUrl = "https://docs.acmebooker.example.com/".ParseUrlOrNull(),
                 DatasetLanguages = new List<string> { "en-GB" },
@@ -202,7 +204,7 @@ namespace BookingSystem.AspNetCore
                 PlatformVersion = "2.0",
                 BackgroundImageUrl = "https://data.better.org.uk/images/bg.jpg".ParseUrlOrNull(),
                 DateFirstPublished = new DateTimeOffset(new DateTime(2019, 01, 14)),
-                OpenBookingAPIBaseUrl = "https://localhost:44307/api/openbooking/".ParseUrlOrNull(),
+                OpenBookingAPIBaseUrl = (BaseUrl + "api/openbooking/").ParseUrlOrNull(),
             },
             new StoreBookingEngineSettings
             {

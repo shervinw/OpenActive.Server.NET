@@ -38,22 +38,22 @@ namespace OpenActive.Server.NET.StoreBooking
         }
 
 
-        public void GetOrderItems(List<IOrderItemContext> orderItemContexts, StoreBookingFlowContext context)
+        public void GetOrderItems(List<IOrderItemContext> orderItemContexts, StoreBookingFlowContext flowContext)
         {
             // TODO: Include validation on the OrderItem created, to ensure it includes all the required fields
-            GetOrderItem(ConvertToSpecificComponents(orderItemContexts), context);
+            GetOrderItem(ConvertToSpecificComponents(orderItemContexts), flowContext);
         }
 
-        public void LeaseOrderItems(List<IOrderItemContext> orderItemContexts, StoreBookingFlowContext context, dynamic databaseTransactionContext)
+        public void LeaseOrderItems(List<IOrderItemContext> orderItemContexts, StoreBookingFlowContext flowContext, dynamic databaseTransactionContext)
         {
             // TODO: Include validation on the OrderItem created, to ensure it includes all the required fields
-            LeaseOrderItem(ConvertToSpecificComponents(orderItemContexts), context, (TDatabaseTransaction)databaseTransactionContext);
+            LeaseOrderItem(ConvertToSpecificComponents(orderItemContexts), flowContext, (TDatabaseTransaction)databaseTransactionContext);
         }
 
-        public void BookOrderItems(List<IOrderItemContext> orderItemContexts, StoreBookingFlowContext context, dynamic databaseTransactionContext)
+        public void BookOrderItems(List<IOrderItemContext> orderItemContexts, StoreBookingFlowContext flowContext, dynamic databaseTransactionContext)
         {
             // TODO: Include validation on the OrderItem created, to ensure it includes all the required fields
-            BookOrderItem(ConvertToSpecificComponents(orderItemContexts), context, (TDatabaseTransaction)databaseTransactionContext);
+            BookOrderItem(ConvertToSpecificComponents(orderItemContexts), flowContext, (TDatabaseTransaction)databaseTransactionContext);
         }
 
         protected abstract void GetOrderItem(List<OrderItemContext<TComponents>> orderItemContexts, StoreBookingFlowContext flowContext);

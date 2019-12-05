@@ -326,40 +326,40 @@ namespace OpenActive.Server.NET.StoreBooking
                     // Leasing is optimistic, booking is atomic
                     using (dynamic dbTransaction = storeBookingEngineSettings.OrderStore.BeginOrderTransaction(context.Stage))
                     {
-                        try
-                        {
-                            responseOrderQuote.Lease = storeBookingEngineSettings.OrderStore.CreateLease(responseOrderQuote, context, dbTransaction);
-
-                            // Lease the OrderItems, if a lease exists
-                            if (responseOrderQuote.Lease != null)
+                            try
                             {
-                                foreach (var g in orderItemGroups)
+                                responseOrderQuote.Lease = storeBookingEngineSettings.OrderStore.CreateLease(responseOrderQuote, context, dbTransaction);
+
+                                // Lease the OrderItems, if a lease exists
+                                if (responseOrderQuote.Lease != null)
                                 {
-                                    g.Store.LeaseOrderItems(g.OrderItemContexts, context, dbTransaction);
+                                    foreach (var g in orderItemGroups)
+                                    {
+                                        g.Store.LeaseOrderItems(g.OrderItemContexts, context, dbTransaction);
+                                    }
                                 }
+
+                                /*
+                                // Lease the OrderItems
+                                responseOrderQuote.OrderedItem = orderItemGroups.Select(g => {
+                                    // Errors produced by LeaseOrderItem are in the same order as the items provided
+                                    // This interface encourages implementers not to make any alterations to the OrderItems at the lease stage
+                                    g.Store.LeaseOrderItems(g.OrderItemContexts, context, dbTransaction);
+                                    return g.OrderItemContexts;
+                                })
+                                .SelectMany(x => x)
+                                .OrderBy(x => x.Index)
+                                .Select(x => x.responseOrderItem)
+                                .ToList();
+                                */
+
+                                storeBookingEngineSettings.OrderStore.CompleteOrderTransaction(dbTransaction);
                             }
-
-                            /*
-                            // Lease the OrderItems
-                            responseOrderQuote.OrderedItem = orderItemGroups.Select(g => {
-                                // Errors produced by LeaseOrderItem are in the same order as the items provided
-                                // This interface encourages implementers not to make any alterations to the OrderItems at the lease stage
-                                g.Store.LeaseOrderItems(g.OrderItemContexts, context, dbTransaction);
-                                return g.OrderItemContexts;
-                            })
-                            .SelectMany(x => x)
-                            .OrderBy(x => x.Index)
-                            .Select(x => x.responseOrderItem)
-                            .ToList();
-                            */
-
-                            storeBookingEngineSettings.OrderStore.CompleteOrderTransaction(dbTransaction);
-                        }
-                        catch
-                        {
-                            storeBookingEngineSettings.OrderStore.RollbackOrderTransaction(dbTransaction);
-                            throw;
-                        }
+                            catch
+                            {
+                                storeBookingEngineSettings.OrderStore.RollbackOrderTransaction(dbTransaction);
+                                throw;
+                            }
                     }
                     break;
 
@@ -382,6 +382,11 @@ namespace OpenActive.Server.NET.StoreBooking
                     // Booking is atomic
                     using (dynamic dbTransaction = storeBookingEngineSettings.OrderStore.BeginOrderTransaction(context.Stage))
                     {
+                        if (dbTransaction == null)
+                        {
+                            throw new EngineConfigurationException("A transaction is required for booking at B, to ensure the integrity of the booking made.");
+                        }
+
                         try
                         {
                             // Create the parent Order

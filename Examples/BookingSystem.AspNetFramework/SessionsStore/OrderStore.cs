@@ -20,7 +20,7 @@ namespace BookingSystem.AspNetFramework
             return FakeBookingSystem.Database.CancelOrderItem(orderId.uuid, orderItemIds.Select(x => x.OrderItemIdLong.Value).ToList(), true);
         }
 
-        public override Lease CreateLease(OrderQuote orderQuote, StoreBookingFlowContext context, DatabaseTransaction databaseTransaction)
+        public override Lease CreateLease(OrderQuote orderQuote, StoreBookingFlowContext flowContext, DatabaseTransaction databaseTransaction)
         {
             if (orderQuote.TotalPaymentDue.PriceCurrency != "GBP")
             {
@@ -30,17 +30,17 @@ namespace BookingSystem.AspNetFramework
             // Note if no lease support, simply return null always here instead
 
             // In this example leasing is only supported at C2
-            if (context.Stage == FlowStage.C2)
+            if (flowContext.Stage == FlowStage.C2)
             {
                 // TODO: Make the lease duration configurable
                 var leaseExpires = DateTimeOffset.Now + new TimeSpan(0, 5, 0);
 
                 var result = databaseTransaction.Database.AddLease(
-                    context.OrderId.uuid,
-                    context.BrokerRole == BrokerType.AgentBroker ? BrokerRole.AgentBroker : context.BrokerRole == BrokerType.ResellerBroker ? BrokerRole.ResellerBroker : BrokerRole.NoBroker,
-                    context.Broker.Name,
-                    context.SellerId.SellerIdLong.Value,
-                    context.Customer.Email,
+                    flowContext.OrderId.uuid,
+                    flowContext.BrokerRole == BrokerType.AgentBroker ? BrokerRole.AgentBroker : flowContext.BrokerRole == BrokerType.ResellerBroker ? BrokerRole.ResellerBroker : BrokerRole.NoBroker,
+                    flowContext.Broker.Name,
+                    flowContext.SellerId.SellerIdLong.Value,
+                    flowContext.Customer.Email,
                     leaseExpires
                     );
 
@@ -63,7 +63,7 @@ namespace BookingSystem.AspNetFramework
             FakeBookingSystem.Database.DeleteLease(orderId.uuid);
         }
 
-        public override void CreateOrder(Order order, StoreBookingFlowContext context, DatabaseTransaction databaseTransaction)
+        public override void CreateOrder(Order order, StoreBookingFlowContext flowContext, DatabaseTransaction databaseTransaction)
         {
             if (order.TotalPaymentDue.PriceCurrency != "GBP")
             {
@@ -71,12 +71,12 @@ namespace BookingSystem.AspNetFramework
             }
 
             var result = databaseTransaction.Database.AddOrder(
-                context.OrderId.uuid,
-                context.BrokerRole == BrokerType.AgentBroker ? BrokerRole.AgentBroker : context.BrokerRole == BrokerType.ResellerBroker ? BrokerRole.ResellerBroker : BrokerRole.NoBroker,
-                context.Broker.Name,
-                context.SellerId.SellerIdLong.Value,
-                context.Customer.Email,
-                context.Payment?.Identifier,
+                flowContext.OrderId.uuid,
+                flowContext.BrokerRole == BrokerType.AgentBroker ? BrokerRole.AgentBroker : flowContext.BrokerRole == BrokerType.ResellerBroker ? BrokerRole.ResellerBroker : BrokerRole.NoBroker,
+                flowContext.Broker.Name,
+                flowContext.SellerId.SellerIdLong.Value,
+                flowContext.Customer.Email,
+                flowContext.Payment?.Identifier,
                 order.TotalPaymentDue.Price.Value);
 
             if (!result) throw new OpenBookingException(new OrderAlreadyExistsError());
