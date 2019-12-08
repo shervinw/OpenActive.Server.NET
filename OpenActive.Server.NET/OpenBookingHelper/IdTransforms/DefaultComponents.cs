@@ -17,6 +17,7 @@ namespace OpenActive.Server.NET.OpenBookingHelper
     public class OrderIdComponents
     {
         public OrderType? OrderType { get; set; }
+        public string ClientId { get; set; }
         public string uuid { get; set; }
         public long? OrderItemIdLong { get; set; }
         public string OrderItemIdString { get; set; }

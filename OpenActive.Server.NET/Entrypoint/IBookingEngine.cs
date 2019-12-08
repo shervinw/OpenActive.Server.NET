@@ -22,17 +22,17 @@ namespace OpenActive.Server.NET
         ResponseContent GetOpenDataRPDEPageForFeed(string feedname, string afterTimestamp, string afterId, string afterChangeNumber);
 
         // These endpoints are authenticated by seller credentials (OAuth Authorization Code Grant)
-        ResponseContent ProcessCheckpoint1(string authPartySellerToken, string uuid, string orderQuoteJson);
-        ResponseContent ProcessCheckpoint2(string authPartySellerToken, string uuid, string orderQuoteJson);
-        ResponseContent ProcessOrderCreationB(string authPartySellerToken, string uuid, string orderJson);
-        ResponseContent DeleteOrder(string authPartySellerToken, string uuid);
-        ResponseContent DeleteOrderQuote(string authPartySellerToken, string uuid);
-        ResponseContent ProcessOrderUpdate(string authPartySellerToken, string uuid, string orderJson);
+        ResponseContent ProcessCheckpoint1(string bookingPartnerClientId, Uri sellerId, string uuid, string orderQuoteJson);
+        ResponseContent ProcessCheckpoint2(string bookingPartnerClientId, Uri sellerId, string uuid, string orderQuoteJson);
+        ResponseContent ProcessOrderCreationB(string bookingPartnerClientId, Uri sellerId, string uuid, string orderJson);
+        ResponseContent DeleteOrder(string bookingPartnerClientId, Uri sellerId, string uuid);
+        ResponseContent DeleteOrderQuote(string bookingPartnerClientId, Uri sellerId, string uuid);
+        ResponseContent ProcessOrderUpdate(string bookingPartnerClientId, Uri sellerId, string uuid, string orderJson);
 
         // These endpoints are authenticated by client credentials (OAuth Client Credentials Grant)
-        ResponseContent CreateTestData(string authPartyClientToken, string opportunityType, string eventJson);
-        ResponseContent DeleteTestData(string authPartyClientToken, string opportunityType, string name);
-        ResponseContent GetOrdersRPDEPageForFeed(string authPartyClientToken, string afterTimestamp, string afterId, string afterChangeNumber);
-        ResponseContent GetOrdersRPDEPageForFeed(string authPartyClientToken, long? afterTimestamp, string afterId, long? afterChangeNumber);
+        ResponseContent CreateTestData(string bookingPartnerClientId, string opportunityType, string eventJson);
+        ResponseContent DeleteTestData(string bookingPartnerClientId, string opportunityType, string name);
+        ResponseContent GetOrdersRPDEPageForFeed(string bookingPartnerClientId, string afterTimestamp, string afterId, string afterChangeNumber);
+        ResponseContent GetOrdersRPDEPageForFeed(string bookingPartnerClientId, long? afterTimestamp, string afterId, long? afterChangeNumber);
     }
 }

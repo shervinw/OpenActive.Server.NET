@@ -37,6 +37,7 @@ namespace OpenActive.FakeDatabase.NET
 
                 OrderItems = database.OrderItems.Select(x => new OrderItemsTable
                 {
+                    ClientId = x.ClientId,
                     Id = x.Id,
                     Deleted = x.Deleted,
                     Modified = x.Modified,
@@ -51,6 +52,7 @@ namespace OpenActive.FakeDatabase.NET
 
                 Orders = database.Orders.Select(x => new OrderTable
                 {
+                    ClientId = x.ClientId,
                     Id = x.Id,
                     Deleted = x.Deleted,
                     Modified = x.Modified,

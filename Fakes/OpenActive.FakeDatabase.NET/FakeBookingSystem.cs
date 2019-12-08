@@ -43,13 +43,14 @@ namespace OpenActive.FakeDatabase.NET
             }
         }
 
-        public bool AddLease(string uuid, BrokerRole brokerRole, string brokerName, long sellerId, string customerEmail, DateTimeOffset leaseExpires)
+        public bool AddLease(string clientId, string uuid, BrokerRole brokerRole, string brokerName, long sellerId, string customerEmail, DateTimeOffset leaseExpires)
         {
-            var existingOrder = Orders.SingleOrDefault(x => x.Id == uuid);
+            var existingOrder = Orders.SingleOrDefault(x => x.ClientId == clientId && x.Id == uuid );
             if (existingOrder == null)
             {
                 Orders.Add(new OrderTable
                 {
+                    ClientId = clientId,
                     Id = uuid,
                     Deleted = false,
                     BrokerRole = brokerRole,
@@ -82,22 +83,24 @@ namespace OpenActive.FakeDatabase.NET
             
         }
 
-        public void DeleteLease(string uuid)
+        public void DeleteLease(string clientId, string uuid, long sellerId)
         {
-            if (Orders.Exists(x => x.IsLease && x.Id == uuid))
+            // TODO: Note this should throw an error if the Seller ID does not match, same as DeleteOrder
+            if (Orders.Exists(x => x.ClientId == clientId && x.IsLease && x.Id == uuid && x.SellerId == sellerId))
             {
-                OrderItems.RemoveAll(x => x.OrderId == uuid);
-                Orders.RemoveAll(x => x.Id == uuid);
+                OrderItems.RemoveAll(x => x.ClientId == clientId && x.OrderId == uuid);
+                Orders.RemoveAll(x => x.ClientId == clientId && x.Id == uuid);
             }
         }
 
-        public bool AddOrder(string uuid, BrokerRole brokerRole, string brokerName, long sellerId, string customerEmail, string paymentIdentifier, decimal totalOrderPrice)
+        public bool AddOrder(string clientId, string uuid, BrokerRole brokerRole, string brokerName, long sellerId, string customerEmail, string paymentIdentifier, decimal totalOrderPrice)
         {
-            var existingOrder = Orders.SingleOrDefault(x => x.Id == uuid);
+            var existingOrder = Orders.SingleOrDefault(x => x.ClientId == clientId && x.Id == uuid);
             if (existingOrder == null)
             {
                 Orders.Add(new OrderTable
                 {
+                    ClientId = clientId,
                     Id = uuid,
                     Deleted = false,
                     BrokerRole = brokerRole,
@@ -131,29 +134,38 @@ namespace OpenActive.FakeDatabase.NET
             } 
         }
 
-        public void DeleteOrder(string uuid)
+        public void DeleteOrder(string clientId, string uuid, long sellerId)
         {
             // Set the Order to deleted in the feed, and erase all associated personal data
-            var order = Orders.FirstOrDefault(x => !x.IsLease && x.Id == uuid && !x.Deleted);
+            var order = Orders.FirstOrDefault(x => x.ClientId == clientId && x.IsLease && x.Id == uuid && !x.Deleted);
             if (order != null)
             {
+                if (order.SellerId != sellerId)
+                {
+                    throw new ArgumentException("SellerId does not match Order");
+                }
                 order.Deleted = true;
                 order.CustomerEmail = null;
                 order.Modified = DateTimeOffset.Now;
-                OrderItems.RemoveAll(x => x.OrderId == order.Id);
+                OrderItems.RemoveAll(x => x.ClientId == clientId && x.OrderId == order.Id);
             }
         }
 
-        public bool LeaseOrderItemsForClassOccurrence(string uuid, long occurrenceId, long numberOfSpaces)
+        public bool LeaseOrderItemsForClassOccurrence(string clientId, long sellerId, string uuid, long occurrenceId, long numberOfSpaces)
         {
             var thisOccurrence = Occurrences.FirstOrDefault(x => x.Id == occurrenceId && !x.Deleted);
             var thisClass = Classes.FirstOrDefault(x => x.Id == thisOccurrence?.ClassId && !x.Deleted);
 
             if (thisOccurrence != null && thisClass != null)
             {
+                if (thisClass.SellerId != sellerId)
+                {
+                    throw new ArgumentException("SellerId does not match Order");
+                }
+
                 // Remove existing leases
                 // Note a real implementation would likely maintain existing leases instead of removing and recreating them
-                OrderItems.RemoveAll(x => x.OrderId == uuid && x.OccurrenceId == occurrenceId);
+                OrderItems.RemoveAll(x => x.ClientId == clientId && x.OrderId == uuid && x.OccurrenceId == occurrenceId);
                 var leasedSpaces = OrderItems.Where(x => Orders.Single(o => o.Id == x.OrderId).IsLease && x.OccurrenceId == occurrenceId).Count();
                 thisOccurrence.LeasedSpaces = leasedSpaces;
                 thisOccurrence.Modified = DateTimeOffset.Now + new TimeSpan(0, 0, 5); // Push into the future to avoid it getting lost in the feed
@@ -165,6 +177,7 @@ namespace OpenActive.FakeDatabase.NET
                     {
                         OrderItems.Add(new OrderItemsTable
                         {
+                            ClientId = clientId,
                             Id = nextId++,
                             Deleted = false,
                             OrderId = uuid,
@@ -175,7 +188,7 @@ namespace OpenActive.FakeDatabase.NET
                     // Update number of spaces remaining for the opportunity
                     var totalSpacesTaken = OrderItems.Where(x => Orders.Single(o => o.Id == x.OrderId).IsLease && x.OccurrenceId == occurrenceId).Count();
                     thisOccurrence.LeasedSpaces = totalSpacesTaken;
-                    thisOccurrence.Modified = DateTimeOffset.Now + new TimeSpan(0, 0, 5); // Push into the future to avoid it getting lost in the feed
+                    thisOccurrence.Modified = DateTimeOffset.Now + new TimeSpan(0, 0, 5); // Push into the future to avoid it getting lost in the feed // TODO: Document this!
                     return true;
                 }
                 else
@@ -189,16 +202,21 @@ namespace OpenActive.FakeDatabase.NET
         }
 
         // TODO this should reuse code of LeaseOrderItemsForClassOccurrence
-        public List<long> BookOrderItemsForClassOccurrence(string uuid, long occurrenceId, string opportunityJsonLdType, string opportunityJsonLdId, string offerJsonLdId, long numberOfSpaces)
+        public List<long> BookOrderItemsForClassOccurrence(string clientId, long sellerId, string uuid, long occurrenceId, string opportunityJsonLdType, string opportunityJsonLdId, string offerJsonLdId, long numberOfSpaces)
         {
             var thisOccurrence = Occurrences.FirstOrDefault(x => x.Id == occurrenceId && !x.Deleted);
             var thisClass = Classes.FirstOrDefault(x => x.Id == thisOccurrence.ClassId && !x.Deleted);
 
             if (thisOccurrence != null && thisClass != null)
             {
+                if (thisClass.SellerId != sellerId)
+                {
+                    throw new ArgumentException("SellerId does not match Order");
+                }
+
                 // Remove existing leases
                 // Note a real implementation would likely maintain existing leases instead of removing and recreating them
-                OrderItems.RemoveAll(x => x.OrderId == uuid && x.OccurrenceId == occurrenceId);
+                OrderItems.RemoveAll(x => x.ClientId == clientId && x.OrderId == uuid && x.OccurrenceId == occurrenceId);
                 var leasedSpaces = OrderItems.Where(x => Orders.Single(o => o.Id == x.OrderId).IsLease && x.OccurrenceId == occurrenceId).Count();
                 thisOccurrence.LeasedSpaces = leasedSpaces;
                 thisOccurrence.Modified = DateTimeOffset.Now + new TimeSpan(0, 0, 5); // Push into the future to avoid it getting lost in the feed
@@ -213,6 +231,7 @@ namespace OpenActive.FakeDatabase.NET
                         OrderItemIds.Add(orderItemId);
                         OrderItems.Add(new OrderItemsTable
                         {
+                            ClientId = clientId,
                             Id = orderItemId,
                             Deleted = false,
                             OrderId = uuid,
@@ -244,13 +263,17 @@ namespace OpenActive.FakeDatabase.NET
             }
         }
 
-        public bool CancelOrderItem(string uuid, List<long> orderItemIds, bool customerCancelled)
+        public bool CancelOrderItem(string clientId, long sellerId, string uuid, List<long> orderItemIds, bool customerCancelled)
         {
-            var order = Orders.FirstOrDefault(x => !x.IsLease && x.Id == uuid && !x.Deleted);
+            var order = Orders.FirstOrDefault(x => x.ClientId == clientId && !x.IsLease && x.Id == uuid && !x.Deleted);
+            if (order.SellerId != sellerId)
+            {
+                throw new ArgumentException("SellerId does not match Order");
+            }
             if (order != null)
             {
                 List<OrderItemsTable> updatedOrderItems = new List<OrderItemsTable>();
-                foreach (OrderItemsTable orderItem in OrderItems.Where(x => x.OrderId == order.Id)) {
+                foreach (OrderItemsTable orderItem in OrderItems.Where(x => x.ClientId == clientId && x.OrderId == order.Id && orderItemIds.Contains(x.Id))) {
                     if (orderItem.Status == BookingStatus.Confirmed || orderItem.Status == BookingStatus.Attended)
                     {
                         updatedOrderItems.Add(orderItem);
@@ -260,7 +283,7 @@ namespace OpenActive.FakeDatabase.NET
                 // Update the total price and modified date on the Order to update the feed, if something has changed
                 if (updatedOrderItems.Count > 0)
                 {
-                    var totalPrice = OrderItems.Where(x => x.OrderId == order.Id && (x.Status == BookingStatus.Confirmed || x.Status == BookingStatus.Attended)).Sum(x => x.Price);
+                    var totalPrice = OrderItems.Where(x => x.ClientId == clientId && x.OrderId == order.Id && (x.Status == BookingStatus.Confirmed || x.Status == BookingStatus.Attended)).Sum(x => x.Price);
                     order.TotalOrderPrice = totalPrice;
                     order.VisibleInFeed = true;
                     order.Modified = DateTimeOffset.Now;

@@ -347,13 +347,17 @@ namespace OpenActive.Server.NET.OpenBookingHelper
             if (orderItemIdTemplate == null) throw new ArgumentNullException(nameof(orderItemIdTemplate));
         }
 
-        public OrderIdComponents GetOrderIdComponents(Uri id)
+        public OrderIdComponents GetOrderIdComponents(string clientId, Uri id)
         {
-            return base.GetIdComponents(nameof(GetIdComponents), id, null);
+            var orderId = base.GetIdComponents(nameof(GetIdComponents), id, null);
+            orderId.ClientId = clientId;
+            return orderId;
         }
-        public OrderIdComponents GetOrderItemIdComponents(Uri id)
+        public OrderIdComponents GetOrderItemIdComponents(string clientId, Uri id)
         {
-            return base.GetIdComponents(nameof(GetIdComponents), null, id);
+            var orderId = base.GetIdComponents(nameof(GetIdComponents), null, id);
+            orderId.ClientId = clientId;
+            return orderId;
         }
 
         // TODO: Later - check if RenderOrderId and RenderOrderItemId with multiple params can be moved back out to OrdersRPDEFeedGenerator?

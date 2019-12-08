@@ -14,10 +14,6 @@ using OpenActive.FakeDatabase.NET;
 
 namespace BookingSystem.AspNetFramework
 {
-
-    /// <summary>
-    /// TODO: Move to BookingSystem.AspNetFramework
-    /// </summary>
     class SessionStore : OpportunityStore<SessionOpportunity, DatabaseTransaction>
     {
 
@@ -32,7 +28,6 @@ namespace BookingSystem.AspNetFramework
                     FakeBookingSystem.Database.AddClass(superEvent.Name, superEvent.Offers?.FirstOrDefault()?.Price, session.StartDate.GetPrimative<DateTimeOffset>() ?? default, session.EndDate.GetPrimative<DateTimeOffset>() ?? default, session.MaximumAttendeeCapacity.Value);
                     break;
             }
-
         }
 
         public override void DeleteTestDataItem(OpportunityType opportunityType, string name)
@@ -142,7 +137,7 @@ namespace BookingSystem.AspNetFramework
                 else
                 {
                     // Attempt to lease for those with the same IDs, which is atomic
-                    bool result = databaseTransaction.Database.LeaseOrderItemsForClassOccurrence(flowContext.OrderId.uuid, ctxGroup.Key.ScheduledSessionId.Value, ctxGroup.Count());
+                    bool result = databaseTransaction.Database.LeaseOrderItemsForClassOccurrence(flowContext.OrderId.ClientId, flowContext.SellerId.SellerIdLong.Value, flowContext.OrderId.uuid, ctxGroup.Key.ScheduledSessionId.Value, ctxGroup.Count());
 
                     if (!result)
                     {
@@ -170,7 +165,7 @@ namespace BookingSystem.AspNetFramework
                 }
 
                 // Attempt to lease for those with the same IDs, which is atomic
-                List<long> orderItemIds = databaseTransaction.Database.BookOrderItemsForClassOccurrence(flowContext.OrderId.uuid, ctxGroup.Key.ScheduledSessionId.Value, this.RenderOpportunityJsonLdType(ctxGroup.Key), this.RenderOpportunityId(ctxGroup.Key).ToString(), this.RenderOfferId(ctxGroup.Key).ToString(), ctxGroup.Count());
+                List<long> orderItemIds = databaseTransaction.Database.BookOrderItemsForClassOccurrence(flowContext.OrderId.ClientId, flowContext.SellerId.SellerIdLong.Value, flowContext.OrderId.uuid, ctxGroup.Key.ScheduledSessionId.Value, this.RenderOpportunityJsonLdType(ctxGroup.Key), this.RenderOpportunityId(ctxGroup.Key).ToString(), this.RenderOfferId(ctxGroup.Key).ToString(), ctxGroup.Count());
 
                 if (orderItemIds != null)
                 {
@@ -187,5 +182,4 @@ namespace BookingSystem.AspNetFramework
             }
         }
     }
-
 }

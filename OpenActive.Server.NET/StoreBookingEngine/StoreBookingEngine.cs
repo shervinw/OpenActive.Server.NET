@@ -135,7 +135,7 @@ namespace OpenActive.Server.NET.StoreBooking
         private readonly Dictionary<OpportunityType, IOpportunityStore> storeRouting;
         private readonly StoreBookingEngineSettings storeBookingEngineSettings;
 
-        protected override void CreateTestDataItem(string authPartyClientToken, OpportunityType opportunityType, Event @event)
+        protected override void CreateTestDataItem(string bookingPartnerClientId, OpportunityType opportunityType, Event @event)
         {
             if (!storeRouting.ContainsKey(opportunityType))
                 throw new OpenBookingException(new OpenBookingError(), "Specified opportunity type is not configured as bookable in the StoreBookingEngine constructor.");
@@ -144,7 +144,7 @@ namespace OpenActive.Server.NET.StoreBooking
             storeRouting[opportunityType].CreateTestDataItem(opportunityType, @event);
         }
 
-        protected override void DeleteTestDataItem(string authPartyClientToken, OpportunityType opportunityType, string name)
+        protected override void DeleteTestDataItem(string bookingPartnerClientId, OpportunityType opportunityType, string name)
         {
             if (!storeRouting.ContainsKey(opportunityType))
                 throw new OpenBookingException(new OpenBookingError(), "Specified opportunity type is not configured as bookable in the StoreBookingEngine constructor.");
@@ -154,22 +154,22 @@ namespace OpenActive.Server.NET.StoreBooking
 
 
 
-        public override void ProcessCustomerCancellation(string authPartySellerToken, OrderIdTemplate orderIdTemplate, OrderIdComponents orderId, List<OrderIdComponents> orderItemIds)
+        public override void ProcessCustomerCancellation(OrderIdComponents orderId, SellerIdComponents sellerId, OrderIdTemplate orderIdTemplate, List<OrderIdComponents> orderItemIds)
         {
-            if (!storeBookingEngineSettings.OrderStore.CustomerCancelOrderItems(orderIdTemplate, orderId, orderItemIds))
+            if (!storeBookingEngineSettings.OrderStore.CustomerCancelOrderItems(orderId, sellerId, orderIdTemplate, orderItemIds))
             {
                 throw new OpenBookingException(new NotFoundError(), "Order not found");
             }
         }
 
-        protected override void ProcessOrderDeletion(string authPartySellerToken, OrderIdComponents orderId)
+        protected override void ProcessOrderDeletion(OrderIdComponents orderId, SellerIdComponents sellerId)
         {
-            storeBookingEngineSettings.OrderStore.DeleteOrder(orderId);
+            storeBookingEngineSettings.OrderStore.DeleteOrder(orderId, sellerId);
         }
 
-        protected override void ProcessOrderQuoteDeletion(string authPartySellerToken, OrderIdComponents orderId)
+        protected override void ProcessOrderQuoteDeletion(OrderIdComponents orderId, SellerIdComponents sellerId)
         {
-            storeBookingEngineSettings.OrderStore.DeleteLease(orderId);
+            storeBookingEngineSettings.OrderStore.DeleteLease(orderId, sellerId);
         }
 
 
@@ -353,11 +353,11 @@ namespace OpenActive.Server.NET.StoreBooking
                                 .ToList();
                                 */
 
-                                storeBookingEngineSettings.OrderStore.CompleteOrderTransaction(dbTransaction);
+                                if (dbTransaction != null) storeBookingEngineSettings.OrderStore.CompleteOrderTransaction(dbTransaction);
                             }
                             catch
                             {
-                                storeBookingEngineSettings.OrderStore.RollbackOrderTransaction(dbTransaction);
+                                if (dbTransaction != null) storeBookingEngineSettings.OrderStore.RollbackOrderTransaction(dbTransaction);
                                 throw;
                             }
                     }

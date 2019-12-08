@@ -15,9 +15,11 @@ const ureq = require('./u-req.json');
 var BOOKING_API_BASE = config.get('tests.bookingApiBase');
 var MICROSERVICE_BASE = config.get('tests.microserviceApiBase');
 
-var MEDIA_TYPE_HEADERS = {
-    'Content-Type': 'application/vnd.openactive.booking+json; version=1'
-};
+const createHeaders = (sellerId) => ({
+    'Content-Type': 'application/vnd.openactive.booking+json; version=1',
+    'X-OpenActive-Test-Client-Id': 'test',
+    'X-OpenActive-Test-Seller-Id': sellerId
+});
 
 var expect = chakram.expect;
 
@@ -68,7 +70,7 @@ describe("Create test event", function() {
         apiResponse = chakram.get(MICROSERVICE_BASE + "get-match/Testevent2");
 
         delay(500).then(x => chakram.post(BOOKING_API_BASE + "test-interface/scheduledsession", testEvent, {
-            headers: MEDIA_TYPE_HEADERS
+            headers: createHeaders()
         }));
 
         return apiResponse;
@@ -77,7 +79,7 @@ describe("Create test event", function() {
     after(function () {
         var name = testEvent.superEvent.name;
         return chakram.delete(BOOKING_API_BASE + "test-interface/scheduledsession/" + encodeURIComponent(name), {
-            headers: MEDIA_TYPE_HEADERS
+            headers: createHeaders()
         });
     });
 
@@ -213,7 +215,7 @@ var testWithData = function (dataItem) {
                     sellerId,
                     uuid
                 }), {
-                    headers: MEDIA_TYPE_HEADERS
+                    headers: createHeaders(sellerId)
                 })).then(function(respObj) {
                     c1Response = respObj;
                     logger.log("\n\n** C1 response: ** \n\n" + JSON.stringify(c1Response.body, null, 2));
@@ -224,7 +226,7 @@ var testWithData = function (dataItem) {
                     sellerId,
                     uuid
                 }), {
-                    headers: MEDIA_TYPE_HEADERS
+                    headers: createHeaders(sellerId)
                 })).then(function(respObj) {
                     c2Response = respObj;
                     logger.log("\n\n** C2 response: ** \n\n" + JSON.stringify(c2Response.body, null, 2));
@@ -236,7 +238,7 @@ var testWithData = function (dataItem) {
                     uuid,
                     totalPaymentDue
                 }, true), {
-                    headers: MEDIA_TYPE_HEADERS
+                    headers: createHeaders(sellerId)
                 })).then(function(respObj) {
                     bResponse = respObj;
                     logger.log("\n\n** B response: **\n\n" + JSON.stringify(bResponse.body, null, 2));
@@ -244,7 +246,7 @@ var testWithData = function (dataItem) {
                 }).then(x => chakram.patch(BOOKING_API_BASE + 'orders/' + uuid, bookingRequest(logger, ureq, {
                     orderItemId
                 }), {
-                    headers: MEDIA_TYPE_HEADERS
+                    headers: createHeaders(sellerId)
                 })).then(function(respObj) {
                     uResponse = respObj;
                     if (uResponse.body) {
@@ -256,7 +258,7 @@ var testWithData = function (dataItem) {
         
         
                 delay(500).then(x => chakram.post(BOOKING_API_BASE + "test-interface/scheduledsession", testEvent, {
-                    headers: MEDIA_TYPE_HEADERS
+                    headers: createHeaders(sellerId)
                 })).then(function(respObj) {
                     if (respObj.body) {
                         logger.log("\n\n** Test Interface POST response: " + respObj.response.statusCode + " **\n\n" + JSON.stringify(respObj.body, null, 2));
@@ -270,7 +272,7 @@ var testWithData = function (dataItem) {
         
             after(function () {
                 return chakram.delete(BOOKING_API_BASE + "test-interface/scheduledsession/" + encodeURIComponent(eventName), null, {
-                    headers: MEDIA_TYPE_HEADERS
+                    headers: createHeaders(sellerId)
                 }).then(function(respObj) {
                     if (respObj.body) {
                         logger.log("\n\n** Test Interface DELETE response: " + respObj.response.statusCode + " **\n\n" + JSON.stringify(respObj.body, null, 2));
@@ -278,7 +280,7 @@ var testWithData = function (dataItem) {
                         logger.log("\n\n** Test Interface DELETE response: " + respObj.response.statusCode + " **\n\nNO CONTENT");
                     }
                 }).then(x => chakram.delete(BOOKING_API_BASE + 'orders/' + uuid, null, {
-                    headers: MEDIA_TYPE_HEADERS
+                    headers: createHeaders(sellerId)
                 })).then(function(respObj) {
                     if (respObj.body) {
                         logger.log("\n\n** Orders DELETE response: " + respObj.response.statusCode + " **\n\n" + JSON.stringify(respObj.body, null, 2));

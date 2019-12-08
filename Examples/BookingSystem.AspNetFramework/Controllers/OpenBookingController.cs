@@ -31,7 +31,8 @@ namespace BookingSystem.AspNetFramework.Controllers
         {
             try
             {
-                return _bookingEngine.ProcessCheckpoint1("<seller-credential>", uuid, orderQuote).GetContentResult();
+                (string clientId, Uri sellerId) = AuthenticationHelper.GetIdsFromAuth(Request, User);
+                return _bookingEngine.ProcessCheckpoint1(clientId, sellerId, uuid, orderQuote).GetContentResult();
             }
             catch (OpenBookingException obe)
             {
@@ -49,7 +50,8 @@ namespace BookingSystem.AspNetFramework.Controllers
         {
             try
             {
-                return _bookingEngine.ProcessCheckpoint2("<seller-credential>", uuid, orderQuote).GetContentResult();
+                (string clientId, Uri sellerId) = AuthenticationHelper.GetIdsFromAuth(Request, User);
+                return _bookingEngine.ProcessCheckpoint2(clientId, sellerId, uuid, orderQuote).GetContentResult();
             }
             catch (OpenBookingException obe)
             {
@@ -67,7 +69,8 @@ namespace BookingSystem.AspNetFramework.Controllers
         {
             try
             {
-                return _bookingEngine.DeleteOrderQuote("<seller-credential>", uuid).GetContentResult();
+                (string clientId, Uri sellerId) = AuthenticationHelper.GetIdsFromAuth(Request, User);
+                return _bookingEngine.DeleteOrderQuote(clientId, sellerId, uuid).GetContentResult();
             }
             catch (OpenBookingException obe)
             {
@@ -86,7 +89,8 @@ namespace BookingSystem.AspNetFramework.Controllers
         {
             try
             {
-                return _bookingEngine.ProcessOrderCreationB("<seller-credential>", uuid, order).GetContentResult();
+                (string clientId, Uri sellerId) = AuthenticationHelper.GetIdsFromAuth(Request, User);
+                return _bookingEngine.ProcessOrderCreationB(clientId, sellerId, uuid, order).GetContentResult();
             }
             catch (OpenBookingException obe)
             {
@@ -104,7 +108,8 @@ namespace BookingSystem.AspNetFramework.Controllers
         {
             try
             {
-                return _bookingEngine.DeleteOrder("<seller-credential>", uuid).GetContentResult();
+                (string clientId, Uri sellerId) = AuthenticationHelper.GetIdsFromAuth(Request, User);
+                return _bookingEngine.DeleteOrder(clientId, sellerId, uuid).GetContentResult();
             }
             catch (OpenBookingException obe)
             {
@@ -122,7 +127,8 @@ namespace BookingSystem.AspNetFramework.Controllers
         {
             try
             {
-                return _bookingEngine.ProcessOrderUpdate("<seller-credential>", uuid, order).GetContentResult();
+                (string clientId, Uri sellerId) = AuthenticationHelper.GetIdsFromAuth(Request, User);
+                return _bookingEngine.ProcessOrderUpdate(clientId, sellerId, uuid, order).GetContentResult();
             }
             catch (OpenBookingException obe)
             {
@@ -140,7 +146,8 @@ namespace BookingSystem.AspNetFramework.Controllers
                 // Note only a subset of these parameters will be supplied when this endpoints is called
                 // They are all provided here for the bookingEngine to choose the correct endpoint
                 // The auth token must also be provided from the associated authentication method
-                return _bookingEngine.GetOrdersRPDEPageForFeed("<client-credential>", afterTimestamp, afterId, afterChangeNumber).GetContentResult();
+                string clientId = AuthenticationHelper.GetClientIdFromAuth(Request, User);
+                return _bookingEngine.GetOrdersRPDEPageForFeed(clientId, afterTimestamp, afterId, afterChangeNumber).GetContentResult();
             }
             catch (OpenBookingException obe)
             {
@@ -155,7 +162,8 @@ namespace BookingSystem.AspNetFramework.Controllers
         {
             try
             {
-                return _bookingEngine.CreateTestData("<client-credential>", type, @event).GetContentResult();
+                string clientId = AuthenticationHelper.GetClientIdFromAuth(Request, User);
+                return _bookingEngine.CreateTestData(clientId, type, @event).GetContentResult();
             }
             catch (OpenBookingException obe)
             {
@@ -170,7 +178,8 @@ namespace BookingSystem.AspNetFramework.Controllers
         {
             try
             {
-                return _bookingEngine.DeleteTestData("<client-credential>", type, name).GetContentResult();
+                string clientId = AuthenticationHelper.GetClientIdFromAuth(Request, User);
+                return _bookingEngine.DeleteTestData(clientId, type, name).GetContentResult();
             }
             catch (OpenBookingException obe)
             {

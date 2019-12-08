@@ -39,6 +39,7 @@ namespace OpenActive.FakeDatabase.NET
 
     public class OrderItemsTable : Table
     {
+        public string ClientId { get; internal set; }
         public string OpportunityJsonLdType { get; set; }
         public string OpportunityJsonLdId { get; set; }
         public string OfferJsonLdId { get; set; }
@@ -51,6 +52,7 @@ namespace OpenActive.FakeDatabase.NET
 
     public class OrderTable : Table
     {
+        public string ClientId { get; set; }
         public new string Id { get; set; }
         public long SellerId { get; set; }
         public bool CustomerIsOrganization { get; set; }

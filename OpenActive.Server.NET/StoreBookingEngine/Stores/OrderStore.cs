@@ -13,9 +13,9 @@ namespace OpenActive.Server.NET.StoreBooking
         void RollbackOrderTransaction(dynamic databaseTransaction);
         Lease CreateLease(OrderQuote orderQuote, StoreBookingFlowContext flowContext, dynamic dbTransaction);
         void CreateOrder(Order order, StoreBookingFlowContext flowContext, dynamic dbTransaction);
-        bool CustomerCancelOrderItems(OrderIdTemplate orderIdTemplate, OrderIdComponents orderId, List<OrderIdComponents> orderItemIds);
-        void DeleteOrder(OrderIdComponents orderId);
-        void DeleteLease(OrderIdComponents orderId);
+        bool CustomerCancelOrderItems(OrderIdComponents orderId, SellerIdComponents sellerId, OrderIdTemplate orderIdTemplate, List<OrderIdComponents> orderItemIds);
+        void DeleteOrder(OrderIdComponents orderId, SellerIdComponents sellerId);
+        void DeleteLease(OrderIdComponents orderId, SellerIdComponents sellerId);
     }
 
     public abstract class OrderStore<TDatabaseTransaction> : IOrderStore where TDatabaseTransaction : IDisposable
@@ -61,9 +61,9 @@ namespace OpenActive.Server.NET.StoreBooking
             RollbackOrderTransaction((TDatabaseTransaction)databaseTransaction);
         }
 
-        public abstract bool CustomerCancelOrderItems(OrderIdTemplate orderIdTemplate, OrderIdComponents orderId, List<OrderIdComponents> orderItemIds);
-        public abstract void DeleteOrder(OrderIdComponents orderId);
-        public abstract void DeleteLease(OrderIdComponents orderId);
+        public abstract bool CustomerCancelOrderItems(OrderIdComponents orderId, SellerIdComponents sellerId, OrderIdTemplate orderIdTemplate, List<OrderIdComponents> orderItemIds);
+        public abstract void DeleteOrder(OrderIdComponents orderId, SellerIdComponents sellerId);
+        public abstract void DeleteLease(OrderIdComponents orderId, SellerIdComponents sellerId);
 
         /*
         public OrderItem CreateOrder<TOrder>(IBookableIdComponents opportunityOfferId, StoreBookingFlowContext<TOrder> context)
