@@ -7,7 +7,7 @@ using OpenActive.NET.Rpde.Version1;
 using OpenActive.NET;
 using OpenActive.FakeDatabase.NET;
 
-namespace BookingSystem.AspNetCore
+namespace BookingSystem
 {
     public class AcmeOrdersFeedRPDEGenerator : OrdersRPDEFeedModifiedTimestampAndID
     {

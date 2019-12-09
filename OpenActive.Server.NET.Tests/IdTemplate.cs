@@ -41,7 +41,7 @@ namespace OpenActive.Server.NET.Tests
                 );
             template.RequiredBaseUrl = new Uri("https://example.com/");
 
-            var components = template.GetOrderItemIdComponents(new Uri("https://example.com/api/orders/asdf#/orderedItems/123"));
+            var components = template.GetOrderItemIdComponents("client", new Uri("https://example.com/api/orders/asdf#/orderedItems/123"));
 
             Assert.NotNull(components);
             Assert.Equal(OrderType.Order, components.OrderType);

@@ -1,22 +1,17 @@
-﻿using Newtonsoft.Json;
-using OpenActive.NET;
+﻿using OpenActive.NET;
 using System;
 using System.Collections.Generic;
-using System.Data;
-using System.IO;
-using System.Text;
 using System.Linq;
 using OpenActive.DatasetSite.NET;
 using OpenActive.Server.NET.StoreBooking;
 using OpenActive.Server.NET.OpenBookingHelper;
-using System.Data.Common;
 using OpenActive.FakeDatabase.NET;
 
-namespace BookingSystem.AspNetFramework
+namespace BookingSystem
 {
     class SessionStore : OpportunityStore<SessionOpportunity, DatabaseTransaction>
     {
-
+        
         public override void CreateTestDataItem(OpportunityType opportunityType, Event @event)
         {
             // Note assume that if it's been routed here, it will be possible to cast it to type Event
@@ -28,6 +23,7 @@ namespace BookingSystem.AspNetFramework
                     FakeBookingSystem.Database.AddClass(superEvent.Name, superEvent.Offers?.FirstOrDefault()?.Price, session.StartDate.GetPrimative<DateTimeOffset>() ?? default, session.EndDate.GetPrimative<DateTimeOffset>() ?? default, session.MaximumAttendeeCapacity.Value);
                     break;
             }
+            
         }
 
         public override void DeleteTestDataItem(OpportunityType opportunityType, string name)
@@ -40,7 +36,7 @@ namespace BookingSystem.AspNetFramework
         protected override void GetOrderItem(List<OrderItemContext<SessionOpportunity>> orderItemContexts, StoreBookingFlowContext flowContext)
         {
 
-            // Note the implementation of this method must also check that this OrderItem is from the Seller specified by context.SellerIdComponents
+            // Note the implementation of this method must also check that this OrderItem is from the Seller specified by context.SellerIdComponents (this is not required if using a Single Seller)
 
             // Additionally this method must check that there are enough spaces in each entry
 
@@ -107,7 +103,7 @@ namespace BookingSystem.AspNetFramework
                 {
                     ctx.SetResponseOrderItem(item);
                 }
-
+                
             }
 
             // Add errors to the response according to the attendee details specified as required in the ResponseOrderItem,
@@ -137,8 +133,8 @@ namespace BookingSystem.AspNetFramework
                 else
                 {
                     // Attempt to lease for those with the same IDs, which is atomic
-                    bool result = databaseTransaction.Database.LeaseOrderItemsForClassOccurrence(flowContext.OrderId.ClientId, flowContext.SellerId.SellerIdLong.Value, flowContext.OrderId.uuid, ctxGroup.Key.ScheduledSessionId.Value, ctxGroup.Count());
-
+                    bool result = databaseTransaction.Database.LeaseOrderItemsForClassOccurrence(flowContext.OrderId.ClientId, flowContext.SellerId.SellerIdLong ?? null /* Hack to allow this to work in Single Seller mode too */, flowContext.OrderId.uuid, ctxGroup.Key.ScheduledSessionId.Value, ctxGroup.Count());
+                   
                     if (!result)
                     {
                         foreach (var ctx in ctxGroup)
@@ -165,7 +161,7 @@ namespace BookingSystem.AspNetFramework
                 }
 
                 // Attempt to lease for those with the same IDs, which is atomic
-                List<long> orderItemIds = databaseTransaction.Database.BookOrderItemsForClassOccurrence(flowContext.OrderId.ClientId, flowContext.SellerId.SellerIdLong.Value, flowContext.OrderId.uuid, ctxGroup.Key.ScheduledSessionId.Value, this.RenderOpportunityJsonLdType(ctxGroup.Key), this.RenderOpportunityId(ctxGroup.Key).ToString(), this.RenderOfferId(ctxGroup.Key).ToString(), ctxGroup.Count());
+                List<long> orderItemIds = databaseTransaction.Database.BookOrderItemsForClassOccurrence(flowContext.OrderId.ClientId, flowContext.SellerId.SellerIdLong ?? null  /* Hack to allow this to work in Single Seller mode too */, flowContext.OrderId.uuid, ctxGroup.Key.ScheduledSessionId.Value, this.RenderOpportunityJsonLdType(ctxGroup.Key), this.RenderOpportunityId(ctxGroup.Key).ToString(), this.RenderOfferId(ctxGroup.Key).ToString(), ctxGroup.Count());
 
                 if (orderItemIds != null)
                 {
@@ -182,4 +178,5 @@ namespace BookingSystem.AspNetFramework
             }
         }
     }
+
 }

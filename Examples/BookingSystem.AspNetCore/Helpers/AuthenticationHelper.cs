@@ -3,10 +3,8 @@ using Microsoft.Extensions.Primitives;
 using OpenActive.NET;
 using OpenActive.Server.NET.OpenBookingHelper;
 using System;
-using System.Collections.Generic;
 using System.Linq;
 using System.Security.Claims;
-using System.Threading.Tasks;
 
 namespace BookingSystem.AspNetCore.Helpers
 {

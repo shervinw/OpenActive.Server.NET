@@ -20,10 +20,6 @@
       "addressCountry": "GB"
     }
   },
-  "seller": {
-    "@type": "Organization",
-    "@id": "{{& sellerId}}"
-  },
   "orderedItem": [
     {
       "@type": "OrderItem",

@@ -7,7 +7,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 
-namespace BookingSystem.AspNetFramework
+namespace BookingSystem
 {
     public class AcmeScheduledSessionRPDEGenerator : RPDEFeedModifiedTimestampAndIDLong<SessionOpportunity, ScheduledSession>
     {
@@ -18,9 +18,9 @@ namespace BookingSystem.AspNetFramework
             var query = from occurances in FakeBookingSystem.Database.Occurrences
                         orderby occurances.Modified, occurances.Id
                         where !afterTimestamp.HasValue && !afterId.HasValue ||
-                              occurances.Modified.ToUnixTimeMilliseconds() > afterTimestamp ||
+                              occurances.Modified.ToUnixTimeMilliseconds() > afterTimestamp ||  
                               (occurances.Modified.ToUnixTimeMilliseconds() == afterTimestamp && occurances.Id > afterId)
-
+                        
                         select new RpdeItem<ScheduledSession>
                         {
                             Kind = RpdeKind.ScheduledSession,
@@ -73,7 +73,7 @@ namespace BookingSystem.AspNetFramework
                                 // QUESTION: Should the this.IdTemplate and this.BaseUrl be passed in each time rather than set on
                                 // the parent class? Current thinking is it's more extensible on parent class as function signature remains
                                 // constant as power of configuration through underlying class grows (i.e. as new properties are added)
-                                Id = this.RenderOpportunityId(new SessionOpportunity
+                                Id = this.RenderOpportunityId( new SessionOpportunity
                                 {
                                     OpportunityType = OpportunityType.SessionSeries,
                                     SessionSeriesId = @class.Id
@@ -99,7 +99,7 @@ namespace BookingSystem.AspNetFramework
                                             OfferId = 0
                                         }),
                                         Price = @class.Price
-                                    }
+                                    } 
                                 }
                             }
                         };

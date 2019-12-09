@@ -7,19 +7,18 @@ using OpenActive.NET.Rpde.Version1;
 using OpenActive.NET;
 using OpenActive.FakeDatabase.NET;
 
-namespace BookingSystem.AspNetFramework
+namespace BookingSystem
 {
     public class AcmeOrdersFeedRPDEGenerator : OrdersRPDEFeedModifiedTimestampAndID
     {
         //public override string FeedPath { get; protected set; } = "example path override";
 
-        // TODO: Update to use fake orders database
-        protected override List<RpdeItem> GetRPDEItems(long? afterTimestamp, string afterId)
+        protected override List<RpdeItem> GetRPDEItems(string clientId, long? afterTimestamp, string afterId)
         {
             var query = from orders in FakeBookingSystem.Database.Orders
                         join seller in FakeBookingSystem.Database.Sellers on orders.SellerId equals seller.Id
                         join orderItems in FakeBookingSystem.Database.OrderItems on orders.Id equals orderItems.OrderId
-                        where orders.VisibleInFeed && (!afterTimestamp.HasValue || orders.Modified.ToUnixTimeMilliseconds() > afterTimestamp ||
+                        where orders.VisibleInFeed && orders.ClientId == clientId && (!afterTimestamp.HasValue || orders.Modified.ToUnixTimeMilliseconds() > afterTimestamp ||
                         (orders.Modified.ToUnixTimeMilliseconds() == afterTimestamp && orders.Id.CompareTo(afterId) > 0))
                         group orderItems by new { orders, seller } into thisOrder
                         orderby thisOrder.Key.orders.Modified, thisOrder.Key.orders.Id
@@ -43,16 +42,15 @@ namespace BookingSystem.AspNetFramework
                                     Name = thisOrder.Key.seller.Name,
                                     TaxMode = TaxMode.TaxGross
                                 },
-                                Customer = thisOrder.Key.orders.CustomerIsOrganization ? (ILegalEntity)new Organization
+                                Customer = thisOrder.Key.orders.CustomerIsOrganization ? (ILegalEntity) new Organization
                                 {
                                     Email = thisOrder.Key.orders.CustomerEmail
-                                } : (ILegalEntity)new Person
+                                } : (ILegalEntity) new Person
                                 {
                                     Email = thisOrder.Key.orders.CustomerEmail
                                 },
                                 BrokerRole = thisOrder.Key.orders.BrokerRole == BrokerRole.AgentBroker ? BrokerType.AgentBroker : thisOrder.Key.orders.BrokerRole == BrokerRole.ResellerBroker ? BrokerType.ResellerBroker : BrokerType.NoBroker,
-                                Broker = new Organization
-                                {
+                                Broker = new Organization { 
                                     Name = thisOrder.Key.orders.BrokerName
                                 },
                                 Payment = new Payment
@@ -67,8 +65,7 @@ namespace BookingSystem.AspNetFramework
                                 OrderedItem = thisOrder.Select(orderItem => new OrderItem
                                 {
                                     Id = this.RenderOrderItemId(OrderType.Order, thisOrder.Key.orders.Id, orderItem.Id),
-                                    AcceptedOffer = new Offer
-                                    {
+                                    AcceptedOffer = new Offer { 
                                         Id = new Uri(orderItem.OfferJsonLdId),
                                         Price = orderItem.Price,
                                         PriceCurrency = "GBP"

@@ -1,18 +1,13 @@
-﻿using Newtonsoft.Json;
-using OpenActive.NET;
+﻿using OpenActive.NET;
 using System;
 using System.Collections.Generic;
-using System.Data;
-using System.IO;
-using System.Text;
 using System.Linq;
 using OpenActive.DatasetSite.NET;
 using OpenActive.Server.NET.StoreBooking;
 using OpenActive.Server.NET.OpenBookingHelper;
-using System.Data.Common;
 using OpenActive.FakeDatabase.NET;
 
-namespace BookingSystem.AspNetCore
+namespace BookingSystem
 {
     class SessionStore : OpportunityStore<SessionOpportunity, DatabaseTransaction>
     {

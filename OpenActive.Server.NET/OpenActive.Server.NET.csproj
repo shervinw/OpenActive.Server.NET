@@ -20,7 +20,8 @@
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Debug|netstandard2.0|AnyCPU'">
-    <DocumentationFile>C:\repos\OpenActive.Server.NET\OpenActive.Server.NET\OpenActive.Server.NET.xml</DocumentationFile>
+    <DocumentationFile>bin\Release\OpenActive.Server.NET.xml</DocumentationFile>
+    <OutputPath>bin\Release\</OutputPath>
   </PropertyGroup>
 
   <ItemGroup>

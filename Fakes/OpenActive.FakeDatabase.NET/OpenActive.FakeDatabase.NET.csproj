@@ -24,7 +24,8 @@
     <DefineConstants />
     <TreatWarningsAsErrors>false</TreatWarningsAsErrors>
     <WarningsAsErrors />
-    <DocumentationFile>C:\repos\OpenActive.Server.NET\Fakes\OpenActive.FakeDatabase.NET\OpenActive.FakeDatabase.NET.xml</DocumentationFile>
+    <DocumentationFile>bin\Release\OpenActive.FakeDatabase.NET.xml</DocumentationFile>
+    <OutputPath>bin\Release\</OutputPath>
   </PropertyGroup>
 
   <ItemGroup>

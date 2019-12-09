@@ -5,19 +5,19 @@ using OpenActive.Server.NET.StoreBooking;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Threading.Tasks;
 
-namespace BookingSystem.AspNetFramework
+namespace BookingSystem
 {
     public class AcmeOrderStore : OrderStore<DatabaseTransaction>
     {
         /// <summary>
         /// Initiate customer cancellation for the specified OrderItems
+        /// Note sellerId will always be null in Single Seller mode
         /// </summary>
         /// <returns>True if Order found, False if Order not found</returns>
         public override bool CustomerCancelOrderItems(OrderIdComponents orderId, SellerIdComponents sellerId, OrderIdTemplate orderIdTemplate, List<OrderIdComponents> orderItemIds)
         {
-            return FakeBookingSystem.Database.CancelOrderItem(orderId.ClientId, sellerId.SellerIdLong.Value, orderId.uuid, orderItemIds.Select(x => x.OrderItemIdLong.Value).ToList(), true);
+            return FakeBookingSystem.Database.CancelOrderItem(orderId.ClientId, sellerId.SellerIdLong ?? null  /* Hack to allow this to work in Single Seller mode too */, orderId.uuid, orderItemIds.Select(x => x.OrderItemIdLong.Value).ToList(), true);
         }
 
         public override Lease CreateLease(OrderQuote orderQuote, StoreBookingFlowContext flowContext, DatabaseTransaction databaseTransaction)
@@ -40,7 +40,7 @@ namespace BookingSystem.AspNetFramework
                     flowContext.OrderId.uuid,
                     flowContext.BrokerRole == BrokerType.AgentBroker ? BrokerRole.AgentBroker : flowContext.BrokerRole == BrokerType.ResellerBroker ? BrokerRole.ResellerBroker : BrokerRole.NoBroker,
                     flowContext.Broker.Name,
-                    flowContext.SellerId.SellerIdLong.Value,
+                    flowContext.SellerId.SellerIdLong ?? null, // Small hack to allow use of FakeDatabase when in Single Seller mode
                     flowContext.Customer.Email,
                     leaseExpires
                     );
@@ -76,7 +76,7 @@ namespace BookingSystem.AspNetFramework
                 flowContext.OrderId.uuid,
                 flowContext.BrokerRole == BrokerType.AgentBroker ? BrokerRole.AgentBroker : flowContext.BrokerRole == BrokerType.ResellerBroker ? BrokerRole.ResellerBroker : BrokerRole.NoBroker,
                 flowContext.Broker.Name,
-                flowContext.SellerId.SellerIdLong.Value,
+                flowContext.SellerId.SellerIdLong ?? null, // Small hack to allow use of FakeDatabase when in Single Seller mode
                 flowContext.Customer.Email,
                 flowContext.Payment?.Identifier,
                 order.TotalPaymentDue.Price.Value);
@@ -86,7 +86,7 @@ namespace BookingSystem.AspNetFramework
 
         public override void DeleteOrder(OrderIdComponents orderId, SellerIdComponents sellerId)
         {
-            FakeBookingSystem.Database.DeleteOrder(orderId.ClientId, orderId.uuid, sellerId.SellerIdLong.Value);
+            FakeBookingSystem.Database.DeleteOrder(orderId.ClientId, orderId.uuid, sellerId.SellerIdLong ?? null /* Small hack to allow use of FakeDatabase when in Single Seller mode */);
         }
 
 

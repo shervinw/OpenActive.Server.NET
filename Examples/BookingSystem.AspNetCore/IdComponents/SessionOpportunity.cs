@@ -1,11 +1,7 @@
 ﻿using OpenActive.DatasetSite.NET;
 using OpenActive.Server.NET.OpenBookingHelper;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
 
-namespace BookingSystem.AspNetCore
+namespace BookingSystem
 {
     /// <summary>
     /// These classes must be created by the booking system, the below are some simple examples.

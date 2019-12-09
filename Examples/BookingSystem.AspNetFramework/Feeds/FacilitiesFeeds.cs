@@ -5,7 +5,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 
-namespace BookingSystem.AspNetFramework
+namespace BookingSystem
 {
     public class AcmeFacilityUseRPDEGenerator : RPDEFeedModifiedTimestampAndIDLong<FacilityOpportunity, FacilityUse>
     {
@@ -13,7 +13,7 @@ namespace BookingSystem.AspNetFramework
 
         protected override List<RpdeItem<FacilityUse>> GetRPDEItems(long? afterTimestamp, long? afterId)
         {
-            throw new NotImplementedException();
+            throw new NotImplementedException();    
         }
     }
 

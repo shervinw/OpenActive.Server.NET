@@ -21,7 +21,7 @@ namespace BookingSystem.AspNetFramework.Helpers
                 && (!requireSellerId || (request.Headers.TryGetValues(AuthenticationTestHeaders.SellerId, out testSellerId) && testSellerId.FirstOrDefault().ParseUrlOrNull() != null))
                 )
             {
-                return (testClientId.FirstOrDefault(), testSellerId.FirstOrDefault().ParseUrlOrNull());
+                return (testClientId.FirstOrDefault(), testSellerId?.FirstOrDefault().ParseUrlOrNull());
             }
 
             // For production use: Get Ids from JWT

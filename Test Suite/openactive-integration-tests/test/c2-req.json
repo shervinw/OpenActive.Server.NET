@@ -20,10 +20,6 @@
       "addressCountry": "GB"
     }
   },
-  "seller": {
-    "@type": "Organization",
-    "@id": "{{& sellerId}}"
-  },
   "customer": {
     "@type": "Person",
     "email": "geoffcapes@example.com",
