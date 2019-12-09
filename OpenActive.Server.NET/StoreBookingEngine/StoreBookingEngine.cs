@@ -112,18 +112,18 @@ namespace OpenActive.Server.NET.StoreBooking
             if (datasetSettings == null) throw new ArgumentNullException(nameof(datasetSettings));
             if (storeBookingEngineSettings == null) throw new ArgumentNullException(nameof(storeBookingEngineSettings));
 
-            this.stores = storeBookingEngineSettings.OpenBookingStoreRouting.Keys.ToList();
+            this.stores = storeBookingEngineSettings.OpportunityStoreRouting.Keys.ToList();
             this.storeBookingEngineSettings = storeBookingEngineSettings;
 
             // TODO: Add test to ensure there are not two or more at FirstOrDefault step, in case of configuration error 
-            this.storeRouting = storeBookingEngineSettings.OpenBookingStoreRouting.Select(t => t.Value.Select(y => new
+            this.storeRouting = storeBookingEngineSettings.OpportunityStoreRouting.Select(t => t.Value.Select(y => new
             {
                 store = t.Key,
                 opportunityType = y
             })).SelectMany(x => x.ToList()).GroupBy(g => g.opportunityType).ToDictionary(k => k.Key, v => v.Select(a => a.store).SingleOrDefault());
 
             // Setup each store with the relevant settings, including the relevant IdTemplate inferred from the config
-            var storeConfig = storeBookingEngineSettings.OpenBookingStoreRouting
+            var storeConfig = storeBookingEngineSettings.OpportunityStoreRouting
                 .ToDictionary(k => k.Key, v => v.Value.Select(y => base.OpportunityTemplateLookup[y]).Distinct().Single());
             foreach (var store in storeConfig)
             {

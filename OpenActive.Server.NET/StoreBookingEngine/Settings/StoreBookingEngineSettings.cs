@@ -14,7 +14,7 @@ namespace OpenActive.Server.NET.StoreBooking
         public Func<Organization, Organization> BrokerSupportedFields { get; set; } = o => new Organization {};
         public Func<Payment, Payment> PaymentSupportedFields { get; set; } = o => new Payment { };
         public BookingService BookingServiceDetails { get; set; }
-        public Dictionary<IOpportunityStore, List<OpportunityType>> OpenBookingStoreRouting { get; set; }
+        public Dictionary<IOpportunityStore, List<OpportunityType>> OpportunityStoreRouting { get; set; }
             = new Dictionary<IOpportunityStore, List<OpportunityType>>();
         public IOrderStore OrderStore { get; set; }
     }
