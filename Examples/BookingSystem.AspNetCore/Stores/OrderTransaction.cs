@@ -30,6 +30,8 @@ namespace BookingSystem
 
         public void Dispose()
         {
+            // Note dispose pattern of checking for null first,
+            // to ensure Dispose() is not called twice
             if (_fakeDatabaseTransaction != null)
             {
                 _fakeDatabaseTransaction.Dispose();
@@ -39,12 +41,12 @@ namespace BookingSystem
     }
 
     /*
-    public sealed class EntityFrameworkOrdersTransaction : IDatabaseTransaction
+    public sealed class EntityFrameworkOrderTransaction : IDatabaseTransaction
     {
         private OrderContext _context;
         private DbContextTransaction _dbContextTransaction;
 
-        public EntityFrameworkOrdersTransaction()
+        public EntityFrameworkOrderTransaction()
         {
             _context = new OrderContext();
             _dbContextTransaction = _context.Database.BeginTransaction();
@@ -63,6 +65,8 @@ namespace BookingSystem
 
         public void Dispose()
         {
+            // Note dispose pattern of checking for null first,
+            // to ensure Dispose() is not called twice
             if (_dbContextTransaction != null)
             {
                 _dbContextTransaction.Dispose();
