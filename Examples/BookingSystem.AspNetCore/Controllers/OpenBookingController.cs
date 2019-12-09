@@ -162,8 +162,7 @@ namespace BookingSystem.AspNetCore.Controllers
         {
             try
             {
-                string clientId = AuthenticationHelper.GetClientIdFromAuth(Request, User);
-                return bookingEngine.CreateTestData(clientId, type, @event).GetContentResult();
+                return bookingEngine.CreateTestData(type, @event).GetContentResult();
             }
             catch (OpenBookingException obe)
             {
@@ -177,8 +176,7 @@ namespace BookingSystem.AspNetCore.Controllers
         {
             try
             {
-                string clientId = AuthenticationHelper.GetClientIdFromAuth(Request, User);
-                return bookingEngine.DeleteTestData(clientId, type, name).GetContentResult();
+                return bookingEngine.DeleteTestData(type, name).GetContentResult();
             }
             catch (OpenBookingException obe)
             {

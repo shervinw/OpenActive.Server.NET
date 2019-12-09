@@ -25,10 +25,6 @@ namespace OpenActive.Server.NET.OpenBookingHelper
 
     // TODO: Add resolve Order ID via enumeration, and add paths (e.g. 'order-quote-template') to the below
     public enum OrderType {
-
-        [EnumMember(Value = "order-quote-templates")]
-        OrderQuoteTemplate,
-
         [EnumMember(Value = "order-quotes")]
         OrderQuote,
 

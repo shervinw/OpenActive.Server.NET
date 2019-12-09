@@ -290,7 +290,7 @@ namespace OpenActive.Server.NET.CustomBooking
 
         public ResponseContent ProcessCheckpoint1(string clientId, Uri sellerId, string uuid, string orderQuoteJson)
         {
-            return ProcessCheckpoint(clientId, sellerId, uuid, orderQuoteJson, FlowStage.C1, OrderType.OrderQuoteTemplate);
+            return ProcessCheckpoint(clientId, sellerId, uuid, orderQuoteJson, FlowStage.C1, OrderType.OrderQuote);
         }
         public ResponseContent ProcessCheckpoint2(string clientId, Uri sellerId, string uuid, string orderQuoteJson)
         {
@@ -388,24 +388,24 @@ namespace OpenActive.Server.NET.CustomBooking
         public abstract void ProcessCustomerCancellation(OrderIdComponents orderId, SellerIdComponents sellerId, OrderIdTemplate orderIdTemplate, List<OrderIdComponents> orderItemIds);
 
         // Note opportunityType is required here to facilitate routing to the correct store to handle the request
-        public ResponseContent CreateTestData(string clientId, string opportunityType, string eventJson)
+        public ResponseContent CreateTestData(string opportunityType, string eventJson)
         {
             // Temporary hack while waiting for OpenActive.NET to deserialize subclasses correctly
             ScheduledSession @event = OpenActiveSerializer.Deserialize<ScheduledSession>(eventJson);
-            this.CreateTestDataItem(clientId, (OpportunityType)Enum.Parse(typeof(OpportunityType), opportunityType, true), @event);
+            this.CreateTestDataItem((OpportunityType)Enum.Parse(typeof(OpportunityType), opportunityType, true), @event);
             return ResponseContent.OpenBookingNoContentResponse();
         }
 
-        protected abstract void CreateTestDataItem(string clientId, OpportunityType opportunityType, Event @event);
+        protected abstract void CreateTestDataItem(OpportunityType opportunityType, Event @event);
 
         // Note opportunityType is required here to facilitate routing to the correct store to handle the request
-        public ResponseContent DeleteTestData(string clientId, string opportunityType, string name)
+        public ResponseContent DeleteTestData(string opportunityType, string name)
         {
-            this.DeleteTestDataItem(clientId, (OpportunityType)Enum.Parse(typeof(OpportunityType), opportunityType, true), name);
+            this.DeleteTestDataItem((OpportunityType)Enum.Parse(typeof(OpportunityType), opportunityType, true), name);
             return ResponseContent.OpenBookingNoContentResponse();
         }
 
-        protected abstract void DeleteTestDataItem(string clientId, OpportunityType opportunityType, string name);
+        protected abstract void DeleteTestDataItem(OpportunityType opportunityType, string name);
 
 
         //TODO: Should we move Seller into the Abstract level? Perhaps too much complexity

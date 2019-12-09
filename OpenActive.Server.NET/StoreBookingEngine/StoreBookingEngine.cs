@@ -135,7 +135,7 @@ namespace OpenActive.Server.NET.StoreBooking
         private readonly Dictionary<OpportunityType, IOpportunityStore> storeRouting;
         private readonly StoreBookingEngineSettings storeBookingEngineSettings;
 
-        protected override void CreateTestDataItem(string bookingPartnerClientId, OpportunityType opportunityType, Event @event)
+        protected override void CreateTestDataItem(OpportunityType opportunityType, Event @event)
         {
             if (!storeRouting.ContainsKey(opportunityType))
                 throw new OpenBookingException(new OpenBookingError(), "Specified opportunity type is not configured as bookable in the StoreBookingEngine constructor.");
@@ -144,7 +144,7 @@ namespace OpenActive.Server.NET.StoreBooking
             storeRouting[opportunityType].CreateTestDataItem(opportunityType, @event);
         }
 
-        protected override void DeleteTestDataItem(string bookingPartnerClientId, OpportunityType opportunityType, string name)
+        protected override void DeleteTestDataItem(OpportunityType opportunityType, string name)
         {
             if (!storeRouting.ContainsKey(opportunityType))
                 throw new OpenBookingException(new OpenBookingError(), "Specified opportunity type is not configured as bookable in the StoreBookingEngine constructor.");
