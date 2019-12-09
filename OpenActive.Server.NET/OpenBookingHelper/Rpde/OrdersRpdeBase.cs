@@ -46,6 +46,11 @@ namespace OpenActive.Server.NET.OpenBookingHelper
             return this.SellerIdTemplate.RenderId(sellerIdComponents);
         }
 
+        protected Uri RenderSingleSellerId()
+        {
+            return this.SellerIdTemplate.RenderId(new SellerIdComponents());
+        }
+
         protected static Event RenderOpportunityWithOnlyId(string jsonLdType, Uri id)
         {
             return OrderCalculations.RenderOpportunityWithOnlyId(jsonLdType, id);
@@ -57,21 +62,21 @@ namespace OpenActive.Server.NET.OpenBookingHelper
         internal OrdersRPDEFeedGenerator() { }
     }
 
-    public abstract class OrdersRPDEFeedIncrementingUniqueChangeNumber : OrdersRPDEFeedGenerator, IRPDEFeedIncrementingUniqueChangeNumber
+    public abstract class OrdersRPDEFeedIncrementingUniqueChangeNumber : OrdersRPDEFeedGenerator, IRPDEOrdersFeedIncrementingUniqueChangeNumber
     {
-        protected abstract List<RpdeItem> GetRPDEItems(long? afterChangeNumber);
+        protected abstract List<RpdeItem> GetRPDEItems(string clientId, long? afterChangeNumber);
 
-        public RpdePage GetRPDEPage(long? afterChangeNumber)
+        public RpdePage GetOrdersRPDEPage(string clientId, long? afterChangeNumber)
         {
-            return new RpdePage(this.FeedUrl, afterChangeNumber, GetRPDEItems(afterChangeNumber));
+            return new RpdePage(this.FeedUrl, afterChangeNumber, GetRPDEItems(clientId, afterChangeNumber));
         }
     }
 
-    public abstract class OrdersRPDEFeedModifiedTimestampAndID : OrdersRPDEFeedGenerator, IRPDEFeedModifiedTimestampAndIDString
+    public abstract class OrdersRPDEFeedModifiedTimestampAndID : OrdersRPDEFeedGenerator, IRPDEOrdersFeedModifiedTimestampAndIDString
     {
-        protected abstract List<RpdeItem> GetRPDEItems(long? afterTimestamp, string afterId);
+        protected abstract List<RpdeItem> GetRPDEItems(string clientId, long? afterTimestamp, string afterId);
 
-        public RpdePage GetRPDEPage(long? afterTimestamp, string afterId)
+        public RpdePage GetOrdersRPDEPage(string clientId, long? afterTimestamp, string afterId)
         {
             if ((!afterTimestamp.HasValue && !string.IsNullOrWhiteSpace(afterId)) ||
                 (afterTimestamp.HasValue && string.IsNullOrWhiteSpace(afterId)))
@@ -80,7 +85,7 @@ namespace OpenActive.Server.NET.OpenBookingHelper
             }
             else
             {
-                return new RpdePage(this.FeedUrl, afterTimestamp, afterId, GetRPDEItems(afterTimestamp, afterId));
+                return new RpdePage(this.FeedUrl, afterTimestamp, afterId, GetRPDEItems(clientId, afterTimestamp, afterId));
             }
         }
     }

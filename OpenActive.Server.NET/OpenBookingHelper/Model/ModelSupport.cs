@@ -17,14 +17,14 @@ namespace OpenActive.Server.NET.OpenBookingHelper
             this.SellerIdTemplate = sellerTemplate;
         }
 
-        /// <summary>
-        /// Use OpportunityType from components
-        /// </summary>
-        /// <param name="components"></param>
-        /// <returns></returns>
         protected Uri RenderSellerId(SellerIdComponents components)
         {
             return SellerIdTemplate.RenderId(components);
+        }
+
+        protected Uri RenderSingleSellerId()
+        {
+            return SellerIdTemplate.RenderId(new SellerIdComponents());
         }
 
         /// <summary>

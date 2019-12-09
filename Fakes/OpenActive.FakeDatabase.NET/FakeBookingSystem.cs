@@ -43,7 +43,7 @@ namespace OpenActive.FakeDatabase.NET
             }
         }
 
-        public bool AddLease(string clientId, string uuid, BrokerRole brokerRole, string brokerName, long sellerId, string customerEmail, DateTimeOffset leaseExpires)
+        public bool AddLease(string clientId, string uuid, BrokerRole brokerRole, string brokerName, long? sellerId, string customerEmail, DateTimeOffset leaseExpires)
         {
             var existingOrder = Orders.SingleOrDefault(x => x.ClientId == clientId && x.Id == uuid );
             if (existingOrder == null)
@@ -55,7 +55,7 @@ namespace OpenActive.FakeDatabase.NET
                     Deleted = false,
                     BrokerRole = brokerRole,
                     BrokerName = brokerName,
-                    SellerId = sellerId,
+                    SellerId = sellerId ?? default,
                     CustomerEmail = customerEmail,
                     IsLease = true,
                     LeaseExpires = leaseExpires,
@@ -73,7 +73,7 @@ namespace OpenActive.FakeDatabase.NET
             {
                 existingOrder.BrokerRole = brokerRole;
                 existingOrder.BrokerName = brokerName;
-                existingOrder.SellerId = sellerId;
+                existingOrder.SellerId = sellerId ?? default;
                 existingOrder.CustomerEmail = customerEmail;
                 existingOrder.IsLease = true;
                 existingOrder.LeaseExpires = leaseExpires;
@@ -83,17 +83,17 @@ namespace OpenActive.FakeDatabase.NET
             
         }
 
-        public void DeleteLease(string clientId, string uuid, long sellerId)
+        public void DeleteLease(string clientId, string uuid, long? sellerId)
         {
             // TODO: Note this should throw an error if the Seller ID does not match, same as DeleteOrder
-            if (Orders.Exists(x => x.ClientId == clientId && x.IsLease && x.Id == uuid && x.SellerId == sellerId))
+            if (Orders.Exists(x => x.ClientId == clientId && x.IsLease && x.Id == uuid && (!sellerId.HasValue || x.SellerId == sellerId)))
             {
                 OrderItems.RemoveAll(x => x.ClientId == clientId && x.OrderId == uuid);
                 Orders.RemoveAll(x => x.ClientId == clientId && x.Id == uuid);
             }
         }
 
-        public bool AddOrder(string clientId, string uuid, BrokerRole brokerRole, string brokerName, long sellerId, string customerEmail, string paymentIdentifier, decimal totalOrderPrice)
+        public bool AddOrder(string clientId, string uuid, BrokerRole brokerRole, string brokerName, long? sellerId, string customerEmail, string paymentIdentifier, decimal totalOrderPrice)
         {
             var existingOrder = Orders.SingleOrDefault(x => x.ClientId == clientId && x.Id == uuid);
             if (existingOrder == null)
@@ -105,7 +105,7 @@ namespace OpenActive.FakeDatabase.NET
                     Deleted = false,
                     BrokerRole = brokerRole,
                     BrokerName = brokerName,
-                    SellerId = sellerId,
+                    SellerId = sellerId ?? default,
                     CustomerEmail = customerEmail,
                     PaymentIdentifier = paymentIdentifier,
                     TotalOrderPrice = totalOrderPrice,
@@ -124,7 +124,7 @@ namespace OpenActive.FakeDatabase.NET
             {
                 existingOrder.BrokerRole = brokerRole;
                 existingOrder.BrokerName = brokerName;
-                existingOrder.SellerId = sellerId;
+                existingOrder.SellerId = sellerId ?? default;
                 existingOrder.CustomerEmail = customerEmail;
                 existingOrder.PaymentIdentifier = paymentIdentifier;
                 existingOrder.TotalOrderPrice = totalOrderPrice;
@@ -134,13 +134,13 @@ namespace OpenActive.FakeDatabase.NET
             } 
         }
 
-        public void DeleteOrder(string clientId, string uuid, long sellerId)
+        public void DeleteOrder(string clientId, string uuid, long? sellerId)
         {
             // Set the Order to deleted in the feed, and erase all associated personal data
             var order = Orders.FirstOrDefault(x => x.ClientId == clientId && x.IsLease && x.Id == uuid && !x.Deleted);
             if (order != null)
             {
-                if (order.SellerId != sellerId)
+                if (sellerId.HasValue && order.SellerId != sellerId)
                 {
                     throw new ArgumentException("SellerId does not match Order");
                 }
@@ -151,14 +151,14 @@ namespace OpenActive.FakeDatabase.NET
             }
         }
 
-        public bool LeaseOrderItemsForClassOccurrence(string clientId, long sellerId, string uuid, long occurrenceId, long numberOfSpaces)
+        public bool LeaseOrderItemsForClassOccurrence(string clientId, long? sellerId, string uuid, long occurrenceId, long numberOfSpaces)
         {
             var thisOccurrence = Occurrences.FirstOrDefault(x => x.Id == occurrenceId && !x.Deleted);
             var thisClass = Classes.FirstOrDefault(x => x.Id == thisOccurrence?.ClassId && !x.Deleted);
 
             if (thisOccurrence != null && thisClass != null)
             {
-                if (thisClass.SellerId != sellerId)
+                if (sellerId.HasValue && thisClass.SellerId != sellerId)
                 {
                     throw new ArgumentException("SellerId does not match Order");
                 }
@@ -202,14 +202,14 @@ namespace OpenActive.FakeDatabase.NET
         }
 
         // TODO this should reuse code of LeaseOrderItemsForClassOccurrence
-        public List<long> BookOrderItemsForClassOccurrence(string clientId, long sellerId, string uuid, long occurrenceId, string opportunityJsonLdType, string opportunityJsonLdId, string offerJsonLdId, long numberOfSpaces)
+        public List<long> BookOrderItemsForClassOccurrence(string clientId, long? sellerId, string uuid, long occurrenceId, string opportunityJsonLdType, string opportunityJsonLdId, string offerJsonLdId, long numberOfSpaces)
         {
             var thisOccurrence = Occurrences.FirstOrDefault(x => x.Id == occurrenceId && !x.Deleted);
             var thisClass = Classes.FirstOrDefault(x => x.Id == thisOccurrence.ClassId && !x.Deleted);
 
             if (thisOccurrence != null && thisClass != null)
             {
-                if (thisClass.SellerId != sellerId)
+                if (sellerId.HasValue && thisClass.SellerId != sellerId)
                 {
                     throw new ArgumentException("SellerId does not match Order");
                 }
@@ -263,10 +263,10 @@ namespace OpenActive.FakeDatabase.NET
             }
         }
 
-        public bool CancelOrderItem(string clientId, long sellerId, string uuid, List<long> orderItemIds, bool customerCancelled)
+        public bool CancelOrderItem(string clientId, long? sellerId, string uuid, List<long> orderItemIds, bool customerCancelled)
         {
             var order = Orders.FirstOrDefault(x => x.ClientId == clientId && !x.IsLease && x.Id == uuid && !x.Deleted);
-            if (order.SellerId != sellerId)
+            if (sellerId.HasValue && order.SellerId != sellerId)
             {
                 throw new ArgumentException("SellerId does not match Order");
             }

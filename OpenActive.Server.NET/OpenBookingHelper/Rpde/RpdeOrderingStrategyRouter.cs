@@ -21,6 +21,16 @@ namespace OpenActive.Server.NET.OpenBookingHelper
         RpdePage GetRPDEPage(long? afterTimestamp, string afterId);
     }
 
+    public interface IRPDEOrdersFeedIncrementingUniqueChangeNumber : IRPDEFeedGenerator
+    {
+        RpdePage GetOrdersRPDEPage(string clientId, long? afterChangeNumber);
+    }
+
+    public interface IRPDEOrdersFeedModifiedTimestampAndIDString : IRPDEFeedGenerator
+    {
+        RpdePage GetOrdersRPDEPage(string clientId, long? afterTimestamp, string afterId);
+    }
+
     [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1040:Avoid empty interfaces", Justification = "<Pending>")]
     // This interface exists to provide the extension method below for all RPDE feeds
     public interface IRPDEFeedGenerator { }
@@ -59,6 +69,12 @@ namespace OpenActive.Server.NET.OpenBookingHelper
 
                 case IRPDEFeedModifiedTimestampAndIDString timestampAndIDGeneratorString:
                     return timestampAndIDGeneratorString.GetRPDEPage(afterTimestamp, afterId);
+
+                case IRPDEOrdersFeedIncrementingUniqueChangeNumber ordersFeedIncrementingUniqueChangeNumber:
+                    return ordersFeedIncrementingUniqueChangeNumber.GetOrdersRPDEPage(feedidentifier, afterChangeNumber);
+
+                case IRPDEOrdersFeedModifiedTimestampAndIDString ordersFeedModifiedTimestampAndIDString:
+                    return ordersFeedModifiedTimestampAndIDString.GetOrdersRPDEPage(feedidentifier, afterTimestamp, afterId);
 
                 default:
                     throw new InvalidCastException($"RPDEFeedGenerator for '{feedidentifier}' not recognised - check the generic template for RPDEFeedModifiedTimestampAndID uses either <string> or <long?>");

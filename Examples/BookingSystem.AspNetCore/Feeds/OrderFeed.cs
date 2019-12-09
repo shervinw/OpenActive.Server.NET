@@ -13,13 +13,12 @@ namespace BookingSystem.AspNetCore
     {
         //public override string FeedPath { get; protected set; } = "example path override";
 
-        // TODO: Update to use fake orders database
-        protected override List<RpdeItem> GetRPDEItems(long? afterTimestamp, string afterId)
+        protected override List<RpdeItem> GetRPDEItems(string clientId, long? afterTimestamp, string afterId)
         {
             var query = from orders in FakeBookingSystem.Database.Orders
                         join seller in FakeBookingSystem.Database.Sellers on orders.SellerId equals seller.Id
                         join orderItems in FakeBookingSystem.Database.OrderItems on orders.Id equals orderItems.OrderId
-                        where orders.VisibleInFeed && (!afterTimestamp.HasValue || orders.Modified.ToUnixTimeMilliseconds() > afterTimestamp ||
+                        where orders.VisibleInFeed && orders.ClientId == clientId && (!afterTimestamp.HasValue || orders.Modified.ToUnixTimeMilliseconds() > afterTimestamp ||
                         (orders.Modified.ToUnixTimeMilliseconds() == afterTimestamp && orders.Id.CompareTo(afterId) > 0))
                         group orderItems by new { orders, seller } into thisOrder
                         orderby thisOrder.Key.orders.Modified, thisOrder.Key.orders.Id

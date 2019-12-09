@@ -41,7 +41,7 @@ namespace BookingSystem.AspNetCore
         protected override void GetOrderItem(List<OrderItemContext<SessionOpportunity>> orderItemContexts, StoreBookingFlowContext flowContext)
         {
 
-            // Note the implementation of this method must also check that this OrderItem is from the Seller specified by context.SellerIdComponents
+            // Note the implementation of this method must also check that this OrderItem is from the Seller specified by context.SellerIdComponents (this is not required if using a Single Seller)
 
             // Additionally this method must check that there are enough spaces in each entry
 
@@ -138,7 +138,7 @@ namespace BookingSystem.AspNetCore
                 else
                 {
                     // Attempt to lease for those with the same IDs, which is atomic
-                    bool result = databaseTransaction.Database.LeaseOrderItemsForClassOccurrence(flowContext.OrderId.ClientId, flowContext.SellerId.SellerIdLong.Value, flowContext.OrderId.uuid, ctxGroup.Key.ScheduledSessionId.Value, ctxGroup.Count());
+                    bool result = databaseTransaction.Database.LeaseOrderItemsForClassOccurrence(flowContext.OrderId.ClientId, flowContext.SellerId.SellerIdLong ?? null /* Hack to allow this to work in Single Seller mode too */, flowContext.OrderId.uuid, ctxGroup.Key.ScheduledSessionId.Value, ctxGroup.Count());
                    
                     if (!result)
                     {
@@ -166,7 +166,7 @@ namespace BookingSystem.AspNetCore
                 }
 
                 // Attempt to lease for those with the same IDs, which is atomic
-                List<long> orderItemIds = databaseTransaction.Database.BookOrderItemsForClassOccurrence(flowContext.OrderId.ClientId, flowContext.SellerId.SellerIdLong.Value, flowContext.OrderId.uuid, ctxGroup.Key.ScheduledSessionId.Value, this.RenderOpportunityJsonLdType(ctxGroup.Key), this.RenderOpportunityId(ctxGroup.Key).ToString(), this.RenderOfferId(ctxGroup.Key).ToString(), ctxGroup.Count());
+                List<long> orderItemIds = databaseTransaction.Database.BookOrderItemsForClassOccurrence(flowContext.OrderId.ClientId, flowContext.SellerId.SellerIdLong ?? null  /* Hack to allow this to work in Single Seller mode too */, flowContext.OrderId.uuid, ctxGroup.Key.ScheduledSessionId.Value, this.RenderOpportunityJsonLdType(ctxGroup.Key), this.RenderOpportunityId(ctxGroup.Key).ToString(), this.RenderOfferId(ctxGroup.Key).ToString(), ctxGroup.Count());
 
                 if (orderItemIds != null)
                 {

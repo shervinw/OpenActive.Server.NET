@@ -21,6 +21,11 @@ namespace OpenActive.Server.NET.OpenBookingHelper
             return this.IdTemplate.RenderId(sellerIdComponents);
         }
 
+        protected Uri RenderSingleSellerId()
+        {
+            return this.IdTemplate.RenderId(new SellerIdComponents());
+        }
+
         internal ILegalEntity GetSellerById(SellerIdComponents sellerIdComponents)
         {
             // TODO: Include validation on the OrderItem created, to ensure it includes all the required fields

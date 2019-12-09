@@ -148,9 +148,21 @@ namespace BookingSystem.AspNetCore
 
                 JsonLdIdBaseUrl = new Uri("https://example.com/api/identifiers/"),
 
+                
+                // Multiple Seller Mode
+                SellerStore = new AcmeSellerStore(),
                 SellerIdTemplate = new SingleIdTemplate<SellerIdComponents>(
                     "{+BaseUrl}api/sellers/{SellerIdLong}"
                     ),
+
+                /*
+                // Single Seller Mode
+                SellerStore = new AcmeSellerStore(),
+                SellerIdTemplate = new SingleIdTemplate<SellerIdComponents>(
+                    "{+BaseUrl}api/seller"
+                    ),
+                HasSingleSeller = true,
+                */
 
                 OpenDataFeeds = new Dictionary<OpportunityType, IOpportunityDataRPDEFeedGenerator> {
                     {
@@ -181,9 +193,7 @@ namespace BookingSystem.AspNetCore
                     "{+BaseUrl}api/{OrderType}/{uuid}#/orderedItems/{OrderItemIdLong}"
                     ),
 
-                OrderFeedGenerator = new AcmeOrdersFeedRPDEGenerator(),
-
-                SellerStore = new AcmeSellerStore()
+                OrderFeedGenerator = new AcmeOrdersFeedRPDEGenerator()
             },
             new DatasetSiteGeneratorSettings
             {

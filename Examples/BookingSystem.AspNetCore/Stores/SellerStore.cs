@@ -13,26 +13,43 @@ namespace BookingSystem.AspNetCore
         // If the Seller is not found, simply return null to generate the correct Open Booking error
         protected override ILegalEntity GetSeller(SellerIdComponents sellerIdComponents)
         {
-            // For single-organization sellers, this may be hardcoded.
-            // Otherwise it may be looked up based on supplied sellerIdComponents which are extacted from the sellerId.
-
-            var seller = FakeBookingSystem.Database.Sellers.SingleOrDefault(x => x.Id == sellerIdComponents.SellerIdLong);
-            if (seller != null)
+            // Note both examples are shown below to demonstrate options available. Only one block of the if statement below is required.
+            if (sellerIdComponents.SellerIdLong == null && sellerIdComponents.SellerIdString == null)
             {
-                return seller.IsIndividual ? (ILegalEntity) new Person
+
+                // For Single Seller booking systems, no ID will be available from sellerIdComponents, and this data should instead come from your configuration table
+                return new Organization
                 {
-                    Id = this.RenderSellerId(new SellerIdComponents { SellerIdLong = seller.Id } ),
-                    Name = seller.Name,
-                    TaxMode = TaxMode.TaxGross
-                } : (ILegalEntity) new Organization
-                {
-                    Id = this.RenderSellerId(new SellerIdComponents { SellerIdLong = seller.Id }),
-                    Name = seller.Name,
+                    Id = this.RenderSingleSellerId(),
+                    Name = "Test Seller",
                     TaxMode = TaxMode.TaxGross
                 };
-            } else
+
+            }
+            else
             {
-                return null;
+
+                // Otherwise it may be looked up based on supplied sellerIdComponents which are extacted from the sellerId.
+                var seller = FakeBookingSystem.Database.Sellers.SingleOrDefault(x => x.Id == sellerIdComponents.SellerIdLong);
+                if (seller != null)
+                {
+                    return seller.IsIndividual ? (ILegalEntity)new Person
+                    {
+                        Id = this.RenderSellerId(new SellerIdComponents { SellerIdLong = seller.Id }),
+                        Name = seller.Name,
+                        TaxMode = TaxMode.TaxGross
+                    } : (ILegalEntity)new Organization
+                    {
+                        Id = this.RenderSellerId(new SellerIdComponents { SellerIdLong = seller.Id }),
+                        Name = seller.Name,
+                        TaxMode = TaxMode.TaxGross
+                    };
+                }
+                else
+                {
+                    return null;
+                }
+
             }
         }
     }

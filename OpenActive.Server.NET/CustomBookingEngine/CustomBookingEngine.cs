@@ -48,8 +48,16 @@ namespace OpenActive.Server.NET.CustomBooking
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Usage", "CA2208:Instantiate argument exceptions correctly", Justification = "Exception relates to specific settings property being null")]
         public CustomBookingEngine(BookingEngineSettings settings, Uri openBookingAPIBaseUrl, Uri openDataFeedBaseUrl) : this (settings, openBookingAPIBaseUrl)
         {
+            // Check constructor configuration is correct
             if (openDataFeedBaseUrl == null) throw new ArgumentNullException(nameof(openDataFeedBaseUrl));
             if (settings.OpenDataFeeds == null) throw new ArgumentNullException("settings.OpenDataFeeds");
+
+
+            // Check Seller configuration is provided
+            if (settings.SellerStore == null || settings.SellerIdTemplate == null)
+            {
+                throw new EngineConfigurationException("SellerStore and SellerIdTemplate must be specified in BookingEngineSettings");
+            }
 
             this.openDataFeedBaseUrl = openDataFeedBaseUrl;
 
@@ -314,6 +322,9 @@ namespace OpenActive.Server.NET.CustomBooking
 
         private SellerIdComponents GetSellerIdComponentsFromApiKey(Uri sellerId)
         {
+            // Return empty SellerIdComponents in Single Seller mode, as it is not required in the API Key
+            if (settings.HasSingleSeller == true) return new SellerIdComponents();
+
             var sellerIdComponents = settings.SellerIdTemplate.GetIdComponents(sellerId);
             if (sellerIdComponents == null) throw new OpenBookingException(new InvalidAPITokenError());
             return sellerIdComponents;
@@ -409,28 +420,7 @@ namespace OpenActive.Server.NET.CustomBooking
 
             // TODO: Add more request validation rules here
 
-            Uri sellerId = authenticationSellerId ?? orderQuote?.Seller?.Id;
-
-            // Check that taxMode is set in Seller
-            if (sellerId == null)
-            {
-                // TODO: Update data model to throw actual error for all occurances of OpenBookingError
-                throw new OpenBookingException(new OpenBookingError(), "SellerNotSpecified");
-            }
-
-            if (authenticationSellerId != null && orderQuote?.Seller?.Id != null && authenticationSellerId != orderQuote?.Seller?.Id)
-            {
-                // TODO: Update data model to throw actual error for all occurances of OpenBookingError
-                throw new OpenBookingException(new OpenBookingError(), "SellerIdMismatch");
-            }
-
-            SellerIdComponents sellerIdComponents = settings.SellerIdTemplate.GetIdComponents(sellerId);
-
-            if (sellerIdComponents == null)
-            {
-                // TODO: Update data model to throw actual error for all occurances of OpenBookingError
-                throw new OpenBookingException(new OpenBookingError(), "SellerInvalid");
-            }
+            SellerIdComponents sellerIdComponents = GetSellerIdComponentsFromApiKey(authenticationSellerId);
 
             ILegalEntity seller = settings.SellerStore.GetSellerById(sellerIdComponents);
 
@@ -438,6 +428,12 @@ namespace OpenActive.Server.NET.CustomBooking
             {
                 // TODO: Update data model to throw actual error for all occurances of OpenBookingError
                 throw new OpenBookingException(new OpenBookingError(), "SellerNotFound");
+            }
+            
+            if (orderQuote?.Seller?.Id != null && seller?.Id != orderQuote?.Seller?.Id)
+            {
+                // TODO: Update data model to throw actual error for all occurances of OpenBookingError
+                throw new OpenBookingException(new OpenBookingError(), "SellerIdMismatch");
             }
 
             // Check that taxMode is set in Seller
