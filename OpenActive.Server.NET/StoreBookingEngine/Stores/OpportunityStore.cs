@@ -16,8 +16,8 @@ namespace OpenActive.Server.NET.StoreBooking
         */
 
         void GetOrderItems(List<IOrderItemContext> orderItemContexts, StoreBookingFlowContext flowContext);
-        void LeaseOrderItems(List<IOrderItemContext> orderItemContexts, StoreBookingFlowContext flowContext, dynamic databaseTransactionContext);
-        void BookOrderItems(List<IOrderItemContext> orderItemContexts, StoreBookingFlowContext flowContext, dynamic databaseTransactionContext);
+        void LeaseOrderItems(List<IOrderItemContext> orderItemContexts, StoreBookingFlowContext flowContext, IDatabaseTransaction databaseTransactionContext);
+        void BookOrderItems(List<IOrderItemContext> orderItemContexts, StoreBookingFlowContext flowContext, IDatabaseTransaction databaseTransactionContext);
 
         void CreateTestDataItem(OpportunityType opportunityType, Event @event);
         void DeleteTestDataItem(OpportunityType opportunityType, string name);
@@ -25,7 +25,7 @@ namespace OpenActive.Server.NET.StoreBooking
 
 
     //TODO: Remove duplication between this and RpdeBase if possible as they are using the same pattern?
-    public abstract class OpportunityStore<TComponents, TDatabaseTransaction> : ModelSupport<TComponents>, IOpportunityStore where TComponents : class, IBookableIdComponents, new()
+    public abstract class OpportunityStore<TComponents, TDatabaseTransaction> : ModelSupport<TComponents>, IOpportunityStore where TComponents : class, IBookableIdComponents, new() where TDatabaseTransaction : IDatabaseTransaction
     {
         public void SetConfiguration(IBookablePairIdTemplate template, SingleIdTemplate<SellerIdComponents> sellerTemplate)
         {
@@ -44,13 +44,13 @@ namespace OpenActive.Server.NET.StoreBooking
             GetOrderItem(ConvertToSpecificComponents(orderItemContexts), flowContext);
         }
 
-        public void LeaseOrderItems(List<IOrderItemContext> orderItemContexts, StoreBookingFlowContext flowContext, dynamic databaseTransactionContext)
+        public void LeaseOrderItems(List<IOrderItemContext> orderItemContexts, StoreBookingFlowContext flowContext, IDatabaseTransaction databaseTransactionContext)
         {
             // TODO: Include validation on the OrderItem created, to ensure it includes all the required fields
             LeaseOrderItem(ConvertToSpecificComponents(orderItemContexts), flowContext, (TDatabaseTransaction)databaseTransactionContext);
         }
 
-        public void BookOrderItems(List<IOrderItemContext> orderItemContexts, StoreBookingFlowContext flowContext, dynamic databaseTransactionContext)
+        public void BookOrderItems(List<IOrderItemContext> orderItemContexts, StoreBookingFlowContext flowContext, IDatabaseTransaction databaseTransactionContext)
         {
             // TODO: Include validation on the OrderItem created, to ensure it includes all the required fields
             BookOrderItem(ConvertToSpecificComponents(orderItemContexts), flowContext, (TDatabaseTransaction)databaseTransactionContext);

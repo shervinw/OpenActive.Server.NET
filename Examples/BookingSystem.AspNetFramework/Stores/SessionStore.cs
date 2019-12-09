@@ -9,7 +9,7 @@ using OpenActive.FakeDatabase.NET;
 
 namespace BookingSystem
 {
-    class SessionStore : OpportunityStore<SessionOpportunity, DatabaseTransaction>
+    class SessionStore : OpportunityStore<SessionOpportunity, OrderTransaction>
     {
         
         public override void CreateTestDataItem(OpportunityType opportunityType, Event @event)
@@ -115,7 +115,7 @@ namespace BookingSystem
 
         }
 
-        protected override void LeaseOrderItem(List<OrderItemContext<SessionOpportunity>> orderItemContexts, StoreBookingFlowContext flowContext, DatabaseTransaction databaseTransaction)
+        protected override void LeaseOrderItem(List<OrderItemContext<SessionOpportunity>> orderItemContexts, StoreBookingFlowContext flowContext, OrderTransaction databaseTransaction)
         {
             // Check that there are no conflicts between the supplied opportunities
             // Also take into account spaces requested across OrderItems against total spaces in each opportunity
@@ -147,7 +147,7 @@ namespace BookingSystem
         }
 
         //TODO: This should reuse code of LeaseOrderItem
-        protected override void BookOrderItem(List<OrderItemContext<SessionOpportunity>> orderItemContexts, StoreBookingFlowContext flowContext, DatabaseTransaction databaseTransaction)
+        protected override void BookOrderItem(List<OrderItemContext<SessionOpportunity>> orderItemContexts, StoreBookingFlowContext flowContext, OrderTransaction databaseTransaction)
         {
             // Check that there are no conflicts between the supplied opportunities
             // Also take into account spaces requested across OrderItems against total spaces in each opportunity

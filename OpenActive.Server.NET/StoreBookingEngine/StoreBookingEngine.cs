@@ -324,7 +324,7 @@ namespace OpenActive.Server.NET.StoreBooking
 
                     // Note behaviour here is to lease those items that are available to be leased, and return errors for everything else
                     // Leasing is optimistic, booking is atomic
-                    using (dynamic dbTransaction = storeBookingEngineSettings.OrderStore.BeginOrderTransaction(context.Stage))
+                    using (IDatabaseTransaction dbTransaction = storeBookingEngineSettings.OrderStore.BeginOrderTransaction(context.Stage))
                     {
                             try
                             {
@@ -353,11 +353,11 @@ namespace OpenActive.Server.NET.StoreBooking
                                 .ToList();
                                 */
 
-                                if (dbTransaction != null) storeBookingEngineSettings.OrderStore.CompleteOrderTransaction(dbTransaction);
+                                if (dbTransaction != null) dbTransaction.Commit();
                             }
                             catch
                             {
-                                if (dbTransaction != null) storeBookingEngineSettings.OrderStore.RollbackOrderTransaction(dbTransaction);
+                                if (dbTransaction != null) dbTransaction.Rollback();
                                 throw;
                             }
                     }
@@ -380,7 +380,7 @@ namespace OpenActive.Server.NET.StoreBooking
                     }
 
                     // Booking is atomic
-                    using (dynamic dbTransaction = storeBookingEngineSettings.OrderStore.BeginOrderTransaction(context.Stage))
+                    using (IDatabaseTransaction dbTransaction = storeBookingEngineSettings.OrderStore.BeginOrderTransaction(context.Stage))
                     {
                         if (dbTransaction == null)
                         {
@@ -431,11 +431,11 @@ namespace OpenActive.Server.NET.StoreBooking
                             .ToList();
                             */
 
-                            storeBookingEngineSettings.OrderStore.CompleteOrderTransaction(dbTransaction);
+                            dbTransaction.Commit();
                         }
                         catch
                         {
-                            storeBookingEngineSettings.OrderStore.RollbackOrderTransaction(dbTransaction);
+                            dbTransaction.Rollback();
                             throw;
                         }
                     }

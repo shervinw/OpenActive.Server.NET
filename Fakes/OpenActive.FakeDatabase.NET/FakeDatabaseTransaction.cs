@@ -5,9 +5,9 @@ using System.Text;
 
 namespace OpenActive.FakeDatabase.NET
 {
-    public class DatabaseTransaction : IDisposable
+    public class FakeDatabaseTransaction : IDisposable
     {
-        public DatabaseTransaction(FakeDatabase database)
+        public FakeDatabaseTransaction(FakeDatabase database)
         {
             sourceDatabase = database;
             Database = new FakeDatabase

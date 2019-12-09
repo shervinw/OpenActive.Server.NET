@@ -8,7 +8,7 @@ using System.Linq;
 
 namespace BookingSystem
 {
-    public class AcmeOrderStore : OrderStore<DatabaseTransaction>
+    public class AcmeOrderStore : OrderStore<OrderTransaction>
     {
         /// <summary>
         /// Initiate customer cancellation for the specified OrderItems
@@ -20,7 +20,7 @@ namespace BookingSystem
             return FakeBookingSystem.Database.CancelOrderItem(orderId.ClientId, sellerId.SellerIdLong ?? null  /* Hack to allow this to work in Single Seller mode too */, orderId.uuid, orderItemIds.Select(x => x.OrderItemIdLong.Value).ToList(), true);
         }
 
-        public override Lease CreateLease(OrderQuote orderQuote, StoreBookingFlowContext flowContext, DatabaseTransaction databaseTransaction)
+        public override Lease CreateLease(OrderQuote orderQuote, StoreBookingFlowContext flowContext, OrderTransaction databaseTransaction)
         {
             if (orderQuote.TotalPaymentDue.PriceCurrency != "GBP")
             {
@@ -64,7 +64,7 @@ namespace BookingSystem
             FakeBookingSystem.Database.DeleteLease(orderId.ClientId, orderId.uuid, sellerId.SellerIdLong.Value);
         }
 
-        public override void CreateOrder(Order order, StoreBookingFlowContext flowContext, DatabaseTransaction databaseTransaction)
+        public override void CreateOrder(Order order, StoreBookingFlowContext flowContext, OrderTransaction databaseTransaction)
         {
             if (order.TotalPaymentDue.PriceCurrency != "GBP")
             {
@@ -90,26 +90,16 @@ namespace BookingSystem
         }
 
 
-        protected override DatabaseTransaction BeginOrderTransaction(FlowStage stage)
+        protected override OrderTransaction BeginOrderTransaction(FlowStage stage)
         {
             if (stage != FlowStage.C1)
             {
-                return new DatabaseTransaction(FakeBookingSystem.Database);
+                return new OrderTransaction();
             }
             else
             {
                 return null;
             }
-        }
-
-        protected override void CompleteOrderTransaction(DatabaseTransaction databaseTransaction)
-        {
-            databaseTransaction.CommitTransaction();
-        }
-
-        protected override void RollbackOrderTransaction(DatabaseTransaction databaseTransaction)
-        {
-            databaseTransaction.Database = null;
         }
     }
 }
