@@ -234,8 +234,7 @@ namespace OpenActive.Server.NET.StoreBooking
                     throw new EngineConfigurationException("OpportunityType must be configured for each IdComponent entry in the settings.");
                 }
 
-
-                // Create the relevant OrderItemContext using the specific type of the IdComponents
+                // Create the relevant OrderItemContext using the specific type of the IdComponents returned
                 Type type = typeof(OrderItemContext<>).MakeGenericType(idComponents.GetType());
                 IOrderItemContext orderItemContext = (IOrderItemContext)Activator.CreateInstance(type);
                 orderItemContext.Index = index;
@@ -243,12 +242,7 @@ namespace OpenActive.Server.NET.StoreBooking
                 orderItemContext.RequestOrderItem = orderItem;
 
                 return orderItemContext;
-                /*
-                return (IOrderItemContext) new OrderItemContext <type> {
-                    Index = index,
-                    OpportunityIdComponents = idComponents, 
-                    requestOrderItem = orderItem
-                };*/
+
             }).ToList();
 
 
@@ -282,11 +276,12 @@ namespace OpenActive.Server.NET.StoreBooking
                     throw new EngineConfigurationException("Not all OrderItemContext have a ResponseOrderItem set with an AcceptedOffer containing both Price and PriceCurrency.");
                 }
 
+                // TODO: Implement error logic for all types of item errors based on the results of this
+
                 return new
                 {
                     OpportunityType = opportunityType,
                     Store = store,
-                    // TODO: Implement error logic for all types of item errors based on the results of this
                     OrderItemContexts = orderItemContextsWithinGroup
                 };
             }).ToList();
@@ -307,7 +302,6 @@ namespace OpenActive.Server.NET.StoreBooking
 
             // Add totals to the resulting Order
             OrderCalculations.AugmentOrderWithTotals(responseGenericOrder);
-
 
 
             switch (responseGenericOrder)
@@ -335,23 +329,9 @@ namespace OpenActive.Server.NET.StoreBooking
                                 {
                                     foreach (var g in orderItemGroups)
                                     {
-                                        g.Store.LeaseOrderItems(g.OrderItemContexts, context, dbTransaction);
+                                        g.Store.LeaseOrderItems(responseOrderQuote.Lease, g.OrderItemContexts, context, dbTransaction);
                                     }
                                 }
-
-                                /*
-                                // Lease the OrderItems
-                                responseOrderQuote.OrderedItem = orderItemGroups.Select(g => {
-                                    // Errors produced by LeaseOrderItem are in the same order as the items provided
-                                    // This interface encourages implementers not to make any alterations to the OrderItems at the lease stage
-                                    g.Store.LeaseOrderItems(g.OrderItemContexts, context, dbTransaction);
-                                    return g.OrderItemContexts;
-                                })
-                                .SelectMany(x => x)
-                                .OrderBy(x => x.Index)
-                                .Select(x => x.responseOrderItem)
-                                .ToList();
-                                */
 
                                 if (dbTransaction != null) dbTransaction.Commit();
                             }
@@ -366,6 +346,27 @@ namespace OpenActive.Server.NET.StoreBooking
                 case Order responseOrder:
                     if (context.Stage != FlowStage.B)
                         throw new OpenBookingException(new OpenBookingError(), "Unexpected Order type provided");
+
+                    // If any capacity errors were returned from GetOrderItems, the booking must fail
+                    // https://www.openactive.io/open-booking-api/EditorsDraft/#order-creation-b
+                    if (responseOrder.OrderedItem.Any(i => i.Error != null && i.Error.Any(e => e != null && e.GetType() == typeof(OpportunityHasInsufficientCapacityError))))
+                    {
+                        throw new OpenBookingException(new OpportunityHasInsufficientCapacityError());
+                    }
+
+                    // If any lease capacity errors were returned from GetOrderItems, the booking must fail
+                    // https://www.openactive.io/open-booking-api/EditorsDraft/#order-creation-b
+                    if (responseOrder.OrderedItem.Any(i => i.Error != null && i.Error.Any(e => e != null && e.GetType() == typeof(OpportunityCapacityIsReservedByLeaseError))))
+                    {
+                        throw new OpenBookingException(new OpportunityCapacityIsReservedByLeaseError());
+                    }
+
+                    // If any other errors were returned from GetOrderItems, the booking must fail
+                    // https://www.openactive.io/open-booking-api/EditorsDraft/#order-creation-b
+                    if (responseOrder.OrderedItem.Any(x => x.Error != null && x.Error.Count > 0))
+                    {
+                        throw new OpenBookingException(new UnableToProcessOrderItemError());
+                    }
 
                     // If "payment" has been supplied unnecessarily, throw an error
                     if (responseOrder.Payment != null && responseOrder.TotalPaymentDue?.Price == 0)
@@ -410,27 +411,6 @@ namespace OpenActive.Server.NET.StoreBooking
                                 }
                             }
 
-                            /*
-                            responseOrder.OrderedItem = orderItemGroups.Select(g => {
-                                // Errors produced by LeaseOrderItem are in the same order as the items provided
-                                // This interface encourages implementers not to make any alterations to the OrderItems at the lease stage
-                                g.Store.BookOrderItems(g.OrderItemContexts, context, dbTransaction);
-                                return g.OrderItemContexts;
-                            })
-                            .SelectMany(x => x)
-                            .OrderBy(x => x.Index)
-                            .Select(x => {
-                                // Render the OrderItem Id from the context
-                                if (x.OrderIdComponents == null)
-                                {
-                                    throw new ArgumentException("OrderIdComponents must be supplied for each result of BookOrderItems");
-                                }
-                                x.responseOrderItem.Id = context.OrderIdTemplate.RenderOrderItemId(x.OrderIdComponents);
-                                return x.responseOrderItem;
-                            })
-                            .ToList();
-                            */
-
                             dbTransaction.Commit();
                         }
                         catch
@@ -449,132 +429,7 @@ namespace OpenActive.Server.NET.StoreBooking
             responseGenericOrder.OrderedItem = orderItemContexts.Select(x => x.ResponseOrderItem).ToList();
 
             return responseGenericOrder;
-
-
-
-
-            // QUESTION: Do we need to force them into include the seller twice??
-
-
-
-            /*
-            switch (rawOrderItem?.OrderedItem) {
-                case SessionSeries sessionSeries:
-                    sellerId = sessionSeries?.SuperEvent?.Organizer.Value1?.Id ?? sessionSeries?.SuperEvent?.Organizer.Value2?.Id;
-                    Seller seller2 = sessionSeries?.SuperEvent?.Organizer.Value1;
-                    Organization org = sessionSeries?.SuperEvent?.Organizer;
-                    seller2.WrappedValue
-                    break;
-                case Slot slot:
-                    sellerId = slot?.FacilityUse.Value3?.Provider?.Id ?? slot?.FacilityUse.Value3?.Provider?.Id;
-                    break;
-                case Event @event: // Should catch HeadlineEvent, Course, etc too
-                    sellerId = @event?.SuperEvent?.Organizer.Value1?.Id ?? @event?.SuperEvent?.Organizer.Value2?.Id
-                        ?? @event?.Organizer.Value1?.Id ?? @event?.Organizer.Value2?.Id;
-                    break;
-                case null:
-                default:
-                    throw new OpenBookingException(new OpenBookingError(), "Seller not provided in supplied OrderItem");
-            }
-            */
-
-            //    return rawOrderItem;
-            //}).ToList();
-
         }
-
-
-
-
-
-        /*
-         * 
-
-        // The below goes into RpdeBase
-
-
-
-          var sellerId = fullOrderItem.organizer.id || fullOrderItem.superEvent.organizer.id || fullOrderItem.facilityUse.organizer.id || fullOrderItem.superEvent.superEvent.organizer.id;
-
-          if (seller.id != sellerId) {
-            x.error[] += renderError("OpportunitySellerMismatch", notBookableReason);    
-            return x;
-          }
-
-          // Validate output, and throw on error
-          validateOutputOrderItem(fullOrderItem);
-
-          // Check for a 'bookable' Opportunity and Offer pair was returned
-          var notBookableReason = validateBookable(fullOrderItem);
-          if (notBookableReason) {
-            x.error[] += renderError("OpportunityOfferPairNotBookable", notBookableReason);    
-            return x;
-          } else {
-            // Note: only validating details if the output is valid (previous check)
-            return validateDetailsCapture(checkpointStage, fullOrderItem);
-          }
-        } else {
-          x.error[] += renderError("IncompleteOrderItemError");  
-          return x;
-        }
-      } 
-    );
-
-    if (checkpointStage == "C1" || checkpointStage == "C2") {
-      var draftOrderQuote = {
-        "@context": "https://openactive.io/",
-        "type": "OrderQuote",
-        "identifier": orderQuoteId,
-        "brokerRole": orderQuote.brokerRole,
-        "broker": broker,
-        "seller": seller,
-        "customer": customer,
-        "bookingService": bookingService
-      };
-
-      // Attempt to retrieve lease, or at a minimum check the items can be purchased together (are not conflicted)
-      // Note leaseOrCheckBookable adds errors to the orderedItems supplied array
-      draftOrderQuote.lease = leaseOrCheckBookable(mutable orderedItems, draftOrderQuote, checkpointStage, seller.taxMode, taxPayeeRelationship, payer, authKey, data );
-
-      // TODO: leases need to be set at the beginning, as they'll influence remaining spaces and OpportunityIsFullError etc. 
-
-      // Add orderItems and totals to draftOrderQuote
-      draftOrderQuote.orderedItems = orderedItems;
-      augmentOrderWithTotals(draftOrderQuote);
-      return draftOrderQuote;
-    }
-
-    if (checkpointStage == "B") {
-      var payment = getPaymentSupportedFields(orderQuote.payment)
-
-      var draftOrder = {
-        "@context": "https://openactive.io/",
-        "type": "Order",
-        "identifier": orderQuoteId,
-        "brokerRole": orderQuote.brokerRole,
-        "broker": broker,
-        "seller": seller,
-        "customer": customer,
-        "bookingService": bookingService,
-        "orderedItems": orderedItems,
-        "payment": payment
-      };
-      augmentOrderWithTotals(draftOrder);
-
-      // Check that draftOrder matches expected totalPaymentDue provided with input order
-      if (draftOrder.totalPaymentDue.price != orderQuote.totalPaymentDue.price) {
-        return renderError("TotalPaymentDueMismatchError");
-      }
-
-      // Add orderItem.id, orderItem.accessCode and orderItem.accessToken for successful booking
-      // Note this needs to store enough data to contract an Orders feed entry
-      processBooking(orderId, draftOrder, seller.taxMode, taxPayeeRelationship, payer, authKey, data);
-
-      return draftOrder;
-    }
-
-}
-*/
     }
 }
 

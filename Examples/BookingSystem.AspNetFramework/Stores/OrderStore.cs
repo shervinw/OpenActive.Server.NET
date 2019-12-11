@@ -20,9 +20,9 @@ namespace BookingSystem
             return FakeBookingSystem.Database.CancelOrderItem(orderId.ClientId, sellerId.SellerIdLong ?? null  /* Hack to allow this to work in Single Seller mode too */, orderId.uuid, orderItemIds.Select(x => x.OrderItemIdLong.Value).ToList(), true);
         }
 
-        public override Lease CreateLease(OrderQuote orderQuote, StoreBookingFlowContext flowContext, OrderTransaction databaseTransaction)
+        public override Lease CreateLease(OrderQuote responseOrderQuote, StoreBookingFlowContext flowContext, OrderTransaction databaseTransaction)
         {
-            if (orderQuote.TotalPaymentDue.PriceCurrency != "GBP")
+            if (responseOrderQuote.TotalPaymentDue.PriceCurrency != "GBP")
             {
                 throw new OpenBookingException(new OpenBookingError(), "Unsupported currency");
             }
@@ -64,9 +64,9 @@ namespace BookingSystem
             FakeBookingSystem.Database.DeleteLease(orderId.ClientId, orderId.uuid, sellerId.SellerIdLong.Value);
         }
 
-        public override void CreateOrder(Order order, StoreBookingFlowContext flowContext, OrderTransaction databaseTransaction)
+        public override void CreateOrder(Order responseOrder, StoreBookingFlowContext flowContext, OrderTransaction databaseTransaction)
         {
-            if (order.TotalPaymentDue.PriceCurrency != "GBP")
+            if (responseOrder.TotalPaymentDue.PriceCurrency != "GBP")
             {
                 throw new OpenBookingException(new OpenBookingError(), "Unsupported currency");
             }
@@ -79,7 +79,7 @@ namespace BookingSystem
                 flowContext.SellerId.SellerIdLong ?? null, // Small hack to allow use of FakeDatabase when in Single Seller mode
                 flowContext.Customer.Email,
                 flowContext.Payment?.Identifier,
-                order.TotalPaymentDue.Price.Value);
+                responseOrder.TotalPaymentDue.Price.Value);
 
             if (!result) throw new OpenBookingException(new OrderAlreadyExistsError());
         }

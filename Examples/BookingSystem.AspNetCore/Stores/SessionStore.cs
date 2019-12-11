@@ -115,7 +115,7 @@ namespace BookingSystem
 
         }
 
-        protected override void LeaseOrderItem(List<OrderItemContext<SessionOpportunity>> orderItemContexts, StoreBookingFlowContext flowContext, OrderTransaction databaseTransaction)
+        protected override void LeaseOrderItem(Lease lease, List<OrderItemContext<SessionOpportunity>> orderItemContexts, StoreBookingFlowContext flowContext, OrderTransaction databaseTransaction)
         {
             // Check that there are no conflicts between the supplied opportunities
             // Also take into account spaces requested across OrderItems against total spaces in each opportunity

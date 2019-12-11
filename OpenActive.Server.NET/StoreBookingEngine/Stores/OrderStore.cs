@@ -9,8 +9,8 @@ namespace OpenActive.Server.NET.StoreBooking
     public interface IOrderStore
     {
         IDatabaseTransaction BeginOrderTransaction(FlowStage stage);
-        Lease CreateLease(OrderQuote orderQuote, StoreBookingFlowContext flowContext, IDatabaseTransaction dbTransaction);
-        void CreateOrder(Order order, StoreBookingFlowContext flowContext, IDatabaseTransaction dbTransaction);
+        Lease CreateLease(OrderQuote responseOrderQuote, StoreBookingFlowContext flowContext, IDatabaseTransaction dbTransaction);
+        void CreateOrder(Order responseOrder, StoreBookingFlowContext flowContext, IDatabaseTransaction dbTransaction);
         bool CustomerCancelOrderItems(OrderIdComponents orderId, SellerIdComponents sellerId, OrderIdTemplate orderIdTemplate, List<OrderIdComponents> orderItemIds);
         void DeleteOrder(OrderIdComponents orderId, SellerIdComponents sellerId);
         void DeleteLease(OrderIdComponents orderId, SellerIdComponents sellerId);
@@ -18,20 +18,18 @@ namespace OpenActive.Server.NET.StoreBooking
 
     public abstract class OrderStore<TDatabaseTransaction> : IOrderStore where TDatabaseTransaction : IDatabaseTransaction
     {
-        public abstract Lease CreateLease(OrderQuote orderQuote, StoreBookingFlowContext flowContext, TDatabaseTransaction databaseTransaction);
-        public abstract void CreateOrder(Order order, StoreBookingFlowContext flowContext, TDatabaseTransaction databaseTransaction);
+        public abstract Lease CreateLease(OrderQuote responseOrderQuote, StoreBookingFlowContext flowContext, TDatabaseTransaction databaseTransaction);
+        public abstract void CreateOrder(Order responseOrder, StoreBookingFlowContext flowContext, TDatabaseTransaction databaseTransaction);
 
-        public Lease CreateLease(OrderQuote orderQuote, StoreBookingFlowContext flowContext, IDatabaseTransaction dbTransaction)
+        public Lease CreateLease(OrderQuote responseOrderQuote, StoreBookingFlowContext flowContext, IDatabaseTransaction dbTransaction)
         {
-            return CreateLease(orderQuote, flowContext, (TDatabaseTransaction)dbTransaction);
+            return CreateLease(responseOrderQuote, flowContext, (TDatabaseTransaction)dbTransaction);
         }
 
-        public void CreateOrder(Order order, StoreBookingFlowContext flowContext, IDatabaseTransaction dbTransaction)
+        public void CreateOrder(Order responseOrder, StoreBookingFlowContext flowContext, IDatabaseTransaction dbTransaction)
         {
-            CreateOrder(order, flowContext, (TDatabaseTransaction)dbTransaction);
+            CreateOrder(responseOrder, flowContext, (TDatabaseTransaction)dbTransaction);
         }
-
-
 
         /// <summary>
         /// Stage is provided as it depending on the implementation (e.g. what level of leasing is applied)
@@ -50,36 +48,6 @@ namespace OpenActive.Server.NET.StoreBooking
         public abstract bool CustomerCancelOrderItems(OrderIdComponents orderId, SellerIdComponents sellerId, OrderIdTemplate orderIdTemplate, List<OrderIdComponents> orderItemIds);
         public abstract void DeleteOrder(OrderIdComponents orderId, SellerIdComponents sellerId);
         public abstract void DeleteLease(OrderIdComponents orderId, SellerIdComponents sellerId);
-
-        /*
-        public OrderItem CreateOrder<TOrder>(IBookableIdComponents opportunityOfferId, StoreBookingFlowContext<TOrder> context)
-        {
-            if (!(opportunityOfferId.GetType() == typeof(TComponents)))
-            {
-                throw new NotSupportedException($"{opportunityOfferId.GetType().ToString()} does not match {typeof(BookablePairIdTemplate<TComponents>).ToString()}. All types of IBookableIdComponents (T) used for BookablePairIdTemplate<T> assigned to feeds via settings.IdConfiguration must match those used by the stores in storeSettings.OpenBookingStoreRouting.");
-            }
-
-            // TODO: Include validation on the OrderItem created, to ensure it includes all the required fields
-            return GetOrderItem<TOrder>((TComponents)opportunityOfferId, context);
-        }
-
-        protected abstract OrderItem CreateOrder<TOrder>(OrderIdComponents opportunityOfferId, StoreBookingFlowContext<TOrder> context);
-
-
-        public OrderItem GetOrderItem<TOrder>(IBookableIdComponents opportunityOfferId, StoreBookingFlowContext<TOrder> context)
-        {
-            if (!(opportunityOfferId.GetType() == typeof(TComponents)))
-            {
-                throw new NotSupportedException($"{opportunityOfferId.GetType().ToString()} does not match {typeof(BookablePairIdTemplate<TComponents>).ToString()}. All types of IBookableIdComponents (T) used for BookablePairIdTemplate<T> assigned to feeds via settings.IdConfiguration must match those used by the stores in storeSettings.OpenBookingStoreRouting.");
-            }
-
-            // TODO: Include validation on the OrderItem created, to ensure it includes all the required fields
-            return GetOrderItem<TOrder>((TComponents)opportunityOfferId, context);
-        }
-
-        protected abstract OrderItem GetOrder<TOrder>(OrderIdComponents opportunityOfferId, StoreBookingFlowContext<TOrder> context);
-
-     */
     }
 
 
