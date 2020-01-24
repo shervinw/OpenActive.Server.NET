@@ -310,6 +310,9 @@ namespace OpenActive.Server.NET.StoreBooking
                     if (!(context.Stage == FlowStage.C1 || context.Stage == FlowStage.C2))
                         throw new OpenBookingException(new OpenBookingError(), "Unexpected Order type provided");
 
+                    // This library does not yet support approval
+                    responseOrderQuote.OrderRequiresApproval = false;
+
                     // If "payment" has been supplied unnecessarily, simply do not return it
                     if (responseOrderQuote.Payment != null && responseOrderQuote.TotalPaymentDue.Price.Value == 0)
                     {
