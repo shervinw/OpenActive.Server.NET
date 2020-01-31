@@ -37,14 +37,19 @@ namespace BookingSystem.AspNetCore
         // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
         {
-            // TODO: Authentication disabled for now
-            //services.AddAuthentication(AzureADB2CDefaults.BearerAuthenticationScheme)
-            //    .AddAzureADB2CBearer(options => Configuration.Bind("AzureAdB2C", options));
+            services.AddAuthentication("Bearer")
+                .AddJwtBearer("Bearer", options =>
+                {
+                    options.Authority = "http://localhost:5000";
+                    options.RequireHttpsMetadata = false;
+
+                    options.Audience = "https://openactive.booking";
+                });
+
             services
                 .AddMvc()
                 .AddMvcOptions(options => options.InputFormatters.Insert(0, new OpenBookingInputFormatter()))
                 .SetCompatibilityVersion(CompatibilityVersion.Version_2_1);
-
 
             //QUESTION: Should all these be configured here? Are we using the pattern correctly?
             //https://docs.microsoft.com/en-us/aspnet/core/mvc/controllers/dependency-injection?view=aspnetcore-3.0

@@ -28,6 +28,14 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Fakes", "Fakes", "{1AA583F8
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "OpenActive.FakeDatabase.NET", "Fakes\OpenActive.FakeDatabase.NET\OpenActive.FakeDatabase.NET.csproj", "{81C43FE1-AA19-435F-95A3-6AADFE9637FB}"
 EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "OpenActive.IdentityServer.NET", "OpenActive.IdentityServer.NET\OpenActive.IdentityServer.NET.csproj", "{CBDD21FC-DE19-41A9-B246-CE3CEAC51A6A}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "ClientExamples", "ClientExamples", "{14A6256F-1017-4F55-9C47-1D615B486C15}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BookingSystem.Client.ClientCredentials", "ClientExamples\BookingSystem.Client.ClientCredentials\BookingSystem.Client.ClientCredentials.csproj", "{4A296C4F-1EC7-4235-B189-F1E630EDF259}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BookingSystem.Client.Interactive", "ClientExamples\BookingSystem.Client.Interactive\BookingSystem.Client.Interactive.csproj", "{86D89F97-A03E-4E93-BFA4-63C07AEFCBC6}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -66,6 +74,18 @@ Global
 		{81C43FE1-AA19-435F-95A3-6AADFE9637FB}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{81C43FE1-AA19-435F-95A3-6AADFE9637FB}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{81C43FE1-AA19-435F-95A3-6AADFE9637FB}.Release|Any CPU.Build.0 = Release|Any CPU
+		{CBDD21FC-DE19-41A9-B246-CE3CEAC51A6A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{CBDD21FC-DE19-41A9-B246-CE3CEAC51A6A}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{CBDD21FC-DE19-41A9-B246-CE3CEAC51A6A}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{CBDD21FC-DE19-41A9-B246-CE3CEAC51A6A}.Release|Any CPU.Build.0 = Release|Any CPU
+		{4A296C4F-1EC7-4235-B189-F1E630EDF259}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{4A296C4F-1EC7-4235-B189-F1E630EDF259}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{4A296C4F-1EC7-4235-B189-F1E630EDF259}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{4A296C4F-1EC7-4235-B189-F1E630EDF259}.Release|Any CPU.Build.0 = Release|Any CPU
+		{86D89F97-A03E-4E93-BFA4-63C07AEFCBC6}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{86D89F97-A03E-4E93-BFA4-63C07AEFCBC6}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{86D89F97-A03E-4E93-BFA4-63C07AEFCBC6}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{86D89F97-A03E-4E93-BFA4-63C07AEFCBC6}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -77,6 +97,8 @@ Global
 		{74756AC9-D78C-4022-AECF-91FC3E2B45D6} = {E63124B9-4DD4-4B0F-A7B4-8D233C42155F}
 		{9C079C35-C77A-4A46-AA0E-4D2800B65EA3} = {E63124B9-4DD4-4B0F-A7B4-8D233C42155F}
 		{81C43FE1-AA19-435F-95A3-6AADFE9637FB} = {1AA583F8-863F-47D4-9FDF-C43664DAAF6E}
+		{4A296C4F-1EC7-4235-B189-F1E630EDF259} = {14A6256F-1017-4F55-9C47-1D615B486C15}
+		{86D89F97-A03E-4E93-BFA4-63C07AEFCBC6} = {14A6256F-1017-4F55-9C47-1D615B486C15}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {7CBBF4D4-3F0D-47FE-95D2-5BE1D604F9F3}

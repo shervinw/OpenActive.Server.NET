@@ -15,6 +15,7 @@ namespace BookingSystem.AspNetCore.Controllers
 {
     [Route("feeds")]
     [ApiController]
+    [Authorize]
     public class OpenDataController : ControllerBase
     {
         /// <summary>
@@ -27,6 +28,7 @@ namespace BookingSystem.AspNetCore.Controllers
         {
             try
             {
+                (string clientId, Uri sellerId) = AuthenticationHelper.GetIdsFromAuth(Request, User);
                 // Note only a subset of these parameters will be supplied when this endpoints is called
                 // They are all provided here for the bookingEngine to choose the correct endpoint
                 return bookingEngine.GetOpenDataRPDEPageForFeed(feedname, afterTimestamp, afterId, afterChangeNumber).GetContentResult();
