@@ -16,14 +16,8 @@ namespace src
             new TestUser{SubjectId = "818727", Username = "alice", Password = "alice", 
                 Claims = 
                 {
-                    new Claim(JwtClaimTypes.Name, "Example Booking Partner"),
-                    //new Claim("https://openactive.io/sellerName", "Test"),
-                    //new Claim("https://openactive.io/sellerLogo", "Test"),
-                    //new Claim("https://openactive.io/sellerUrl", "Test"),
-                    //new Claim("https://openactive.io/sellerId", "Test"),
-                    //new Claim("https://openactive.io/clientId", "Test"),
-                    //new Claim("https://openactive.io/bookingServiceName", "Test"),
-                    //new Claim("https://openactive.io/bookingServiceUrl", "Test")
+                    new Claim("https://openactive.io/sellerName", "Example Seller"),
+                    new Claim("https://openactive.io/sellerId", "jdgfhsnorghsdlgk"),
                 }
             }
         };

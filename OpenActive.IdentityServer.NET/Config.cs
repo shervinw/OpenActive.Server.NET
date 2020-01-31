@@ -107,12 +107,10 @@ namespace IdentityServer
                         IdentityServerConstants.StandardScopes.OpenId,
                         IdentityServerConstants.StandardScopes.Profile,
                         "openactive-openbooking",
-                        "openactive-ordersfeed",
                         "oauth-dymamic-client-update"
                     }, 
                     Claims = new List<System.Security.Claims.Claim>()
                     {
-                        new System.Security.Claims.Claim("https://openactive.io/sellerId", ""),
                         new System.Security.Claims.Claim("https://openactive.io/clientId", "dfjlosdkgsdgsdfh")
                     },
                     AlwaysSendClientClaims = true,
