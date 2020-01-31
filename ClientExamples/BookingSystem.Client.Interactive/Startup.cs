@@ -38,15 +38,17 @@ namespace BookingSystem.Client.Interactive
                 {
                     options.Authority = "http://localhost:5000";
                     options.RequireHttpsMetadata = false;
-                    options.GetClaimsFromUserInfoEndpoint = true;
+                    // options.GetClaimsFromUserInfoEndpoint = true;
                     options.ClientId = "dfjlosdkgsdgsdfh";
                     options.ClientSecret = "secret";
                     options.ResponseType = "code";
                     // options.Resource = "openbooking";
+                    // changing the scopes here will impact permission requested and claims returned
+                    // include offline_access in order to enable refresh tokens
                     options.Scope.Add("openactive-openbooking");
-                    options.Scope.Add("openactive-ordersfeed");
                     options.Scope.Add("oauth-dymamic-client-update");
                     options.Scope.Add("offline_access");
+                    options.Scope.Add("openactive-identity");
                     options.SaveTokens = true;
                 });
         }

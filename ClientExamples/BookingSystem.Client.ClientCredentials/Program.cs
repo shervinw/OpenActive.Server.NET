@@ -27,7 +27,7 @@ namespace BookingSystem.Client.ClientCredentials
                 Address = disco.TokenEndpoint,
                 ClientId = "oijsadgfoijasg",
                 ClientSecret = "secret", 
-                Scope = "https://openactive.booking"
+                Scope = "openactive-openbooking"
             });
 
             if (tokenResponse.IsError)

@@ -42,8 +42,7 @@ namespace BookingSystem.AspNetCore
                 {
                     options.Authority = "http://localhost:5000";
                     options.RequireHttpsMetadata = false;
-
-                    options.Audience = "https://openactive.booking";
+                    options.Audience = "openbooking";
                 });
 
             services

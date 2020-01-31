@@ -44,11 +44,13 @@ namespace IdentityServer
         {
             context.LogProfileRequest(Logger);
 
+            // Claims added here are defined be the API and RESOURCE configurations in Config.cs, only the requested claims will be added to the IssuedClaims collection
             if (context.RequestedClaimTypes.Any())
             {
                 var user = Users.FindBySubjectId(context.Subject.GetSubjectId());
                 if (user != null)
                 {
+
                     context.AddRequestedClaims(user.Claims);
                 }
             }

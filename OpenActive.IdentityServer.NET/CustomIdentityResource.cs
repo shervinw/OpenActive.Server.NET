@@ -11,16 +11,23 @@ namespace IdentityServer
         public static IEnumerable<IdentityResource> GetIdentityResources()
         {
             // claims configured here will be included in the id_token???
-            var customProfile = new IdentityResource(
-                name: "openactive.profile",
-                displayName: "Openactive profile",
-                claimTypes: new[] { "https://openactive.io/sellerId", "https://openactive.io/clientId" });
+            var openactiveIdentity = new IdentityResource();
+            openactiveIdentity.UserClaims = new[] {
+                    "https://openactive.io/sellerId",
+                    "https://openactive.io/sellerName",
+                    "https://openactive.io/sellerUrl",
+                    "https://openactive.io/sellerLogo",
+                    "https://openactive.io/bookingServiceName",
+                    "https://openactive.io/bookingServiceUrl",};
+            openactiveIdentity.Required = true;
+            openactiveIdentity.DisplayName = "Access to Openactive Identity claims about you, the Seller.";
+            openactiveIdentity.Name = "openactive-identity";
 
             return new List<IdentityResource>
             {
                 new IdentityResources.OpenId(),
                 new IdentityResources.Profile(),
-                customProfile
+                openactiveIdentity
             };
         }
     }

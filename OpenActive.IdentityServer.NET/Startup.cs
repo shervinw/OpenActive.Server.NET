@@ -30,9 +30,7 @@ namespace IdentityServer
                 .AddInMemoryApiResources(Config.Apis)
                 .AddInMemoryClients(Config.Clients)
                 .AddTestUsers(TestUsers.Users)
-                .AddProfileService<ProfileService>();
-
-            // services.AddTransient<IProfileService, ProfileService>();
+                .AddProfileService<ProfileService>(); //adding a custom profile service
 
             // not recommended for production - you need to store your key material somewhere secure
             builder.AddDeveloperSigningCredential();
