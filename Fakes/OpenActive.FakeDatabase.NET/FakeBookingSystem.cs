@@ -307,12 +307,13 @@ namespace OpenActive.FakeDatabase.NET
 
         }
 
-
         public List<ClassTable> Classes { get; set; } = new List<ClassTable>();
         public List<OccurrenceTable> Occurrences { get; set; } = new List<OccurrenceTable>();
         public List<OrderItemsTable> OrderItems { get; set; } = new List<OrderItemsTable>();
         public List<OrderTable> Orders { get; set; } = new List<OrderTable>();
         public List<SellerTable> Sellers { get; set; } = new List<SellerTable>();
+
+        public List<BookingPartnerTable> BookingPartners { get; set; } = new List<BookingPartnerTable>();
 
         public static FakeDatabase GetPrepopulatedFakeDatabase()
         {
@@ -350,8 +351,35 @@ namespace OpenActive.FakeDatabase.NET
             .ToList();
 
             Sellers.AddRange(new List<SellerTable> {
-                new SellerTable { Id = 0, Name = "Acme Fitness Ltd", IsIndividual = false },
-                new SellerTable { Id = 1, Name = "Jane Smith", IsIndividual = true }
+                new SellerTable { Id = 0, SellerId = "abcd", Name = "Acme Fitness Ltd", IsIndividual = false },
+                new SellerTable { Id = 1, SellerId = "efgh", Name = "Jane Smith", IsIndividual = true }
+            });
+            
+            BookingPartners.AddRange(new List<BookingPartnerTable>
+            {
+                new BookingPartnerTable { ClientId = "clientid_123", SellerId = "abcd", ClientSecret = "secret",
+                    ClientJson = new ClientRegistrationModel {
+                        ClientId = "clientid_123",
+                        ClientName = "Example Booking Partner 1",
+                        Scope = "openid profile openactive-openbooking openactive-ordersfeed oauth-dymamic-client-update openactive-identity",
+                        RedirectUris = new[] { "http://localhost:5002/signin-oidc" },
+                        GrantTypes = new[] { "authorization_code", "refresh_token" }
+                    } },
+                new BookingPartnerTable { ClientId = "clientid_456", SellerId = "abcd", ClientSecret = "secret",
+                    ClientJson = new ClientRegistrationModel {
+                        ClientId = "clientid_456",
+                        ClientName = "Example Booking Partner 2",
+                        Scope = "openid profile openactive-openbooking openactive-ordersfeed oauth-dymamic-client-update openactive-identity",
+                        RedirectUris = new[] { "http://localhost:5002/signin-oidc" },
+                        GrantTypes = new[] { "authorization_code", "refresh_token" }
+                    } },
+                new BookingPartnerTable { ClientId = "clientid_789", SellerId = "abcd", ClientSecret = "secret",
+                    ClientJson = new ClientRegistrationModel {
+                        ClientId = "clientid_789",
+                        ClientName = "Example Booking Partner 3",
+                        Scope = "openid profile openactive-openbooking openactive-ordersfeed oauth-dymamic-client-update openactive-identity",
+                        GrantTypes = new[] { "client_credentials" }
+                    } }
             });
         }
 

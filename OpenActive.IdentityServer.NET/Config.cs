@@ -20,14 +20,10 @@ namespace IdentityServer
                 new ApiResource
                 {
                     Name = "openbooking",
-
-                    // secret for using introspection endpoint
                     ApiSecrets =
                     {
                         new Secret("secret".Sha256())
                     },
-
-                    // this API defines three scopes
                     Scopes =
                     {
                         new Scope()
@@ -52,85 +48,85 @@ namespace IdentityServer
                 }
            };
 
-        public static IEnumerable<Client> Clients =>
-            new List<Client>
-            {
-                // clients list needs to be obtained from booking system administration page
-                // client credentials
-                new Client
-                {
-                    ClientId = "oijsadgfoijasg",
-                    ClientName = "Example Booking Partner",
-                    // no interactive user, use the clientid/secret for authentication
-                    AllowedGrantTypes = GrantTypes.ClientCredentials,
+        //public static IEnumerable<Client> Clients =>
+        //    new List<Client>
+        //    {
+        //        // clients list needs to be obtained from booking system administration page
+        //        // client credentials
+        //        new Client
+        //        {
+        //            ClientId = "oijsadgfoijasg",
+        //            ClientName = "Example Booking Partner",
+        //            // no interactive user, use the clientid/secret for authentication
+        //            AllowedGrantTypes = GrantTypes.ClientCredentials,
+                    
+        //            // secret for authentication
+        //            ClientSecrets =
+        //            {
+        //                new Secret("secret".Sha256())
+        //            },
 
-                    // secret for authentication
-                    ClientSecrets =
-                    {
-                        new Secret("secret".Sha256())
-                    },
+        //            // scopes that client has access to
+        //            AllowedScopes = new List<string>
+        //            {
+        //                IdentityServerConstants.StandardScopes.OpenId,
+        //                IdentityServerConstants.StandardScopes.Profile,
+        //                "openactive-openbooking",
+        //                "openactive-ordersfeed",
+        //                "oauth-dymamic-client-update",
+        //                "openactive-identity"
+        //            },
+        //            // this claim should come from the booking administration database
+        //            Claims = new List<System.Security.Claims.Claim>()
+        //            {
+        //                new System.Security.Claims.Claim("https://openactive.io/clientId", "abc")
+        //            },
+        //            ClientClaimsPrefix = "",
+        //            AlwaysSendClientClaims = true,
+        //            AlwaysIncludeUserClaimsInIdToken = true,
+        //            AllowOfflineAccess = true, //enables sending refresh tokens
+        //            UpdateAccessTokenClaimsOnRefresh = true //ensures claims are updated on refresh
+        //        },
+        //        // 
+        //        new Client
+        //        {
+        //            ClientId = "dfjlosdkgsdgsdfh",
+        //            ClientName = "Example Booking Partner",
+        //            ClientSecrets = { new Secret("secret".Sha256()) },
 
-                    // scopes that client has access to
-                    AllowedScopes = new List<string>
-                    {
-                        IdentityServerConstants.StandardScopes.OpenId,
-                        IdentityServerConstants.StandardScopes.Profile,
-                        "openactive-openbooking",
-                        "openactive-ordersfeed",
-                        "oauth-dymamic-client-update",
-                        "openactive-identity"
-                    },
-                    // this claim should come from the booking administration database
-                    Claims = new List<System.Security.Claims.Claim>()
-                    {
-                        new System.Security.Claims.Claim("https://openactive.io/clientId", "abc")
-                    },
-                    ClientClaimsPrefix = "",
-                    AlwaysSendClientClaims = true,
-                    AlwaysIncludeUserClaimsInIdToken = true,
-                    AllowOfflineAccess = true, //enables sending refresh tokens
-                    UpdateAccessTokenClaimsOnRefresh = true //ensures claims are updated on refresh
-                },
-                // 
-                new Client
-                {
-                    ClientId = "dfjlosdkgsdgsdfh",
-                    ClientName = "Example Booking Partner",
-                    ClientSecrets = { new Secret("secret".Sha256()) },
-
-                    AllowedGrantTypes = GrantTypes.Code,
-                    RequireConsent = true,
-                    RequirePkce = true,
+        //            AllowedGrantTypes = GrantTypes.Code,
+        //            RequireConsent = true,
+        //            RequirePkce = true,
                     
 
-                    // where to redirect to after login
-                    RedirectUris = { "http://localhost:5002/signin-oidc" },
+        //            // where to redirect to after login
+        //            RedirectUris = { "http://localhost:5002/signin-oidc" },
 
-                    // where to redirect to after logout
-                    PostLogoutRedirectUris = { "http://localhost:5002/signout-callback-oidc" },
+        //            // where to redirect to after logout
+        //            PostLogoutRedirectUris = { "http://localhost:5002/signout-callback-oidc" },
 
-                    AllowedScopes = new List<string>
-                    {
-                        IdentityServerConstants.StandardScopes.OpenId,
-                        IdentityServerConstants.StandardScopes.Profile,
-                        "openactive-openbooking",
-                        "oauth-dymamic-client-update",
-                        "openactive-identity"
-                    }, 
-                    // this claim should come from the booking administration database
-                    Claims = new List<System.Security.Claims.Claim>()
-                    {
-                        new System.Security.Claims.Claim("https://openactive.io/clientId", "dfjlosdkgsdgsdfh")
-                    },
-                    ClientClaimsPrefix = "",
-                    AlwaysSendClientClaims = true,
-                    AlwaysIncludeUserClaimsInIdToken = true,
-                    AllowOfflineAccess = true, //enables sending refresh tokens
-                    UpdateAccessTokenClaimsOnRefresh = true //ensures claims are updated on refresh
+        //            AllowedScopes = new List<string>
+        //            {
+        //                IdentityServerConstants.StandardScopes.OpenId,
+        //                IdentityServerConstants.StandardScopes.Profile,
+        //                "openactive-openbooking",
+        //                "oauth-dymamic-client-update",
+        //                "openactive-identity"
+        //            }, 
+        //            // this claim should come from the booking administration database
+        //            Claims = new List<System.Security.Claims.Claim>()
+        //            {
+        //                new System.Security.Claims.Claim("https://openactive.io/clientId", "dfjlosdkgsdgsdfh")
+        //            },
+        //            ClientClaimsPrefix = "",
+        //            AlwaysSendClientClaims = true,
+        //            AlwaysIncludeUserClaimsInIdToken = true,
+        //            AllowOfflineAccess = true, //enables sending refresh tokens
+        //            UpdateAccessTokenClaimsOnRefresh = true //ensures claims are updated on refresh
 
                     
-                }
-            };
+        //        }
+        //    };
 
     }
 }

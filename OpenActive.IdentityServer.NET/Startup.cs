@@ -3,6 +3,7 @@
 
 
 using IdentityServer4.Services;
+using IdentityServer4.Stores;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.DependencyInjection;
@@ -24,11 +25,12 @@ namespace IdentityServer
         {
             // uncomment, if you want to add an MVC-based UI
             services.AddControllersWithViews();
+            services.AddTransient<IClientStore, ClientStore>();
 
             var builder = services.AddIdentityServer()
                 .AddInMemoryIdentityResources(Config.Ids)
                 .AddInMemoryApiResources(Config.Apis)
-                .AddInMemoryClients(Config.Clients)
+                .AddClientStore<ClientStore>()
                 .AddTestUsers(TestUsers.Users)
                 .AddProfileService<ProfileService>(); //adding a custom profile service
 

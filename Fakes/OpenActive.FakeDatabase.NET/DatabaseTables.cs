@@ -69,8 +69,37 @@ namespace OpenActive.FakeDatabase.NET
 
     public class SellerTable : Table
     {
+        public string SellerId { get; set; }
         public string Name { get; set; }
         public bool IsIndividual { get; set; }
 
+        public string SellerUrl { get; set; }
+
+    }
+
+    public class BookingPartnerTable
+    {
+        public string ClientId { get; set; }
+        public string SellerId { get; set; }
+        public string ClientSecret { get; set; }
+        public ClientRegistrationModel ClientJson { get; set; }
+    }
+
+
+    public class ClientRegistrationModel
+    {
+        public string ClientId { get; set; }
+
+        public string ClientName { get; set; }
+
+        public string ClientUri { get; set; }
+
+        public string LogoUri { get; set; }
+
+        public IEnumerable<string> GrantTypes { get; set; }
+
+        public IEnumerable<string> RedirectUris { get; set; } = new List<string>();
+
+        public string Scope { get; set; } = "openid profile email";
     }
 }

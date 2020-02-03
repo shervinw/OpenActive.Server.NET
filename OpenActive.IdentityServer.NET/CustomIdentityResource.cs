@@ -10,7 +10,6 @@ namespace IdentityServer
     {
         public static IEnumerable<IdentityResource> GetIdentityResources()
         {
-            // claims configured here will be included in the id_token???
             var openactiveIdentity = new IdentityResource();
             openactiveIdentity.UserClaims = new[] {
                     "https://openactive.io/sellerId",

@@ -39,7 +39,7 @@ namespace BookingSystem.Client.Interactive
                     options.Authority = "http://localhost:5000";
                     options.RequireHttpsMetadata = false;
                     // options.GetClaimsFromUserInfoEndpoint = true;
-                    options.ClientId = "dfjlosdkgsdgsdfh";
+                    options.ClientId = "clientid_123";
                     options.ClientSecret = "secret";
                     options.ResponseType = "code";
                     // options.Resource = "openbooking";
