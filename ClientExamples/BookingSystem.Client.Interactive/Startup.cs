@@ -36,10 +36,10 @@ namespace BookingSystem.Client.Interactive
                 .AddCookie("Cookies")
                 .AddOpenIdConnect("oidc", options =>
                 {
-                    options.Authority = "http://localhost:5000";
+                    options.Authority = "http://localhost:50247";
                     options.RequireHttpsMetadata = false;
                     // options.GetClaimsFromUserInfoEndpoint = true;
-                    options.ClientId = "clientid_123";
+                    options.ClientId = "dfjlosdkgsdgsdfh";
                     options.ClientSecret = "secret";
                     options.ResponseType = "code";
                     // options.Resource = "openbooking";
