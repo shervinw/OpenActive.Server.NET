@@ -21,8 +21,8 @@ namespace OpenActive.Server.NET.StoreBooking
         void LeaseOrderItems(Lease lease, List<IOrderItemContext> orderItemContexts, StoreBookingFlowContext flowContext, IDatabaseTransaction databaseTransactionContext);
         void BookOrderItems(List<IOrderItemContext> orderItemContexts, StoreBookingFlowContext flowContext, IDatabaseTransaction databaseTransactionContext);
 
-        void CreateTestDataItem(OpportunityType opportunityType, Event @event);
-        void DeleteTestDataItem(OpportunityType opportunityType, string name);
+        Event CreateTestDataItemEvent(OpportunityType opportunityType, Event @event);
+        void DeleteTestDataItemEvent(OpportunityType opportunityType, Uri id);
     }
 
 
@@ -70,8 +70,21 @@ namespace OpenActive.Server.NET.StoreBooking
 
         protected abstract void LeaseOrderItem(Lease lease, List<OrderItemContext<TComponents>> orderItemContexts, StoreBookingFlowContext flowContext, TDatabaseTransaction databaseTransactionContext);
 
-        public abstract void CreateTestDataItem(OpportunityType opportunityType, Event @event);
-        public abstract void DeleteTestDataItem(OpportunityType opportunityType, string name);
+
+        protected abstract TComponents CreateTestDataItem(OpportunityType opportunityType, Event @event);
+        protected abstract void DeleteTestDataItem(OpportunityType opportunityType, TComponents components);
+
+
+        public Event CreateTestDataItemEvent(OpportunityType opportunityType, Event @event)
+        {
+            var components = CreateTestDataItem(opportunityType, @event);
+            return OrderCalculations.RenderOpportunityWithOnlyId(RenderOpportunityJsonLdType(components), RenderOpportunityId(components));
+        }
+        public void DeleteTestDataItemEvent(OpportunityType opportunityType, Uri id)
+        {
+            var components = GetBookableOpportunityReference(opportunityType, id);
+            DeleteTestDataItem(opportunityType, components);
+        }
 
 
         private List<OrderItemContext<TComponents>> ConvertToSpecificComponents(List<IOrderItemContext> orderItemContexts)

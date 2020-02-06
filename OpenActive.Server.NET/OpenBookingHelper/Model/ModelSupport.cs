@@ -64,5 +64,12 @@ namespace OpenActive.Server.NET.OpenBookingHelper
         {
             return IdTemplate.RenderOfferId(opportunityType, components);
         }
+
+        protected TComponents GetBookableOpportunityReference(OpportunityType opportunityType, Uri id)
+        {
+            var components = IdTemplate.GetBookableOpportunityIdComponents(id);
+            if (components.OpportunityType != opportunityType) throw new ArgumentOutOfRangeException("Provided opportunityType does not match provided id");
+            return components;
+        }
     }
 }

@@ -20,6 +20,9 @@ namespace BookingSystem
                         join orderItems in FakeBookingSystem.Database.OrderItems on orders.Id equals orderItems.OrderId
                         where orders.VisibleInFeed && orders.ClientId == clientId && (!afterTimestamp.HasValue || orders.Modified.ToUnixTimeMilliseconds() > afterTimestamp ||
                         (orders.Modified.ToUnixTimeMilliseconds() == afterTimestamp && orders.Id.CompareTo(afterId) > 0))
+                        // Ensure the RPDE endpoint filters out all items with a "modified" date after 2 seconds in the past, to delay items appearing in the feed
+                        // https://app.gitbook.com/@openactive/s/openactive-developer/publishing-data/data-feeds/implementing-rpde-feeds
+                        && orders.Modified < DateTimeOffset.UtcNow - new TimeSpan(0, 0, 2)
                         group orderItems by new { orders, seller } into thisOrder
                         orderby thisOrder.Key.orders.Modified, thisOrder.Key.orders.Id
                         select new RpdeItem
