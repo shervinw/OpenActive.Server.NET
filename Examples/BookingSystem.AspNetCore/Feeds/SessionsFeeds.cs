@@ -20,7 +20,10 @@ namespace BookingSystem
                         where !afterTimestamp.HasValue && !afterId.HasValue ||
                               occurances.Modified.ToUnixTimeMilliseconds() > afterTimestamp ||  
                               (occurances.Modified.ToUnixTimeMilliseconds() == afterTimestamp && occurances.Id > afterId)
-                        
+                              // Ensure the RPDE endpoint filters out all items with a "modified" date after 2 seconds in the past, to delay items appearing in the feed
+                              // https://app.gitbook.com/@openactive/s/openactive-developer/publishing-data/data-feeds/implementing-rpde-feeds
+                              && occurances.Modified < DateTimeOffset.UtcNow - new TimeSpan(0, 0, 2)
+
                         select new RpdeItem<ScheduledSession>
                         {
                             Kind = RpdeKind.ScheduledSession,
@@ -61,6 +64,9 @@ namespace BookingSystem
                         where !afterTimestamp.HasValue && !afterId.HasValue ||
                               @class.Modified.ToUnixTimeMilliseconds() > afterTimestamp ||
                               (@class.Modified.ToUnixTimeMilliseconds() == afterTimestamp && @class.Id > afterId)
+                              // Ensure the RPDE endpoint filters out all items with a "modified" date after 2 seconds in the past, to delay items appearing in the feed
+                              // https://app.gitbook.com/@openactive/s/openactive-developer/publishing-data/data-feeds/implementing-rpde-feeds
+                              && @class.Modified < DateTimeOffset.UtcNow - new TimeSpan(0, 0, 2)
 
                         select new RpdeItem<SessionSeries>
                         {

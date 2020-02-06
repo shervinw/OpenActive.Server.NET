@@ -134,22 +134,22 @@ namespace OpenActive.Server.NET.StoreBooking
         private readonly List<IOpportunityStore> stores;
         private readonly Dictionary<OpportunityType, IOpportunityStore> storeRouting;
         private readonly StoreBookingEngineSettings storeBookingEngineSettings;
-
-        protected override void CreateTestDataItem(OpportunityType opportunityType, Event @event)
+        
+        protected override Event CreateTestDataItem(OpportunityType opportunityType, Event @event)
         {
             if (!storeRouting.ContainsKey(opportunityType))
                 throw new OpenBookingException(new OpenBookingError(), "Specified opportunity type is not configured as bookable in the StoreBookingEngine constructor.");
 
             //TODO: This forces the cast into the Store. Perhaps best to move the cast here to simplify the store?
-            storeRouting[opportunityType].CreateTestDataItem(opportunityType, @event);
+            return storeRouting[opportunityType].CreateTestDataItemEvent(opportunityType, @event);
         }
 
-        protected override void DeleteTestDataItem(OpportunityType opportunityType, string name)
+        protected override void DeleteTestDataItem(OpportunityType opportunityType, Uri id)
         {
             if (!storeRouting.ContainsKey(opportunityType))
                 throw new OpenBookingException(new OpenBookingError(), "Specified opportunity type is not configured as bookable in the StoreBookingEngine constructor.");
 
-            storeRouting[opportunityType].DeleteTestDataItem(opportunityType, name);
+            storeRouting[opportunityType].DeleteTestDataItemEvent(opportunityType, id);
         }
 
 
@@ -245,6 +245,8 @@ namespace OpenActive.Server.NET.StoreBooking
 
             }).ToList();
 
+            // Run a final update outside of the transaction for any records affected that are in RPDE feeds 
+            var stateContext = storeBookingEngineSettings.OrderStore.InitialiseFlow(context);
 
             // Group by OpportunityType for processing
             var orderItemGroups = orderItemContexts.GroupBy(orderItemContext => orderItemContext.RequestBookableOpportunityOfferId.OpportunityType.Value)
@@ -325,7 +327,7 @@ namespace OpenActive.Server.NET.StoreBooking
                     {
                             try
                             {
-                                responseOrderQuote.Lease = storeBookingEngineSettings.OrderStore.CreateLease(responseOrderQuote, context, dbTransaction);
+                                responseOrderQuote.Lease = storeBookingEngineSettings.OrderStore.CreateLease(responseOrderQuote, context, stateContext, dbTransaction);
 
                                 // Lease the OrderItems, if a lease exists
                                 if (responseOrderQuote.Lease != null)
@@ -335,6 +337,11 @@ namespace OpenActive.Server.NET.StoreBooking
                                         g.Store.LeaseOrderItems(responseOrderQuote.Lease, g.OrderItemContexts, context, dbTransaction);
                                     }
                                 }
+
+                                // Update this in case ResponseOrderItem was overwritten in Lease
+                                responseOrderQuote.OrderedItem = orderItemContexts.Select(x => x.ResponseOrderItem).ToList();
+
+                                storeBookingEngineSettings.OrderStore.UpdateLease(responseOrderQuote, context, stateContext, dbTransaction);
 
                                 if (dbTransaction != null) dbTransaction.Commit();
                             }
@@ -394,7 +401,7 @@ namespace OpenActive.Server.NET.StoreBooking
                         try
                         {
                             // Create the parent Order
-                            storeBookingEngineSettings.OrderStore.CreateOrder(responseOrder, context, dbTransaction);
+                            storeBookingEngineSettings.OrderStore.CreateOrder(responseOrder, context, stateContext, dbTransaction);
                             
                             // Book the OrderItems
                             foreach (var g in orderItemGroups)
@@ -414,6 +421,11 @@ namespace OpenActive.Server.NET.StoreBooking
                                 }
                             }
 
+                            // Update this in case ResponseOrderItem was overwritten in Book
+                            responseOrder.OrderedItem = orderItemContexts.Select(x => x.ResponseOrderItem).ToList();
+
+                            storeBookingEngineSettings.OrderStore.UpdateOrder(responseOrder, context, stateContext, dbTransaction);
+
                             dbTransaction.Commit();
                         }
                         catch
@@ -427,9 +439,6 @@ namespace OpenActive.Server.NET.StoreBooking
                 default:
                     throw new OpenBookingException(new OpenBookingError(), "Unexpected Order type provided");
             }
-
-            // Update this in case ResponseOrderItem was overwritten in Lease or Book
-            responseGenericOrder.OrderedItem = orderItemContexts.Select(x => x.ResponseOrderItem).ToList();
 
             return responseGenericOrder;
         }

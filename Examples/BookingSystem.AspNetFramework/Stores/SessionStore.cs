@@ -11,8 +11,8 @@ namespace BookingSystem
 {
     class SessionStore : OpportunityStore<SessionOpportunity, OrderTransaction>
     {
-        
-        public override void CreateTestDataItem(OpportunityType opportunityType, Event @event)
+
+        protected override SessionOpportunity CreateTestDataItem(OpportunityType opportunityType, Event @event)
         {
             // Note assume that if it's been routed here, it will be possible to cast it to type Event
             switch (opportunityType)
@@ -20,15 +20,31 @@ namespace BookingSystem
                 case OpportunityType.ScheduledSession:
                     var session = (ScheduledSession)@event;
                     var superEvent = (SessionSeries)session.SuperEvent.GetClass<Event>();
-                    FakeBookingSystem.Database.AddClass(superEvent.Name, superEvent.Offers?.FirstOrDefault()?.Price, session.StartDate.GetPrimative<DateTimeOffset>() ?? default, session.EndDate.GetPrimative<DateTimeOffset>() ?? default, session.MaximumAttendeeCapacity.Value);
-                    break;
+                    var (classId, occurrenceId) = FakeBookingSystem.Database.AddClass(superEvent.Name, superEvent.Offers?.FirstOrDefault()?.Price, session.StartDate.GetPrimative<DateTimeOffset>() ?? default, session.EndDate.GetPrimative<DateTimeOffset>() ?? default, session.MaximumAttendeeCapacity.Value);
+                    return new SessionOpportunity { 
+                        OpportunityType = opportunityType,
+                        SessionSeriesId = classId,
+                        ScheduledSessionId = occurrenceId
+                    };
+                default:
+                    throw new OpenBookingException(new OpenBookingError(), "Opportunity Type not supported");
             }
             
         }
 
-        public override void DeleteTestDataItem(OpportunityType opportunityType, string name)
+        protected override void DeleteTestDataItem(OpportunityType opportunityType, SessionOpportunity sessionOpportunity)
         {
-            FakeBookingSystem.Database.DeleteClass(name);
+            if (!sessionOpportunity.SessionSeriesId.HasValue || !sessionOpportunity.ScheduledSessionId.HasValue)
+                throw new OpenBookingException(new OpenBookingError(), "Invalid Session Id");
+
+            // Note assume that if it's been routed here, it will be possible to cast it to type Event
+            switch (opportunityType)
+                {
+                    case OpportunityType.ScheduledSession:
+                        FakeBookingSystem.Database.DeleteClass(sessionOpportunity.SessionSeriesId.Value, sessionOpportunity.ScheduledSessionId.Value);
+                        break;
+                }
+            
         }
 
 
@@ -66,7 +82,8 @@ namespace BookingSystem
                                  // Note this should always use RenderOfferId with the supplied SessionOpportunity, to take into account inheritance and OfferType
                                  Id = this.RenderOfferId(orderItemContext.RequestBookableOpportunityOfferId),
                                  Price = classes.Price,
-                                 PriceCurrency = "GBP"
+                                 PriceCurrency = "GBP",
+                                 AvailableChannel = new List<AvailableChannelType> { AvailableChannelType.OpenBookingPrepayment }
                              },
                              OrderedItem = new ScheduledSession
                              {
@@ -87,7 +104,9 @@ namespace BookingSystem
                                      Name = classes.Title
                                  },
                                  StartDate = (DateTimeOffset)occurances.Start,
-                                 EndDate = (DateTimeOffset)occurances.End
+                                 EndDate = (DateTimeOffset)occurances.End,
+                                 MaximumAttendeeCapacity = occurances.TotalSpaces,
+                                 RemainingAttendeeCapacity = occurances.RemainingSpaces
                              }
                          });
 
@@ -102,6 +121,11 @@ namespace BookingSystem
                 else
                 {
                     ctx.SetResponseOrderItem(item);
+
+                    if (item.OrderedItem.RemainingAttendeeCapacity == 0)
+                    {
+                        ctx.AddError(new OpportunityIsFullError());
+                    }
                 }
                 
             }

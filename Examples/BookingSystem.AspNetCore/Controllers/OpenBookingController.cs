@@ -158,7 +158,7 @@ namespace BookingSystem.AspNetCore.Controllers
 
         // POST api/openbooking/test-interface/scheduledsession
         [HttpPost("test-interface/{type}")]
-        public IActionResult Post([FromServices] IBookingEngine bookingEngine, string type, [FromBody] string @event)
+        public IActionResult TestInterfaceCreate([FromServices] IBookingEngine bookingEngine, string type, [FromBody] string @event)
         {
             try
             {
@@ -172,7 +172,7 @@ namespace BookingSystem.AspNetCore.Controllers
 
         // DELETE api/openbooking/test-interface/scheduledsession/{name}
         [HttpDelete("test-interface/{type}/{name}")]
-        public IActionResult Delete([FromServices] IBookingEngine bookingEngine, string type, string name)
+        public IActionResult TestInterfaceDelete([FromServices] IBookingEngine bookingEngine, string type, string name)
         {
             try
             {
@@ -183,5 +183,23 @@ namespace BookingSystem.AspNetCore.Controllers
                 return obe.ErrorResponseContent.GetContentResult();
             }
         }
+
+        /*
+         * TOOD: Add this test interface
+         * 
+        // POST api/openbooking/test-interface/scheduledsession/{name}/providercancellation
+        [HttpPost("test-interface/{type}/{name}/{scenario}")]
+        public IActionResult TestInterfaceTrigger([FromServices] IBookingEngine bookingEngine, string type, string name, string scenario)
+        {
+            try
+            {
+                return bookingEngine.TriggerTestScenario(type, name, scenario).GetContentResult();
+            }
+            catch (OpenBookingException obe)
+            {
+                return obe.ErrorResponseContent.GetContentResult();
+            }
+        }
+        */
     }
 }
