@@ -12,6 +12,7 @@ namespace BookingSystem
         private FakeDatabaseTransaction _fakeDatabaseTransaction;
 
         public FakeDatabase Database { get => _fakeDatabaseTransaction.Database; }
+        public FakeDatabaseTransaction Transaction { get => _fakeDatabaseTransaction; }
 
         public OrderTransaction()
         {
@@ -25,7 +26,7 @@ namespace BookingSystem
 
         public void Rollback()
         {
-            _fakeDatabaseTransaction.Database = null;
+            _fakeDatabaseTransaction.RollbackTransaction();
         }
 
         public void Dispose()

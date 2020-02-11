@@ -390,22 +390,37 @@ namespace OpenActive.Server.NET.CustomBooking
         // Note opportunityType is required here to facilitate routing to the correct store to handle the request
         public ResponseContent CreateTestData(string opportunityType, string eventJson)
         {
-            // Temporary hack while waiting for OpenActive.NET to deserialize subclasses correctly
-            ScheduledSession @event = OpenActiveSerializer.Deserialize<ScheduledSession>(eventJson);
-            this.CreateTestDataItem((OpportunityType)Enum.Parse(typeof(OpportunityType), opportunityType, true), @event);
-            return ResponseContent.OpenBookingNoContentResponse();
+            Event @event = OpenActiveSerializer.Deserialize<ScheduledSession>(eventJson);
+
+            // Returns a matching Event subclass that will only include "@type" and "@id" properties
+            var createdEvent = this.CreateTestDataItem((OpportunityType)Enum.Parse(typeof(OpportunityType), opportunityType, true), @event);
+
+            if (createdEvent.Type != @event.Type)
+            {
+                throw new OpenBookingException(new OpenBookingError(), "Type of created Event does not match type of requested Event");
+            }
+
+            return ResponseContent.OpenBookingResponse(OpenActiveSerializer.Serialize(createdEvent), HttpStatusCode.OK);
         }
 
-        protected abstract void CreateTestDataItem(OpportunityType opportunityType, Event @event);
+        protected abstract Event CreateTestDataItem(OpportunityType opportunityType, Event @event);
 
         // Note opportunityType is required here to facilitate routing to the correct store to handle the request
-        public ResponseContent DeleteTestData(string opportunityType, string name)
+        public ResponseContent DeleteTestData(string opportunityType, string id)
         {
-            this.DeleteTestDataItem((OpportunityType)Enum.Parse(typeof(OpportunityType), opportunityType, true), name);
+            if (Uri.TryCreate(id, UriKind.Absolute, out Uri jsonLdId))
+            {
+                this.DeleteTestDataItem((OpportunityType)Enum.Parse(typeof(OpportunityType), opportunityType, true), jsonLdId);
+            }
+            else
+            {
+                throw new OpenBookingException(new OpenBookingError(), "Invalid ID provided");
+            }   
+            
             return ResponseContent.OpenBookingNoContentResponse();
         }
 
-        protected abstract void DeleteTestDataItem(OpportunityType opportunityType, string name);
+        protected abstract void DeleteTestDataItem(OpportunityType opportunityType, Uri id);
 
 
         //TODO: Should we move Seller into the Abstract level? Perhaps too much complexity

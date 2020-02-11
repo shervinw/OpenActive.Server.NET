@@ -217,7 +217,33 @@ namespace OpenActive.Server.NET.OpenBookingHelper
                 ?? GetIdComponentsWithOpportunityTypeExt(this.ParentIdConfiguration?.OpportunityType, null, null, opportunityId, offerId);
         }
 
-        // Note this method exists just for type conversion to work as this is not C# 8.0
+        /// <summary>
+        /// This is used by the booking engine to resolve a bookable Opportunity ID to its components
+        /// </summary>
+        /// <param name="opportunityId"></param>
+        /// <returns>Null if the ID does not match the template</returns>
+        public TBookableIdComponents GetBookableOpportunityIdComponents(Uri opportunityId)
+        {
+            // Require opportunityId to not be null
+            if (opportunityId == null) throw new ArgumentNullException(nameof(opportunityId));
+
+            // This method not effected by inheritance, and will return the Opportunity or _parent_ Opportunity, if either are bookable
+            // Note that if any URL templates to be used for one of the checks below are null, the result for that check will be null
+            // Note the grandparent is never bookable
+
+            return 
+                (
+                this.OpportunityIdConfiguration.Bookable && OpportunityTypes.Configurations[this.OpportunityIdConfiguration.OpportunityType].Bookable ?
+                    GetIdComponentsWithOpportunityType(this.OpportunityIdConfiguration.OpportunityType, opportunityId, null, null, null) : null
+                    )
+                ?? (
+                this.ParentIdConfiguration.HasValue && this.ParentIdConfiguration.Value.Bookable && OpportunityTypes.Configurations[this.ParentIdConfiguration.Value.OpportunityType].Bookable ?
+                    GetIdComponentsWithOpportunityType(this.ParentIdConfiguration?.OpportunityType, null, null, opportunityId, null) : null
+                    )
+                ;
+        }
+
+        // Note this method exists just for type conversion (from TBookableIdComponents to IBookableIdComponents) to work as this is not C# 8.0
         private IBookableIdComponents GetIdComponentsWithOpportunityTypeExt(OpportunityType? opportunityType, params Uri[] ids)
         {
             return this.GetIdComponentsWithOpportunityType(opportunityType, ids);
@@ -238,6 +264,10 @@ namespace OpenActive.Server.NET.OpenBookingHelper
             }
         }
 
+        public TBookableIdComponents GetIdComponents(Uri opportunityId)
+        {
+            return base.GetIdComponents(nameof(GetIdComponents), opportunityId);
+        }
         public TBookableIdComponents GetIdComponents(Uri opportunityId, Uri offerId)
         {
             return base.GetIdComponents(nameof(GetIdComponents), opportunityId, offerId);

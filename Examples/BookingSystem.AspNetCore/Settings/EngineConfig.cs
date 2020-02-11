@@ -213,7 +213,9 @@ namespace BookingSystem
                         {
                             new PrivacyPolicy
                             {
-                                Url = new Uri("https://example.com/privacy.html")
+                                Name = "Privacy Policy",
+                                Url = new Uri("https://example.com/privacy.html"),
+                                RequiresExplicitConsent = false
                             }
                         }
                     },

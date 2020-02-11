@@ -36,16 +36,23 @@ namespace OpenActive.FakeDatabase.NET
         /// </summary>
         public void CleanupExpiredLeases()
         {
+            var occurrenceIds = new List<long>();
+
             foreach (OrderTable order in Orders.Where(x => x.LeaseExpires < DateTimeOffset.Now))
             {
+                occurrenceIds.AddRange(OrderItems.Where(x => x.OrderId == order.Id).Select(x => x.OccurrenceId));
                 OrderItems.RemoveAll(x => x.OrderId == order.Id);
                 Orders.RemoveAll(x => x.Id == order.Id);
             }
+
+            RecalculateSpaces(occurrenceIds.Distinct());
         }
 
-        public bool AddLease(string clientId, string uuid, BrokerRole brokerRole, string brokerName, long? sellerId, string customerEmail, DateTimeOffset leaseExpires)
+        public bool AddLease(string clientId, string uuid, BrokerRole brokerRole, string brokerName, long? sellerId, string customerEmail, DateTimeOffset leaseExpires, FakeDatabaseTransaction transaction)
         {
-            var existingOrder = Orders.SingleOrDefault(x => x.ClientId == clientId && x.Id == uuid );
+            if (transaction != null) transaction.OrdersIds.Add(uuid);
+
+            var existingOrder = Orders.SingleOrDefault(x => x.ClientId == clientId && x.Id == uuid);
             if (existingOrder == null)
             {
                 Orders.Add(new OrderTable
@@ -80,7 +87,7 @@ namespace OpenActive.FakeDatabase.NET
 
                 return true;
             }
-            
+
         }
 
         public void DeleteLease(string clientId, string uuid, long? sellerId)
@@ -88,13 +95,19 @@ namespace OpenActive.FakeDatabase.NET
             // TODO: Note this should throw an error if the Seller ID does not match, same as DeleteOrder
             if (Orders.Exists(x => x.ClientId == clientId && x.IsLease && x.Id == uuid && (!sellerId.HasValue || x.SellerId == sellerId)))
             {
+                var occurrenceIds = OrderItems.Where(x => x.ClientId == clientId && x.OrderId == uuid).Select(x => x.OccurrenceId).Distinct();
+
                 OrderItems.RemoveAll(x => x.ClientId == clientId && x.OrderId == uuid);
                 Orders.RemoveAll(x => x.ClientId == clientId && x.Id == uuid);
+
+                RecalculateSpaces(occurrenceIds);
             }
         }
 
-        public bool AddOrder(string clientId, string uuid, BrokerRole brokerRole, string brokerName, long? sellerId, string customerEmail, string paymentIdentifier, decimal totalOrderPrice)
+        public bool AddOrder(string clientId, string uuid, BrokerRole brokerRole, string brokerName, long? sellerId, string customerEmail, string paymentIdentifier, decimal totalOrderPrice, FakeDatabaseTransaction transaction)
         {
+            transaction.OrdersIds.Add(uuid);
+
             var existingOrder = Orders.SingleOrDefault(x => x.ClientId == clientId && x.Id == uuid);
             if (existingOrder == null)
             {
@@ -131,7 +144,7 @@ namespace OpenActive.FakeDatabase.NET
                 existingOrder.IsLease = false;
 
                 return true;
-            } 
+            }
         }
 
         public void DeleteOrder(string clientId, string uuid, long? sellerId)
@@ -147,8 +160,20 @@ namespace OpenActive.FakeDatabase.NET
                 order.Deleted = true;
                 order.CustomerEmail = null;
                 order.Modified = DateTimeOffset.Now;
+
+                var occurrenceIds = OrderItems.Where(x => x.ClientId == clientId && x.OrderId == order.Id).Select(x => x.OccurrenceId).Distinct();
                 OrderItems.RemoveAll(x => x.ClientId == clientId && x.OrderId == order.Id);
+                RecalculateSpaces(occurrenceIds);
             }
+        }
+
+        public void RollbackOrder(string uuid)
+        {
+            // Set the Order to deleted in the feed, and erase all associated personal data
+            var occurrenceIds = OrderItems.Where(x => x.OrderId == uuid).Select(x => x.OccurrenceId).Distinct();
+            Orders.RemoveAll(x => x.Id == uuid);
+            OrderItems.RemoveAll(x => x.OrderId == uuid);
+            RecalculateSpaces(occurrenceIds);
         }
 
         public bool LeaseOrderItemsForClassOccurrence(string clientId, long? sellerId, string uuid, long occurrenceId, long numberOfSpaces)
@@ -166,9 +191,7 @@ namespace OpenActive.FakeDatabase.NET
                 // Remove existing leases
                 // Note a real implementation would likely maintain existing leases instead of removing and recreating them
                 OrderItems.RemoveAll(x => x.ClientId == clientId && x.OrderId == uuid && x.OccurrenceId == occurrenceId);
-                var leasedSpaces = OrderItems.Where(x => Orders.Single(o => o.Id == x.OrderId).IsLease && x.OccurrenceId == occurrenceId).Count();
-                thisOccurrence.LeasedSpaces = leasedSpaces;
-                thisOccurrence.Modified = DateTimeOffset.Now + new TimeSpan(0, 0, 5); // Push into the future to avoid it getting lost in the feed
+                RecalculateSpaces(occurrenceId);
 
                 // Only lease if all spaces requested are available
                 if (thisOccurrence.RemainingSpaces - thisOccurrence.LeasedSpaces >= numberOfSpaces)
@@ -186,9 +209,8 @@ namespace OpenActive.FakeDatabase.NET
                     }
 
                     // Update number of spaces remaining for the opportunity
-                    var totalSpacesTaken = OrderItems.Where(x => Orders.Single(o => o.Id == x.OrderId).IsLease && x.OccurrenceId == occurrenceId).Count();
-                    thisOccurrence.LeasedSpaces = totalSpacesTaken;
-                    thisOccurrence.Modified = DateTimeOffset.Now + new TimeSpan(0, 0, 5); // Push into the future to avoid it getting lost in the feed // TODO: Document this!
+                    RecalculateSpaces(occurrenceId);
+
                     return true;
                 }
                 else
@@ -217,9 +239,7 @@ namespace OpenActive.FakeDatabase.NET
                 // Remove existing leases
                 // Note a real implementation would likely maintain existing leases instead of removing and recreating them
                 OrderItems.RemoveAll(x => x.ClientId == clientId && x.OrderId == uuid && x.OccurrenceId == occurrenceId);
-                var leasedSpaces = OrderItems.Where(x => Orders.Single(o => o.Id == x.OrderId).IsLease && x.OccurrenceId == occurrenceId).Count();
-                thisOccurrence.LeasedSpaces = leasedSpaces;
-                thisOccurrence.Modified = DateTimeOffset.Now + new TimeSpan(0, 0, 5); // Push into the future to avoid it getting lost in the feed
+                RecalculateSpaces(occurrenceId);
 
                 // Only lease if all spaces requested are available
                 if (thisOccurrence.RemainingSpaces - thisOccurrence.LeasedSpaces >= numberOfSpaces)
@@ -245,10 +265,7 @@ namespace OpenActive.FakeDatabase.NET
                         });
                     }
 
-                    // Update number of spaces remaining for the opportunity
-                    var totalSpacesTaken = OrderItems.Where(x => x.OccurrenceId == occurrenceId && (x.Status == BookingStatus.Confirmed || x.Status == BookingStatus.Attended)).Count();
-                    thisOccurrence.RemainingSpaces = thisOccurrence.TotalSpaces - totalSpacesTaken;
-                    thisOccurrence.Modified = DateTimeOffset.Now + new TimeSpan(0, 0, 5); // Push into the future to avoid it getting lost in the feed
+                    RecalculateSpaces(occurrenceId);
 
                     return OrderItemIds;
                 }
@@ -290,13 +307,7 @@ namespace OpenActive.FakeDatabase.NET
 
                     // Note an actual implementation would need to handle different opportunity types here
                     // Update the number of spaces available as a result of cancellation
-                    foreach (long occurrenceId in updatedOrderItems.Select(x => x.OccurrenceId).Distinct())
-                    {
-                        var occurrence = Occurrences.Single(x => x.Id == occurrenceId);
-                        var totalSpacesTaken = OrderItems.Where(x => x.OccurrenceId == occurrenceId && (x.Status == BookingStatus.Confirmed || x.Status == BookingStatus.Attended)).Count();
-                        occurrence.RemainingSpaces = occurrence.TotalSpaces - totalSpacesTaken;
-                        occurrence.Modified = DateTimeOffset.Now;
-                    }
+                    RecalculateSpaces(updatedOrderItems.Select(x => x.OccurrenceId).Distinct());
                 }
                 return true;
             }
@@ -304,7 +315,30 @@ namespace OpenActive.FakeDatabase.NET
             {
                 return false;
             }
+        }
 
+        public void RecalculateSpaces(long occurrenceId)
+        {
+            RecalculateSpaces(new List<long> { occurrenceId });
+        }
+
+        public void RecalculateSpaces(IEnumerable<long> occurrenceIds)
+        {
+            foreach (var occurrenceId in occurrenceIds)
+            {
+                var thisOccurrence = Occurrences.FirstOrDefault(x => x.Id == occurrenceId && !x.Deleted);
+
+                // Update number of leased spaces remaining for the opportunity
+                var leasedSpaces = OrderItems.Where(x => Orders.Single(o => o.Id == x.OrderId).IsLease && x.OccurrenceId == occurrenceId).Count();
+                thisOccurrence.LeasedSpaces = leasedSpaces;
+
+                // Update number of actual spaces remaining for the opportunity
+                var totalSpacesTaken = OrderItems.Where(x => !Orders.Single(o => o.Id == x.OrderId).IsLease && x.OccurrenceId == occurrenceId && (x.Status == BookingStatus.Confirmed || x.Status == BookingStatus.Attended)).Count();
+                thisOccurrence.RemainingSpaces = thisOccurrence.TotalSpaces - totalSpacesTaken;
+
+                // Push the change into the future to avoid it getting lost in the feed (see race condition transaction challenges https://developer.openactive.io/publishing-data/data-feeds/implementing-rpde-feeds#preventing-the-race-condition) // TODO: Document this!
+                thisOccurrence.Modified = DateTimeOffset.Now;
+            }
         }
 
 
@@ -355,9 +389,10 @@ namespace OpenActive.FakeDatabase.NET
             });
         }
 
-        public void AddClass(string title, decimal? price, DateTimeOffset startTime, DateTimeOffset endTime, long totalSpaces)
+        public ( int, int ) AddClass(string title, decimal? price, DateTimeOffset startTime, DateTimeOffset endTime, long totalSpaces)
         {
             var classId = nextId++;
+            var occurrenceId = nextId++;
 
             Classes.Add(new ClassTable
             {
@@ -370,7 +405,7 @@ namespace OpenActive.FakeDatabase.NET
 
             Occurrences.Add(new OccurrenceTable
             {
-                Id = nextId++,
+                Id = occurrenceId,
                 Deleted = false,
                 ClassId = classId,
                 Start = startTime.DateTime,
@@ -378,16 +413,27 @@ namespace OpenActive.FakeDatabase.NET
                 TotalSpaces = totalSpaces,
                 RemainingSpaces = totalSpaces
             });
+
+            return ( classId, occurrenceId );
         }
 
-        public void DeleteClass(string name)
+        public void DeleteClass(long classId, long occurrenceId)
         {
-            foreach (ClassTable @class in Classes.Where(x => x.Title == name))
+            foreach (ClassTable @class in Classes.Where(x => x.Id == classId))
             {
                 if (!@class.Deleted)
                 {
                     @class.Modified = DateTimeOffset.Now;
                     @class.Deleted = true;
+                }
+            }
+
+            foreach (OccurrenceTable occurrence in Occurrences.Where(x => x.Id == occurrenceId))
+            {
+                if (!occurrence.Deleted)
+                {
+                    occurrence.Modified = DateTimeOffset.Now;
+                    occurrence.Deleted = true;
                 }
             }
         }

@@ -8,7 +8,12 @@ using System.Linq;
 
 namespace BookingSystem
 {
-    public class AcmeOrderStore : OrderStore<OrderTransaction>
+    public class OrderStateContext : IStateContext
+    {
+
+    }
+
+    public class AcmeOrderStore : OrderStore<OrderTransaction, OrderStateContext>
     {
         /// <summary>
         /// Initiate customer cancellation for the specified OrderItems
@@ -20,9 +25,16 @@ namespace BookingSystem
             return FakeBookingSystem.Database.CancelOrderItem(orderId.ClientId, sellerId.SellerIdLong ?? null  /* Hack to allow this to work in Single Seller mode too */, orderId.uuid, orderItemIds.Select(x => x.OrderItemIdLong.Value).ToList(), true);
         }
 
-        public override Lease CreateLease(OrderQuote responseOrderQuote, StoreBookingFlowContext flowContext, OrderTransaction databaseTransaction)
+        public override OrderStateContext Initialise(StoreBookingFlowContext flowContext)
         {
-            if (responseOrderQuote.TotalPaymentDue.PriceCurrency != "GBP")
+            // Runs before the flow starts, for both leasing and booking
+            // Useful for transferring state between stages of the flow
+            return new OrderStateContext();
+        }
+
+        public override Lease CreateLease(OrderQuote responseOrderQuote, StoreBookingFlowContext flowContext, OrderStateContext stateContext, OrderTransaction databaseTransaction)
+        {
+            if (responseOrderQuote.TotalPaymentDue.Price != 0 && responseOrderQuote.TotalPaymentDue.PriceCurrency != "GBP")
             {
                 throw new OpenBookingException(new OpenBookingError(), "Unsupported currency");
             }
@@ -42,7 +54,8 @@ namespace BookingSystem
                     flowContext.Broker.Name,
                     flowContext.SellerId.SellerIdLong ?? null, // Small hack to allow use of FakeDatabase when in Single Seller mode
                     flowContext.Customer.Email,
-                    leaseExpires
+                    leaseExpires,
+                    databaseTransaction?.Transaction
                     );
 
                 if (!result) throw new OpenBookingException(new OrderAlreadyExistsError());
@@ -64,7 +77,7 @@ namespace BookingSystem
             FakeBookingSystem.Database.DeleteLease(orderId.ClientId, orderId.uuid, sellerId.SellerIdLong.Value);
         }
 
-        public override void CreateOrder(Order responseOrder, StoreBookingFlowContext flowContext, OrderTransaction databaseTransaction)
+        public override void CreateOrder(Order responseOrder, StoreBookingFlowContext flowContext, OrderStateContext stateContext, OrderTransaction databaseTransaction)
         {
             if (responseOrder.TotalPaymentDue.PriceCurrency != "GBP")
             {
@@ -79,7 +92,8 @@ namespace BookingSystem
                 flowContext.SellerId.SellerIdLong ?? null, // Small hack to allow use of FakeDatabase when in Single Seller mode
                 flowContext.Customer.Email,
                 flowContext.Payment?.Identifier,
-                responseOrder.TotalPaymentDue.Price.Value);
+                responseOrder.TotalPaymentDue.Price.Value,
+                databaseTransaction.Transaction);
 
             if (!result) throw new OpenBookingException(new OrderAlreadyExistsError());
         }
@@ -87,6 +101,16 @@ namespace BookingSystem
         public override void DeleteOrder(OrderIdComponents orderId, SellerIdComponents sellerId)
         {
             FakeBookingSystem.Database.DeleteOrder(orderId.ClientId, orderId.uuid, sellerId.SellerIdLong ?? null /* Small hack to allow use of FakeDatabase when in Single Seller mode */);
+        }
+
+        public override void UpdateLease(OrderQuote responseOrder, StoreBookingFlowContext flowContext, OrderStateContext stateContext, OrderTransaction databaseTransaction)
+        {
+            // Runs after the transaction is committed
+        }
+
+        public override void UpdateOrder(Order responseOrder, StoreBookingFlowContext flowContext, OrderStateContext stateContext, OrderTransaction databaseTransaction)
+        {
+            // Runs after the transaction is committed
         }
 
 
