@@ -266,7 +266,7 @@ namespace OpenActive.Server.NET.StoreBooking
                 // QUESTION: Should GetOrderItems occur within the transaction?
                 // Currently this is optimised for the transaction to have minimal query coverage (i.e. write-only)
 
-                store.GetOrderItems(orderItemContextsWithinGroup, context);
+                store.GetOrderItems(orderItemContextsWithinGroup, context, stateContext);
 
                 if (!orderItemContextsWithinGroup.TrueForAll(x => x.ResponseOrderItem != null))
                 {
@@ -334,7 +334,7 @@ namespace OpenActive.Server.NET.StoreBooking
                                 {
                                     foreach (var g in orderItemGroups)
                                     {
-                                        g.Store.LeaseOrderItems(responseOrderQuote.Lease, g.OrderItemContexts, context, dbTransaction);
+                                        g.Store.LeaseOrderItems(responseOrderQuote.Lease, g.OrderItemContexts, context, stateContext, dbTransaction);
                                     }
                                 }
 
@@ -406,7 +406,7 @@ namespace OpenActive.Server.NET.StoreBooking
                             // Book the OrderItems
                             foreach (var g in orderItemGroups)
                             {
-                                g.Store.BookOrderItems(g.OrderItemContexts, context, dbTransaction);
+                                g.Store.BookOrderItems(g.OrderItemContexts, context, stateContext, dbTransaction);
 
                                 foreach (var ctx in g.OrderItemContexts)
                                 {
