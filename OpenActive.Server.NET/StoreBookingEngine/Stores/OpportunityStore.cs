@@ -43,22 +43,22 @@ namespace OpenActive.Server.NET.StoreBooking
         public void GetOrderItems(List<IOrderItemContext> orderItemContexts, StoreBookingFlowContext flowContext, IStateContext stateContext)
         {
             // TODO: Include validation on the OrderItem created, to ensure it includes all the required fields
-            GetOrderItem(ConvertToSpecificComponents(orderItemContexts), flowContext, stateContext);
+            GetOrderItem(ConvertToSpecificComponents(orderItemContexts), flowContext, (TStateContext)stateContext);
         }
 
         public void LeaseOrderItems(Lease lease, List<IOrderItemContext> orderItemContexts, StoreBookingFlowContext flowContext, IStateContext stateContext, IDatabaseTransaction databaseTransactionContext)
         {
             // TODO: Include validation on the OrderItem created, to ensure it includes all the required fields
-            LeaseOrderItem(lease, ConvertToSpecificComponents(orderItemContexts), flowContext, stateContext, (TDatabaseTransaction)databaseTransactionContext);
+            LeaseOrderItem(lease, ConvertToSpecificComponents(orderItemContexts), flowContext, (TStateContext)stateContext, (TDatabaseTransaction)databaseTransactionContext);
         }
 
         public void BookOrderItems(List<IOrderItemContext> orderItemContexts, StoreBookingFlowContext flowContext, IStateContext stateContext, IDatabaseTransaction databaseTransactionContext)
         {
             // TODO: Include validation on the OrderItem created, to ensure it includes all the required fields
-            BookOrderItem(ConvertToSpecificComponents(orderItemContexts), flowContext, stateContext, (TDatabaseTransaction)databaseTransactionContext);
+            BookOrderItem(ConvertToSpecificComponents(orderItemContexts), flowContext, (TStateContext)stateContext, (TDatabaseTransaction)databaseTransactionContext);
         }
 
-        protected abstract void GetOrderItem(List<OrderItemContext<TComponents>> orderItemContexts, StoreBookingFlowContext flowContext, IStateContext stateContext);
+        protected abstract void GetOrderItem(List<OrderItemContext<TComponents>> orderItemContexts, StoreBookingFlowContext flowContext, TStateContext stateContext);
 
         /// <summary>
         /// BookOrderItem will always succeed or throw an error on failure.
@@ -66,9 +66,9 @@ namespace OpenActive.Server.NET.StoreBooking
         /// need to be written that require prices. As GetOrderItems occurs outside of the transaction.
         /// 
         /// </summary>
-        protected abstract void BookOrderItem(List<OrderItemContext<TComponents>> orderItemContexts, StoreBookingFlowContext flowContext, IStateContext stateContext, TDatabaseTransaction databaseTransactionContext);
+        protected abstract void BookOrderItem(List<OrderItemContext<TComponents>> orderItemContexts, StoreBookingFlowContext flowContext, TStateContext stateContext, TDatabaseTransaction databaseTransactionContext);
 
-        protected abstract void LeaseOrderItem(Lease lease, List<OrderItemContext<TComponents>> orderItemContexts, StoreBookingFlowContext flowContext, IStateContext stateContext, TDatabaseTransaction databaseTransactionContext);
+        protected abstract void LeaseOrderItem(Lease lease, List<OrderItemContext<TComponents>> orderItemContexts, StoreBookingFlowContext flowContext, TStateContext stateContext, TDatabaseTransaction databaseTransactionContext);
 
 
         protected abstract TComponents CreateTestDataItem(OpportunityType opportunityType, Event @event);
