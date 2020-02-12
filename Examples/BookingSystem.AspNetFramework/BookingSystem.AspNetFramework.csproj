@@ -187,8 +187,8 @@
     <Reference Include="OpenActive.DatasetSite.NET, Version=3.0.3.0, Culture=neutral, processorArchitecture=MSIL">
       <HintPath>..\..\packages\OpenActive.DatasetSite.NET.3.0.3\lib\net45\OpenActive.DatasetSite.NET.dll</HintPath>
     </Reference>
-    <Reference Include="OpenActive.NET, Version=8.6.1.0, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>..\..\packages\OpenActive.NET.8.6.1\lib\netstandard2.0\OpenActive.NET.dll</HintPath>
+    <Reference Include="OpenActive.NET, Version=8.6.3.0, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\..\packages\OpenActive.NET.8.6.3\lib\netstandard2.0\OpenActive.NET.dll</HintPath>
     </Reference>
     <Reference Include="Schema.NET, Version=6.0.0.0, Culture=neutral, PublicKeyToken=fc5550082a9c642c, processorArchitecture=MSIL">
       <HintPath>..\..\packages\Schema.NET.6.0.0\lib\net461\Schema.NET.dll</HintPath>
