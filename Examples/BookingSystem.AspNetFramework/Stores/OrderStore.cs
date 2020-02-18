@@ -22,6 +22,7 @@ namespace BookingSystem
         /// <returns>True if Order found, False if Order not found</returns>
         public override bool CustomerCancelOrderItems(OrderIdComponents orderId, SellerIdComponents sellerId, OrderIdTemplate orderIdTemplate, List<OrderIdComponents> orderItemIds)
         {
+            //throw new OpenBookingException(new CancellationNotPermittedError());
             return FakeBookingSystem.Database.CancelOrderItem(orderId.ClientId, sellerId.SellerIdLong ?? null  /* Hack to allow this to work in Single Seller mode too */, orderId.uuid, orderItemIds.Select(x => x.OrderItemIdLong.Value).ToList(), true);
         }
 
@@ -34,18 +35,13 @@ namespace BookingSystem
 
         public override Lease CreateLease(OrderQuote responseOrderQuote, StoreBookingFlowContext flowContext, OrderStateContext stateContext, OrderTransaction databaseTransaction)
         {
-            if (responseOrderQuote.TotalPaymentDue.Price != 0 && responseOrderQuote.TotalPaymentDue.PriceCurrency != "GBP")
-            {
-                throw new OpenBookingException(new OpenBookingError(), "Unsupported currency");
-            }
-
             // Note if no lease support, simply return null always here instead
 
             // In this example leasing is only supported at C2
             if (flowContext.Stage == FlowStage.C2)
             {
                 // TODO: Make the lease duration configurable
-                var leaseExpires = DateTimeOffset.Now + new TimeSpan(0, 5, 0);
+                var leaseExpires = DateTimeOffset.UtcNow + new TimeSpan(0, 5, 0);
 
                 var result = databaseTransaction.Database.AddLease(
                     flowContext.OrderId.ClientId,
@@ -79,11 +75,6 @@ namespace BookingSystem
 
         public override void CreateOrder(Order responseOrder, StoreBookingFlowContext flowContext, OrderStateContext stateContext, OrderTransaction databaseTransaction)
         {
-            if (responseOrder.TotalPaymentDue.PriceCurrency != "GBP")
-            {
-                throw new OpenBookingException(new OpenBookingError(), "Unsupported currency");
-            }
-
             var result = databaseTransaction.Database.AddOrder(
                 flowContext.OrderId.ClientId,
                 flowContext.OrderId.uuid,

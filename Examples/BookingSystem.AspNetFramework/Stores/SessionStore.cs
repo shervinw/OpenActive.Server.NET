@@ -82,8 +82,7 @@ namespace BookingSystem
                                  // Note this should always use RenderOfferId with the supplied SessionOpportunity, to take into account inheritance and OfferType
                                  Id = this.RenderOfferId(orderItemContext.RequestBookableOpportunityOfferId),
                                  Price = classes.Price,
-                                 PriceCurrency = "GBP",
-                                 AvailableChannel = new List<AvailableChannelType> { AvailableChannelType.OpenBookingPrepayment }
+                                 PriceCurrency = "GBP"
                              },
                              OrderedItem = new ScheduledSession
                              {
@@ -101,7 +100,26 @@ namespace BookingSystem
                                          OpportunityType = OpportunityType.SessionSeries,
                                          SessionSeriesId = occurances.ClassId
                                      }),
-                                     Name = classes.Title
+                                     Name = classes.Title,
+                                     Url = new Uri("https://example.com/events/" + occurances.ClassId),
+                                     Location = new Place
+                                     {
+                                         Name = "Fake fitness studio",
+                                         Geo = new GeoCoordinates
+                                         {
+                                             Latitude = 51.6201M,
+                                             Longitude = 0.302396M
+                                         }
+                                     },
+                                     Activity = new List<Concept>
+                                     {
+                                         new Concept
+                                         {
+                                             Id = new Uri("https://openactive.io/activity-list#6bdea630-ad22-4e58-98a3-bca26ee3f1da"),
+                                             PrefLabel = "Rave Fitness",
+                                             InScheme = new Uri("https://openactive.io/activity-list")
+                                         }
+                                     }
                                  },
                                  StartDate = (DateTimeOffset)occurances.Start,
                                  EndDate = (DateTimeOffset)occurances.End,
@@ -116,7 +134,7 @@ namespace BookingSystem
                 if (item == null)
                 {
                     ctx.SetResponseOrderItemAsSkeleton();
-                    ctx.AddError(new UnknownOpportunityDetailsError());
+                    ctx.AddError(new UnknownOpportunityError());
                 }
                 else
                 {
@@ -151,7 +169,7 @@ namespace BookingSystem
                 {
                     foreach (var ctx in ctxGroup)
                     {
-                        ctx.AddError(new OpenBookingError { Description = "OpportunityNotBookableError" });
+                        ctx.AddError(new OpportunityIntractableError(), "Opportunity ID and type are as not expected for the store. Likely a configuration issue with the Booking System.");
                     }
                 }
                 else
@@ -163,7 +181,7 @@ namespace BookingSystem
                     {
                         foreach (var ctx in ctxGroup)
                         {
-                            ctx.AddError(new OpenBookingError { Description = "Item could not be leased" });
+                            ctx.AddError(new OpportunityIntractableError(), "OrderItem could not be leased for unexpected reasons." );
                         }
                     }
                 }
@@ -181,10 +199,10 @@ namespace BookingSystem
                 // Check that the Opportunity ID and type are as expected for the store 
                 if (ctxGroup.Key.OpportunityType != OpportunityType.ScheduledSession || !ctxGroup.Key.ScheduledSessionId.HasValue)
                 {
-                    throw new OpenBookingException(new OpenBookingError(), "OpportunityNotBookableError");
+                    throw new OpenBookingException(new UnableToProcessOrderItemError());
                 }
 
-                // Attempt to lease for those with the same IDs, which is atomic
+                // Attempt to book for those with the same IDs, which is atomic
                 List<long> orderItemIds = databaseTransaction.Database.BookOrderItemsForClassOccurrence(flowContext.OrderId.ClientId, flowContext.SellerId.SellerIdLong ?? null  /* Hack to allow this to work in Single Seller mode too */, flowContext.OrderId.uuid, ctxGroup.Key.ScheduledSessionId.Value, this.RenderOpportunityJsonLdType(ctxGroup.Key), this.RenderOpportunityId(ctxGroup.Key).ToString(), this.RenderOfferId(ctxGroup.Key).ToString(), ctxGroup.Count());
 
                 if (orderItemIds != null)
@@ -197,7 +215,8 @@ namespace BookingSystem
                 }
                 else
                 {
-                    throw new OpenBookingException(new OpenBookingError(), "BookingFailedError");
+                    // Note: A real implementation would not through an error this vague
+                    throw new OpenBookingException(new OrderCreationFailedError(), "Booking failed for an unexpected reason");
                 }
             }
         }

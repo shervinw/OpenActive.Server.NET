@@ -50,7 +50,9 @@ namespace BookingSystem
                                 EndDate = (DateTimeOffset)occurances.End
                             }
                         };
-            return query.Take(this.RPDEPageSize).ToList();
+
+            // Note there's a race condition in the in-memory database that allows records to be returned from the above query out of order when modified at the same time. The below ensures the correct order is returned.
+            return query.Take(this.RPDEPageSize).ToArray().OrderBy(x => x.Modified).ThenBy(x => x.Id).ToList();
         }
     }
 
@@ -109,7 +111,9 @@ namespace BookingSystem
                                 }
                             }
                         };
-            var items = query.Take(this.RPDEPageSize).ToList();
+
+            // Note there's a race condition in the in-memory database that allows records to be returned from the above query out of order when modified at the same time. The below ensures the correct order is returned.
+            var items = query.Take(this.RPDEPageSize).ToArray().OrderBy(x => x.Modified).ThenBy(x => x.Id).ToList();
             return items;
         }
     }

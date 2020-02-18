@@ -301,7 +301,7 @@ namespace OpenActive.Server.NET.CustomBooking
             OrderQuote orderQuote = OpenActiveSerializer.Deserialize<OrderQuote>(orderQuoteJson);
             if (orderQuote == null || orderQuote.GetType() != typeof(OrderQuote))
             {
-                throw new OpenBookingException(new OpenBookingError(), "OrderQuote is required for C1 and C2");
+                throw new OpenBookingException(new UnexpectedOrderTypeError(), "OrderQuote is required for C1 and C2");
             }
             var orderResponse = ValidateFlowRequest<OrderQuote>(clientId, sellerId, flowStage, uuid, orderType, orderQuote);
             // Return a 409 status code if any OrderItem level errors exist
@@ -315,7 +315,7 @@ namespace OpenActive.Server.NET.CustomBooking
             Order order = OpenActiveSerializer.Deserialize<Order>(orderJson);
             if (order == null || order.GetType() != typeof(Order))
             {
-                throw new OpenBookingException(new OpenBookingError(), "Order is required for B");
+                throw new OpenBookingException(new UnexpectedOrderTypeError(), "Order is required for B");
             }
             return ResponseContent.OpenBookingResponse(OpenActiveSerializer.Serialize(ValidateFlowRequest<Order>(clientId, sellerId, FlowStage.B, uuid, OrderType.Order, order)), HttpStatusCode.OK);
         }
@@ -371,13 +371,13 @@ namespace OpenActive.Server.NET.CustomBooking
             // Check for mismatching UUIDs
             if (!orderItemIds.TrueForAll(x => x != null))
             {
-                throw new OpenBookingException(new OpenBookingError(), "Invalid OrderItem Id supplied.");
+                throw new OpenBookingException(new OrderItemIdInvalidError());
             }
 
             // Check for mismatching UUIDs
             if (!orderItemIds.TrueForAll(x => x.OrderType == OrderType.Order && x.uuid == uuid))
             {
-                throw new OpenBookingException(new OpenBookingError(), "The UUID for each OrderItem specified must match the UUID of the Order being PATCHed.");
+                throw new OpenBookingException(new OrderItemNotWithinOrderError());
             }
 
             ProcessCustomerCancellation(new OrderIdComponents { ClientId = clientId, OrderType = OrderType.Order, uuid = uuid }, sellerIdComponents, settings.OrderIdTemplate, orderItemIds);
@@ -397,7 +397,7 @@ namespace OpenActive.Server.NET.CustomBooking
 
             if (createdEvent.Type != @event.Type)
             {
-                throw new OpenBookingException(new OpenBookingError(), "Type of created Event does not match type of requested Event");
+                throw new OpenBookingException(new OpenBookingError(), "Type of created test Event does not match type of requested Event");
             }
 
             return ResponseContent.OpenBookingResponse(OpenActiveSerializer.Serialize(createdEvent), HttpStatusCode.OK);
@@ -441,20 +441,18 @@ namespace OpenActive.Server.NET.CustomBooking
 
             if (seller == null)
             {
-                // TODO: Update data model to throw actual error for all occurances of OpenBookingError
-                throw new OpenBookingException(new OpenBookingError(), "SellerNotFound");
+                throw new OpenBookingException(new SellerNotFoundError());
             }
             
             if (orderQuote?.Seller?.Id != null && seller?.Id != orderQuote?.Seller?.Id)
             {
-                // TODO: Update data model to throw actual error for all occurances of OpenBookingError
-                throw new OpenBookingException(new OpenBookingError(), "SellerIdMismatch");
+                throw new OpenBookingException(new SellerIdMismatchError());
             }
 
             // Check that taxMode is set in Seller
             if (!(seller?.TaxMode == TaxMode.TaxGross || seller?.TaxMode == TaxMode.TaxNet))
             {
-                throw new OpenBookingException(new OpenBookingError(), "taxMode must always be set in the Seller");
+                throw new EngineConfigurationException("taxMode must always be set in the Seller");
             }
 
             // Default to BusinessToConsumer if no customer provided

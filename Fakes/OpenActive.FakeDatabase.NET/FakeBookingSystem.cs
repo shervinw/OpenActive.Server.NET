@@ -329,11 +329,11 @@ namespace OpenActive.FakeDatabase.NET
                 var thisOccurrence = Occurrences.FirstOrDefault(x => x.Id == occurrenceId && !x.Deleted);
 
                 // Update number of leased spaces remaining for the opportunity
-                var leasedSpaces = OrderItems.Where(x => Orders.Single(o => o.Id == x.OrderId).IsLease && x.OccurrenceId == occurrenceId).Count();
+                var leasedSpaces = OrderItems.Where(x => Orders.SingleOrDefault(o => o.Id == x.OrderId)?.IsLease == true && x.OccurrenceId == occurrenceId).Count();
                 thisOccurrence.LeasedSpaces = leasedSpaces;
 
                 // Update number of actual spaces remaining for the opportunity
-                var totalSpacesTaken = OrderItems.Where(x => !Orders.Single(o => o.Id == x.OrderId).IsLease && x.OccurrenceId == occurrenceId && (x.Status == BookingStatus.Confirmed || x.Status == BookingStatus.Attended)).Count();
+                var totalSpacesTaken = OrderItems.Where(x => !Orders.SingleOrDefault(o => o.Id == x.OrderId).IsLease == true && x.OccurrenceId == occurrenceId && (x.Status == BookingStatus.Confirmed || x.Status == BookingStatus.Attended)).Count();
                 thisOccurrence.RemainingSpaces = thisOccurrence.TotalSpaces - totalSpacesTaken;
 
                 // Push the change into the future to avoid it getting lost in the feed (see race condition transaction challenges https://developer.openactive.io/publishing-data/data-feeds/implementing-rpde-feeds#preventing-the-race-condition) // TODO: Document this!

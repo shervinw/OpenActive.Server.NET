@@ -11,6 +11,14 @@ using System.Runtime.Serialization;
 
 namespace OpenActive.Server.NET.OpenBookingHelper
 {
+    /// <summary>
+    /// Class to represent unrecognised OrderItems
+    /// </summary>
+    public class NullBookableIdComponents : IBookableIdComponents
+    {
+        public OpportunityType? OpportunityType { get => null; set => throw new NotImplementedException(); }
+    }
+
     public interface IBookableIdComponents
     {
         OpportunityType? OpportunityType { get; set; }
