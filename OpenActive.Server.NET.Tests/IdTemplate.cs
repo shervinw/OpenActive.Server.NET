@@ -33,6 +33,21 @@ namespace OpenActive.Server.NET.Tests
         }
 
         [Fact]
+        public void SingleIdTemplate_GetIdComponents_UrlEncoded()
+        {
+            var template = new SingleIdTemplate<SessionSeriesComponents>(
+                "{+BaseUrl}api/{EventType}/{SessionSeriesId}/events/{ScheduledSessionId}"
+                );
+            template.RequiredBaseUrl = new Uri("https://example.com/");
+
+            var components = template.GetIdComponents(new Uri("https://example.com/api/session-series/2020-02-23T17%3A30%3A00Z/events/123"));
+
+            Assert.Equal("session-series", components.EventType);
+            Assert.Equal("2020-02-23T17:30:00Z", components.SessionSeriesId);
+            Assert.Equal(123, components.ScheduledSessionId);
+        }
+
+        [Fact]
         public void SingleIdTemplate_GetIdComponents_IdToEnum()
         {
             var template = new OrderIdTemplate(
@@ -86,6 +101,24 @@ namespace OpenActive.Server.NET.Tests
 
             var outputUri = template.RenderId(components);
             
+            Assert.Equal(uri, outputUri);
+        }
+
+        [Fact]
+        public void SingleIdTemplate_RenderId_UrlEncoded()
+        {
+            var template = new SingleIdTemplate<SessionSeriesComponents>(
+                "{+BaseUrl}api/{EventType}/{SessionSeriesId}/events/{ScheduledSessionId}"
+                );
+
+            template.RequiredBaseUrl = new Uri("https://example.com/");
+
+            var uri = new Uri("https://example.com/api/session-series/2020-02-23T17%3A30%3A00Z/events/123");
+
+            var components = template.GetIdComponents(uri);
+
+            var outputUri = template.RenderId(components);
+
             Assert.Equal(uri, outputUri);
         }
 
