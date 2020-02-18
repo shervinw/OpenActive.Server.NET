@@ -388,13 +388,13 @@ namespace OpenActive.Server.NET.OpenBookingHelper
         public OrderIdComponents GetOrderIdComponents(string clientId, Uri id)
         {
             var orderId = base.GetIdComponents(nameof(GetIdComponents), id, null);
-            orderId.ClientId = clientId;
+            if (orderId != null) orderId.ClientId = clientId;
             return orderId;
         }
         public OrderIdComponents GetOrderItemIdComponents(string clientId, Uri id)
         {
             var orderId = base.GetIdComponents(nameof(GetIdComponents), null, id);
-            orderId.ClientId = clientId;
+            if (orderId != null) orderId.ClientId = clientId;
             return orderId;
         }
 
