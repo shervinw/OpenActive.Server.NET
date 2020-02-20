@@ -11,6 +11,14 @@ using System.Runtime.Serialization;
 
 namespace OpenActive.Server.NET.OpenBookingHelper
 {
+    /// <summary>
+    /// Class to represent unrecognised OrderItems
+    /// </summary>
+    public class NullBookableIdComponents : IBookableIdComponents
+    {
+        public OpportunityType? OpportunityType { get => null; set => throw new NotImplementedException(); }
+    }
+
     public interface IBookableIdComponents
     {
         OpportunityType? OpportunityType { get; set; }
@@ -380,13 +388,13 @@ namespace OpenActive.Server.NET.OpenBookingHelper
         public OrderIdComponents GetOrderIdComponents(string clientId, Uri id)
         {
             var orderId = base.GetIdComponents(nameof(GetIdComponents), id, null);
-            orderId.ClientId = clientId;
+            if (orderId != null) orderId.ClientId = clientId;
             return orderId;
         }
         public OrderIdComponents GetOrderItemIdComponents(string clientId, Uri id)
         {
             var orderId = base.GetIdComponents(nameof(GetIdComponents), null, id);
-            orderId.ClientId = clientId;
+            if (orderId != null) orderId.ClientId = clientId;
             return orderId;
         }
 

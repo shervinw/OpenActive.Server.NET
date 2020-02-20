@@ -34,32 +34,7 @@ namespace BookingSystem
                             Data = thisOrder.Key.orders.Deleted ? null : new Order
                             {
                                 Id = this.RenderOrderId(OrderType.Order, thisOrder.Key.orders.Id),
-                                Seller = thisOrder.Key.seller.IsIndividual ? (ILegalEntity)new Person
-                                {
-                                    Id = this.RenderSellerId(new SellerIdComponents { SellerIdLong = thisOrder.Key.seller.Id }),
-                                    Name = thisOrder.Key.seller.Name,
-                                    TaxMode = TaxMode.TaxGross
-                                } : (ILegalEntity)new Organization
-                                {
-                                    Id = this.RenderSellerId(new SellerIdComponents { SellerIdLong = thisOrder.Key.seller.Id }),
-                                    Name = thisOrder.Key.seller.Name,
-                                    TaxMode = TaxMode.TaxGross
-                                },
-                                Customer = thisOrder.Key.orders.CustomerIsOrganization ? (ILegalEntity) new Organization
-                                {
-                                    Email = thisOrder.Key.orders.CustomerEmail
-                                } : (ILegalEntity) new Person
-                                {
-                                    Email = thisOrder.Key.orders.CustomerEmail
-                                },
-                                BrokerRole = thisOrder.Key.orders.BrokerRole == BrokerRole.AgentBroker ? BrokerType.AgentBroker : thisOrder.Key.orders.BrokerRole == BrokerRole.ResellerBroker ? BrokerType.ResellerBroker : BrokerType.NoBroker,
-                                Broker = new Organization { 
-                                    Name = thisOrder.Key.orders.BrokerName
-                                },
-                                Payment = new Payment
-                                {
-                                    Identifier = thisOrder.Key.orders.PaymentIdentifier
-                                },
+                                Identifier = thisOrder.Key.orders.Id,
                                 TotalPaymentDue = new PriceSpecification
                                 {
                                     Price = thisOrder.Key.orders.TotalOrderPrice,
@@ -75,7 +50,7 @@ namespace BookingSystem
                                     },
                                     OrderedItem = RenderOpportunityWithOnlyId(orderItem.OpportunityJsonLdType, new Uri(orderItem.OpportunityJsonLdId)),
                                     OrderItemStatus =
-                                        orderItem.Status == BookingStatus.Confirmed ? OrderItemStatus.OrderConfirmed :
+                                        orderItem.Status == BookingStatus.Confirmed ? OrderItemStatus.OrderItemConfirmed :
                                         orderItem.Status == BookingStatus.CustomerCancelled ? OrderItemStatus.CustomerCancelled :
                                         orderItem.Status == BookingStatus.SellerCancelled ? OrderItemStatus.SellerCancelled :
                                         orderItem.Status == BookingStatus.Attended ? OrderItemStatus.CustomerAttended : (OrderItemStatus?)null
@@ -83,7 +58,8 @@ namespace BookingSystem
                                 }).ToList()
                             }
                         };
-            var list = query.Take(this.RPDEPageSize).ToList();
+            // Note there's a race condition in the in-memory database that allows records to be returned from the above query out of order when modified at the same time. The below ensures the correct order is returned.
+            var list = query.Take(this.RPDEPageSize).ToArray().OrderBy(x => x.Modified).ThenBy(x => x.Id).ToList();
             return list;
         }
     }

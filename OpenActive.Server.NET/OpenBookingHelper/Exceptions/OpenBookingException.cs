@@ -103,8 +103,7 @@ namespace OpenActive.Server.NET.OpenBookingHelper
             {
                 if (!this.OpenBookingError.StatusCode.HasValue)
                 {
-                    //TODO: Fix the data behind the below so that it works as expected. Is defaulted for now.
-                    //throw new NullReferenceException("An instance of OpenBookingError does not have an associated status");
+                    // Default to 500 if not defined
                     return HttpStatusCode.InternalServerError;
                 }
                 else
