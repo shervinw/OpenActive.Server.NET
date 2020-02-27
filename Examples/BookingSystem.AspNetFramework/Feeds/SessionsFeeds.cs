@@ -16,7 +16,7 @@ namespace BookingSystem
         protected override List<RpdeItem<ScheduledSession>> GetRPDEItems(long? afterTimestamp, long? afterId)
         {
             var query = from occurances in FakeBookingSystem.Database.Occurrences
-                        orderby occurances.Modified, occurances.Id
+                        orderby occurances.Modified.ToUnixTimeMilliseconds(), occurances.Id
                         where !afterTimestamp.HasValue && !afterId.HasValue ||
                               occurances.Modified.ToUnixTimeMilliseconds() > afterTimestamp ||  
                               (occurances.Modified.ToUnixTimeMilliseconds() == afterTimestamp && occurances.Id > afterId)
@@ -47,12 +47,25 @@ namespace BookingSystem
                                     SessionSeriesId = occurances.ClassId
                                 }),
                                 StartDate = (DateTimeOffset)occurances.Start,
-                                EndDate = (DateTimeOffset)occurances.End
+                                EndDate = (DateTimeOffset)occurances.End,
+                                RemainingAttendeeCapacity  = occurances.RemainingSpaces,
+                                MaximumAttendeeCapacity = occurances.TotalSpaces
                             }
                         };
 
             // Note there's a race condition in the in-memory database that allows records to be returned from the above query out of order when modified at the same time. The below ensures the correct order is returned.
-            return query.Take(this.RPDEPageSize).ToArray().OrderBy(x => x.Modified).ThenBy(x => x.Id).ToList();
+            var items = query.ToList().Take(this.RPDEPageSize).ToList();
+
+            /*
+            // Filter out any that were updated while the query was running
+            var lastItemModified = items.LastOrDefault()?.Modified;
+
+            if (lastItemModified != null)
+            {
+                items = items.Where(x => x.Modified <= lastItemModified).ToList(); //.OrderBy(x => x.Modified).ThenBy(x => x.Id)
+            }
+            */
+            return items;
         }
     }
 
@@ -62,7 +75,7 @@ namespace BookingSystem
         {
             var query = from @class in FakeBookingSystem.Database.Classes
                         join seller in FakeBookingSystem.Database.Sellers on @class.SellerId equals seller.Id
-                        orderby @class.Modified, @class.Id
+                        orderby @class.Modified.ToUnixTimeMilliseconds(), @class.Id
                         where !afterTimestamp.HasValue && !afterId.HasValue ||
                               @class.Modified.ToUnixTimeMilliseconds() > afterTimestamp ||
                               (@class.Modified.ToUnixTimeMilliseconds() == afterTimestamp && @class.Id > afterId)
@@ -117,7 +130,17 @@ namespace BookingSystem
                         };
 
             // Note there's a race condition in the in-memory database that allows records to be returned from the above query out of order when modified at the same time. The below ensures the correct order is returned.
-            var items = query.Take(this.RPDEPageSize).ToArray().OrderBy(x => x.Modified).ThenBy(x => x.Id).ToList();
+            var items = query.ToList().Take(this.RPDEPageSize).ToList();
+
+            /*
+            // Filter out any that were updated while the query was running
+            var lastItemModified = items.LastOrDefault()?.Modified;
+
+            if (lastItemModified != null)
+            {
+                items = items.Where(x => x.Modified <= lastItemModified).ToList(); //.OrderBy(x => x.Modified).ThenBy(x => x.Id)
+            }
+            */
             return items;
         }
     }

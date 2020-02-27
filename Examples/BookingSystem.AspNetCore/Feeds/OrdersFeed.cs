@@ -24,7 +24,7 @@ namespace BookingSystem
                         // https://app.gitbook.com/@openactive/s/openactive-developer/publishing-data/data-feeds/implementing-rpde-feeds
                         && orders.Modified < DateTimeOffset.UtcNow - new TimeSpan(0, 0, 2)
                         group orderItems by new { orders, seller } into thisOrder
-                        orderby thisOrder.Key.orders.Modified, thisOrder.Key.orders.Id
+                        orderby thisOrder.Key.orders.Modified.ToUnixTimeMilliseconds(), thisOrder.Key.orders.Id
                         select new RpdeItem
                         {
                             Kind = RpdeKind.Order,
@@ -58,9 +58,20 @@ namespace BookingSystem
                                 }).ToList()
                             }
                         };
+
             // Note there's a race condition in the in-memory database that allows records to be returned from the above query out of order when modified at the same time. The below ensures the correct order is returned.
-            var list = query.Take(this.RPDEPageSize).ToArray().OrderBy(x => x.Modified).ThenBy(x => x.Id).ToList();
-            return list;
+            var items = query.ToList().Take(this.RPDEPageSize).ToList();
+
+            /*
+            // Filter out any that were updated while the query was running
+            var lastItemModified = items.LastOrDefault()?.Modified;
+
+            if (lastItemModified != null)
+            {
+                items = items.Where(x => x.Modified <= lastItemModified).ToList(); //.OrderBy(x => x.Modified).ThenBy(x => x.Id)
+            }
+            */
+            return items;
         }
     }
 }
