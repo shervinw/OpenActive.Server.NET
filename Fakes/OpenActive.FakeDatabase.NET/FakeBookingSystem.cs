@@ -21,6 +21,13 @@ namespace OpenActive.FakeDatabase.NET
         /// TODO: Move this initialisation data into an embedded string to increase portability / ease of installation
         /// </summary>
         public static FakeDatabase Database { get; } = FakeDatabase.GetPrepopulatedFakeDatabase();// JsonConvert.DeserializeObject<FakeBookingSystem>(File.ReadAllText($"../../../../fakedata.json"));
+
+        public static DateTime Truncate(this DateTime dateTime, TimeSpan timeSpan)
+        {
+            if (timeSpan == TimeSpan.Zero) return dateTime; // Or could throw an ArgumentException
+            if (dateTime == DateTime.MinValue || dateTime == DateTime.MaxValue) return dateTime; // do not modify "guard" values
+            return dateTime.AddTicks(-(dateTime.Ticks % timeSpan.Ticks));
+        }
     }
 
 
@@ -360,7 +367,7 @@ namespace OpenActive.FakeDatabase.NET
             Occurrences = Enumerable.Range(1, 1000)
             .Select(n => new {
                 Id = n,
-                StartDate = faker.Date.Soon(10),
+                StartDate = faker.Date.Soon(10).Truncate(TimeSpan.FromSeconds(1)),
                 TotalSpaces = faker.Random.Int(0,30)
             })
             .Select(x => new OccurrenceTable
