@@ -227,7 +227,7 @@ namespace OpenActive.Server.NET.StoreBooking
             // Throw error on missing AuthToken
             if (context.AuthenticatedCustomer != null)
             {
-                if (context.AuthenticatedCustomer.AccessToken != null)
+                if (context.AuthenticatedCustomer.AccessToken == null)
                     throw new OpenBookingException(new OpenBookingError(), "beta:CustomerAuthTokenMissingError");
             }
             // Throw error on incomplete customer details if C2 or B
