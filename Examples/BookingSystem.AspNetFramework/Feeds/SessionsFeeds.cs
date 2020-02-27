@@ -106,7 +106,11 @@ namespace BookingSystem
                                             SessionSeriesId = @class.Id,
                                             OfferId = 0
                                         }),
-                                        Price = @class.Price
+                                        Price = @class.Price,
+                                        AvailableChannel = new List<AvailableChannelType>
+                                        {
+                                            AvailableChannelType.OpenBookingPrepayment
+                                        }
                                     } 
                                 }
                             }

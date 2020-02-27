@@ -446,7 +446,7 @@ namespace OpenActive.Server.NET.CustomBooking
             
             if (orderQuote?.Seller?.Id != null && seller?.Id != orderQuote?.Seller?.Id)
             {
-                throw new OpenBookingException(new SellerIdMismatchError());
+                throw new OpenBookingException(new SellerMismatchError());
             }
 
             // Check that taxMode is set in Seller

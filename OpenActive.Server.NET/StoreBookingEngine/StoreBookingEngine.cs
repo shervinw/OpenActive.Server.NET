@@ -207,22 +207,33 @@ namespace OpenActive.Server.NET.StoreBooking
         {
             StoreBookingFlowContext context = new StoreBookingFlowContext(request);
 
-            // Throw error on incomplete customer details if C2 or B
-            if (context.Stage != FlowStage.C1 && (order.Customer == null || string.IsNullOrWhiteSpace(order.Customer.Email)))
-            {
-                throw new OpenBookingException(new IncompleteCustomerDetailsError());
-            }
-
             // Reflect back only those customer fields that are supported
             switch (order.Customer)
             {
-                case Organization organization:
-                    context.Customer = storeBookingEngineSettings.CustomerOrganizationSupportedFields(organization);
+                case AuthenticatedPerson authenticatedPerson:
+                    context.AuthenticatedCustomer = authenticatedPerson;
+                    context.Customer = null;
                     break;
 
                 case Person person:
                     context.Customer = storeBookingEngineSettings.CustomerPersonSupportedFields(person);
                     break;
+
+                case Organization organization:
+                    context.Customer = storeBookingEngineSettings.CustomerOrganizationSupportedFields(organization);
+                    break;
+            }
+
+            // Throw error on missing AuthToken
+            if (context.AuthenticatedCustomer != null)
+            {
+                if (context.AuthenticatedCustomer.AccessToken != null)
+                    throw new OpenBookingException(new OpenBookingError(), "beta:CustomerAuthTokenMissingError");
+            }
+            // Throw error on incomplete customer details if C2 or B
+            else if (context.Stage != FlowStage.C1 && (context.Customer == null || string.IsNullOrWhiteSpace(context.Customer.Email)))
+            {
+                throw new OpenBookingException(new IncompleteCustomerDetailsError());
             }
 
             // Throw error on incomplete broker details
