@@ -31,7 +31,7 @@ namespace OpenActive.Server.NET
 
         // These endpoints are authenticated by client credentials (OAuth Client Credentials Grant)
         ResponseContent CreateTestData(string opportunityType, string eventJson);
-        ResponseContent DeleteTestData(string opportunityType, string name);
+        ResponseContent DeleteTestData(string opportunityType, string id);
         ResponseContent GetOrdersRPDEPageForFeed(string clientId, string afterTimestamp, string afterId, string afterChangeNumber);
         ResponseContent GetOrdersRPDEPageForFeed(string clientId, long? afterTimestamp, string afterId, long? afterChangeNumber);
     }
