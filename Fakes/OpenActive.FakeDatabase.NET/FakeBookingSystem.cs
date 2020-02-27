@@ -359,16 +359,19 @@ namespace OpenActive.FakeDatabase.NET
         {
             Occurrences = Enumerable.Range(1, 1000)
             .Select(n => new {
-                id = n,
-                startDate = faker.Date.Soon()
+                Id = n,
+                StartDate = faker.Date.Soon(10),
+                TotalSpaces = faker.Random.Int(0,30)
             })
             .Select(x => new OccurrenceTable
             {
-                ClassId = Decimal.ToInt32(x.id / 10),
-                Id = x.id,
+                ClassId = Decimal.ToInt32(x.Id / 10),
+                Id = x.Id,
                 Deleted = false,
-                Start = x.startDate,
-                End = x.startDate + TimeSpan.FromMinutes(faker.Random.Int(0, 360))
+                Start = x.StartDate,
+                End = x.StartDate + TimeSpan.FromMinutes(faker.Random.Int(0, 360)),
+                TotalSpaces = x.TotalSpaces,
+                RemainingSpaces = x.TotalSpaces
             })
             .ToList();
 
