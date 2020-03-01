@@ -19,6 +19,7 @@ namespace IdentityServer
 
         private Client ConvertToIS4Client(BookingPartnerTable bookingPartner)
         {
+            if (bookingPartner == null) return null;
             if (bookingPartner.ClientJson.GrantTypes.Contains("authorization_code"))
             {
                 return new Client()
@@ -42,6 +43,7 @@ namespace IdentityServer
             {
                 return new Client()
                 {
+                    Enabled = bookingPartner.Registered,
                     ClientId = bookingPartner.ClientId,
                     ClientName = bookingPartner.ClientJson.ClientName,
                     AllowedGrantTypes = bookingPartner.ClientJson.GrantTypes.ToList(),

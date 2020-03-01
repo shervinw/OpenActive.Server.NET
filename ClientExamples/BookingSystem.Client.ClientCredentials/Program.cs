@@ -25,7 +25,7 @@ namespace BookingSystem.Client.ClientCredentials
             var tokenResponse = await client.RequestClientCredentialsTokenAsync(new ClientCredentialsTokenRequest
             {
                 Address = disco.TokenEndpoint,
-                ClientId = "oijsadgfoijasg",
+                ClientId = "clientid_123",
                 ClientSecret = "secret", 
                 Scope = "openactive-openbooking"
             });
@@ -43,16 +43,16 @@ namespace BookingSystem.Client.ClientCredentials
             var apiClient = new HttpClient();
             apiClient.SetBearerToken(tokenResponse.AccessToken);
 
-            var response = await apiClient.GetAsync("http://localhost:51590/feeds/session-series");
-            if (!response.IsSuccessStatusCode)
-            {
-                Console.WriteLine(response.StatusCode);
-            }
-            else
-            {
-                var content = await response.Content.ReadAsStringAsync();
-                Console.WriteLine(content.Substring(0, 40) + "...");
-            }
+            //var response = await apiClient.GetAsync("http://localhost:51590/feeds/session-series");
+            //if (!response.IsSuccessStatusCode)
+            //{
+            //    Console.WriteLine(response.StatusCode);
+            //}
+            //else
+            //{
+            //    var content = await response.Content.ReadAsStringAsync();
+            //    Console.WriteLine(content.Substring(0, 40) + "...");
+            //}
         }
     }
 }

@@ -1,5 +1,8 @@
 ﻿using IdentityModel;
+using IdentityServer4.Events;
+using IdentityServer4.Extensions;
 using IdentityServer4.Models;
+using IdentityServer4.Stores;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Primitives;
@@ -20,6 +23,13 @@ namespace IdentityServer
     [Produces("application/json")]
     public class ClientResistrationController : ControllerBase
     {
+        private readonly IClientStore _clients;
+
+        public ClientResistrationController(IClientStore clients)
+        {
+            _clients = clients;
+        }
+
         // POST: connect/register
         [HttpPost]
         [ProducesResponseType(StatusCodes.Status200OK)]
@@ -68,6 +78,7 @@ namespace IdentityServer
             if (bookingPartner.RegistrationKey != registrationKey || bookingPartner.RegistrationKeyValidUntil > DateTime.Now)
                 return Unauthorized("Registration key is not valid, or is expired");
 
+            bookingPartner.Registered = true;
             bookingPartner.ClientJson.ClientName = model.ClientName;
             bookingPartner.ClientJson.ClientUri = model.ClientUri;
             bookingPartner.ClientJson.LogoUri = model.LogoUri;
@@ -75,7 +86,9 @@ namespace IdentityServer
             bookingPartner.ClientJson.GrantTypes = model.GrantTypes;
             bookingPartner.ClientJson.Scope = model.Scope;
             bookingPartner.ClientSecret = key;
-            
+
+            var client = await _clients.FindClientByIdAsync(model.ClientId);
+            client.Enabled = true;
 
             var response = new ClientRegistrationResponse
             {

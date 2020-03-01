@@ -60,6 +60,24 @@ namespace src
             return RedirectToAction("Index");
         }
 
+        /// <summary>
+        /// Handle postback to revoke a client
+        /// </summary>
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> Suspend(string clientId)
+        {
+            var client = await _clients.FindClientByIdAsync(clientId);
+            client.AllowedScopes.Remove("openactive-openbooking");
+            await _events.RaiseAsync(new GrantsRevokedEvent(User.GetSubjectId(), clientId));
+
+            var bookingPartner = FakeBookingSystem.Database.BookingPartners.FirstOrDefault(t => t.ClientId == clientId);
+            bookingPartner.ClientJson.Scope = "openid profile openactive-ordersfeed oauth-dymamic-client-update openactive-identity";
+            bookingPartner.BookingsSuspended = true;
+
+            return RedirectToAction("Index");
+        }
+
         private async Task<BookingPartnerViewModel> BuildViewModelAsync()
         {
             var grants = await _interaction.GetAllUserConsentsAsync();
