@@ -83,6 +83,22 @@ namespace OpenActive.FakeDatabase.NET
         public string SellerId { get; set; }
         public string ClientSecret { get; set; }
         public ClientRegistrationModel ClientJson { get; set; }
+        public bool Registered { get; set; } = false;
+        public DateTime CreatedDate { get; set; }
+        public string RegistrationKey { get; set; }
+        public DateTime RegistrationKeyValidUntil { get; set; }
+        public bool BookingsSuspended { get; set; }
+    }
+
+    public class Grant
+    {
+        public string Key { get; set; }
+        public string Type { get; set; }
+        public string SubjectId { get; set; }
+        public string ClientId { get; set; }
+        public DateTime CreationTime { get; set; }
+        public DateTime? Expiration { get; set; }
+        public string Data { get; set; }
     }
 
 

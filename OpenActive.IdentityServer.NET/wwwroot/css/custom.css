@@ -1,0 +1,12 @@
+﻿.grants .grant .clientname {
+    font-size: 110%;
+    font-weight: bold;
+}
+
+.grants form {
+    display: inline-block;
+}
+
+.grants .btn {
+    display: inline-block;
+}

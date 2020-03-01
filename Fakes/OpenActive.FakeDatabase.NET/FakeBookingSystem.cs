@@ -6,6 +6,7 @@ using System.IO;
 using System.Text;
 using System.Linq;
 using Bogus;
+using System.Threading.Tasks;
 
 namespace OpenActive.FakeDatabase.NET
 {
@@ -346,6 +347,7 @@ namespace OpenActive.FakeDatabase.NET
         public List<OrderItemsTable> OrderItems { get; set; } = new List<OrderItemsTable>();
         public List<OrderTable> Orders { get; set; } = new List<OrderTable>();
         public List<SellerTable> Sellers { get; set; } = new List<SellerTable>();
+        public List<Grant> Grants { get; set; } = new List<Grant>();
 
         public List<BookingPartnerTable> BookingPartners { get; set; } = new List<BookingPartnerTable>();
 
@@ -394,29 +396,66 @@ namespace OpenActive.FakeDatabase.NET
             
             BookingPartners.AddRange(new List<BookingPartnerTable>
             {
-                new BookingPartnerTable { ClientId = "clientid_123", SellerId = "abcd", ClientSecret = "secret",
+                new BookingPartnerTable { ClientId = "clientid_123", SellerId = "abcd", ClientSecret = "secret", Registered = false, CreatedDate = DateTime.Now, BookingsSuspended = false,
                     ClientJson = new ClientRegistrationModel {
                         ClientId = "clientid_123",
-                        ClientName = "Example Booking Partner 1",
+                        ClientName = "Acme Health",
                         Scope = "openid profile openactive-openbooking openactive-ordersfeed oauth-dymamic-client-update openactive-identity",
-                        RedirectUris = new[] { "http://localhost:5002/signin-oidc" },
-                        GrantTypes = new[] { "authorization_code", "refresh_token" }
-                    } },
-                new BookingPartnerTable { ClientId = "clientid_456", SellerId = "abcd", ClientSecret = "secret",
+                        GrantTypes = new[] { "client_credentials" },
+                        ClientUri = "http://example.com",
+                        LogoUri = "http://example.com/logo.jpg"
+                    }
+                },
+                new BookingPartnerTable { ClientId = "clientid_456", SellerId = "abcd", ClientSecret = "secret", Registered = true, CreatedDate = DateTime.Now, BookingsSuspended = true,
                     ClientJson = new ClientRegistrationModel {
                         ClientId = "clientid_456",
-                        ClientName = "Example Booking Partner 2",
+                        ClientName = "Sports England",
                         Scope = "openid profile openactive-openbooking openactive-ordersfeed oauth-dymamic-client-update openactive-identity",
-                        RedirectUris = new[] { "http://localhost:5002/signin-oidc" },
-                        GrantTypes = new[] { "authorization_code", "refresh_token" }
-                    } },
-                new BookingPartnerTable { ClientId = "clientid_789", SellerId = "abcd", ClientSecret = "secret",
+                        GrantTypes = new[] { "client_credentials" },
+                        ClientUri = "http://example.com",
+                        LogoUri = "http://example.com/logo.jpg"
+                    }
+                },
+                new BookingPartnerTable { ClientId = "clientid_789", SellerId = "abcd", ClientSecret = "secret", Registered = true, CreatedDate = DateTime.Now, BookingsSuspended = false,
                     ClientJson = new ClientRegistrationModel {
                         ClientId = "clientid_789",
-                        ClientName = "Example Booking Partner 3",
+                        ClientName = "Garden Athletics",
                         Scope = "openid profile openactive-openbooking openactive-ordersfeed oauth-dymamic-client-update openactive-identity",
-                        GrantTypes = new[] { "client_credentials" }
-                    } }
+                        GrantTypes = new[] { "client_credentials" },
+                        ClientUri = "http://example.com",
+                        LogoUri = "http://example.com/logo.jpg"
+                    } 
+                }
+            });
+            Grants.AddRange(new List<Grant>() 
+            { 
+                new Grant()
+                {
+                    Key = "8vJ5rH7eSj7HL4TD5Tlaeyfa+U6WkFc/ofBdkVuM/RY=",
+                    Type = "user_consent",
+                    SubjectId = "818727",
+                    ClientId = "clientid_123",
+                    CreationTime = DateTime.Now,
+                    Data = "{\"SubjectId\":\"818727\",\"ClientId\":\"clientid_123\",\"Scopes\":[\"openid\",\"profile\",\"openactive-identity\",\"openactive-openbooking\",\"oauth-dymamic-client-update\",\"offline_access\"],\"CreationTime\":\"2020-03-01T13:17:57Z\",\"Expiration\":null}"
+                },
+                new Grant()
+                {
+                    Key = "7vJ5rH7eSj7HL4TD5Tlaeyfa+U6WkFc/ofBdkVuM/RY=",
+                    Type = "user_consent",
+                    SubjectId = "818727",
+                    ClientId = "clientid_456",
+                    CreationTime = DateTime.Now,
+                    Data = "{\"SubjectId\":\"818727\",\"ClientId\":\"clientid_456\",\"Scopes\":[\"openid\",\"profile\",\"openactive-identity\",\"openactive-openbooking\",\"oauth-dymamic-client-update\",\"offline_access\"],\"CreationTime\":\"2020-03-01T13:17:57Z\",\"Expiration\":null}"
+                },
+                new Grant()
+                {
+                    Key = "9vJ5rH7eSj7HL4TD5Tlaeyfa+U6WkFc/ofBdkVuM/RY=",
+                    Type = "user_consent",
+                    SubjectId = "818727",
+                    ClientId = "clientid_789",
+                    CreationTime = DateTime.Now,
+                    Data = "{\"SubjectId\":\"818727\",\"ClientId\":\"clientid_789\",\"Scopes\":[\"openid\",\"profile\",\"openactive-identity\",\"openactive-openbooking\",\"oauth-dymamic-client-update\",\"offline_access\"],\"CreationTime\":\"2020-03-01T13:17:57Z\",\"Expiration\":null}"
+                },
             });
         }
 
@@ -467,6 +506,57 @@ namespace OpenActive.FakeDatabase.NET
                     occurrence.Deleted = true;
                 }
             }
+        }
+
+        public Grant GetGrant(string key)
+        {
+            var grant = Grants.SingleOrDefault(x => x.Key == key);
+            if (grant != null)
+                return grant;
+            return null;
+        }
+        public IEnumerable<Grant> GetAllGrants(string subjectId)
+        {
+            var grants = Grants.Where(x => x.SubjectId == subjectId);
+            if (grants != null)
+                return grants;
+            return null;
+        }
+
+        public async Task AddGrant(string key, string type, string subjectId, string clientId, DateTime CreationTime, DateTime? Expiration, string data)
+        {
+            var grant = new Grant()
+            {
+                Key = key,
+                Type = type,
+                SubjectId = subjectId,
+                ClientId = clientId,
+                CreationTime = CreationTime,
+                Expiration = Expiration,
+                Data = data
+            };
+            Grants.Add(grant);
+        }
+
+        public async Task RemoveGrant(string key)
+        {
+            var grant = Grants.SingleOrDefault(x => x.Key == key);
+            if (grant != null)
+                Grants.Remove(grant);
+        }
+
+        public async Task RemoveGrant(string subjectId, string clientId)
+        {
+            var grant = Grants.SingleOrDefault(x => x.SubjectId == subjectId && x.ClientId == clientId);
+            if (grant != null)
+                Grants.Remove(grant);
+        }
+
+        public async Task RemoveGrant(string subjectId, string clientId, string type)
+        {
+            var grant = Grants.SingleOrDefault(x => x.SubjectId == subjectId && x.ClientId == clientId && x.Type == type);
+            if (grant != null)
+                Grants.Remove(grant);
         }
     }
 }

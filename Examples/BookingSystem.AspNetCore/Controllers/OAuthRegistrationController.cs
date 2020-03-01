@@ -41,7 +41,7 @@ namespace BookingSystem.AspNetCore.Controllers
             return new ClientRegistrationResponse
             {
                 ClientId = clientRegistration.ClientId,
-                //ClientSecret = GenerateSecret(32),
+                // ClientSecret = GenerateSecret(32),
                 ClientName = clientRegistration.ClientName,
                 ClientUri = clientRegistration.ClientUri,
                 LogoUri = clientRegistration.LogoUri,

@@ -13,7 +13,7 @@ namespace IdentityServer
     {
         public Task<Client> FindClientByIdAsync(string clientId)
         {
-            var bookingPartner = FakeBookingSystem.Database.BookingPartners.First(t => t.ClientId == clientId);
+            var bookingPartner = FakeBookingSystem.Database.BookingPartners.FirstOrDefault(t => t.ClientId == clientId);
             return Task.FromResult(this.ConvertToIS4Client(bookingPartner));
         }
 
@@ -36,7 +36,7 @@ namespace IdentityServer
                     UpdateAccessTokenClaimsOnRefresh = true,
                     RedirectUris = bookingPartner.ClientJson.RedirectUris.ToList(),
                     RequireConsent = true,
-                    RequirePkce = true
+                    RequirePkce = true, 
                 };
             } else
             {

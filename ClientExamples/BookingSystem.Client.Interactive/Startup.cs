@@ -36,15 +36,21 @@ namespace BookingSystem.Client.Interactive
                 .AddCookie("Cookies")
                 .AddOpenIdConnect("oidc", options =>
                 {
-                    options.Authority = "http://localhost:50247";
+                    options.Authority = "http://localhost:5000"; //5000
                     options.RequireHttpsMetadata = false;
-                    // options.GetClaimsFromUserInfoEndpoint = true;
-                    options.ClientId = "dfjlosdkgsdgsdfh";
+                    options.GetClaimsFromUserInfoEndpoint = true;
+                    // options.ClientId = "clientid_123";
+                    options.ClientId = "clientid_123";
                     options.ClientSecret = "secret";
                     options.ResponseType = "code";
                     // options.Resource = "openbooking";
                     // changing the scopes here will impact permission requested and claims returned
                     // include offline_access in order to enable refresh tokens
+
+                    // this is for testing Ea
+                    // options.Scope.Add("openactive-booking");
+
+                    //this is for testing Seller Auth
                     options.Scope.Add("openactive-openbooking");
                     options.Scope.Add("oauth-dymamic-client-update");
                     options.Scope.Add("offline_access");
