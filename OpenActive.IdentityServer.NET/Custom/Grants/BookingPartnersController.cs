@@ -12,6 +12,9 @@ using Microsoft.AspNetCore.Authorization;
 using IdentityServer4.Events;
 using IdentityServer4.Extensions;
 using OpenActive.FakeDatabase.NET;
+using System.Security.Cryptography;
+using System;
+using IdentityServer4.Models;
 
 namespace src
 {
@@ -48,6 +51,65 @@ namespace src
         }
 
         /// <summary>
+        /// Show list of grants
+        /// </summary>
+        [HttpGet]
+        public async Task<IActionResult> Edit(string Id)
+        {
+            return View("BookingPartnerEdit", await BuildBookingPartnerViewModelAsync(Id));
+        }
+
+        /// <summary>
+        /// Show list of grants
+        /// </summary>
+        [HttpGet]
+        public async Task<IActionResult> Create()
+        {
+            return View("BookingPartnerCreate", await Task.FromResult(new BookingPartnerModel()));
+        }
+
+        /// <summary>
+        /// Add a new booking partner
+        /// </summary>
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> CreateBookingPartner(string email, string bookingPartnerName)
+        {
+            var hmac = new HMACSHA256();
+            var key = Convert.ToBase64String(hmac.Key);
+
+            var hmacClientId = new HMACSHA256();
+            var clientId = Convert.ToBase64String(hmacClientId.Key);
+
+            var hmacSecret = new HMACSHA256();
+            var clientSecret = Convert.ToBase64String(hmacSecret.Key);
+
+            var newBookingPartner = new BookingPartnerTable()
+            {
+                ClientId = clientId,
+                SellerId = "http://thissellerid", //TODO
+                ClientSecret = clientSecret,
+                Email = email,
+                Registered = false,
+                RegistrationKey = key,
+                RegistrationKeyValidUntil = DateTime.Now.AddDays(2),
+                CreatedDate = DateTime.Now,
+                BookingsSuspended = false,
+                ClientJson = new ClientRegistrationModel
+                {
+                    ClientId = clientId,
+                    ClientName = bookingPartnerName,
+                    Scope = "openid profile openactive-openbooking openactive-ordersfeed oauth-dymamic-client-update openactive-identity",
+                    GrantTypes = new[] { "client_credentials" }
+                }
+            };
+
+            FakeBookingSystem.Database.BookingPartners.Add(newBookingPartner);
+
+            return View("BookingPartnerEdit", await BuildBookingPartnerViewModelAsync(newBookingPartner.ClientId));
+        }
+
+        /// <summary>
         /// Handle postback to revoke a client
         /// </summary>
         [HttpPost]
@@ -78,34 +140,77 @@ namespace src
             return RedirectToAction("Index");
         }
 
+        /// <summary>
+        /// Handle postback to generate a registration key
+        /// </summary>
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> RegenerateKey(string clientId)
+        {
+            var hmac = new HMACSHA256();
+            var key = Convert.ToBase64String(hmac.Key);
+
+            var bookingPartner = FakeBookingSystem.Database.BookingPartners.FirstOrDefault(t => t.ClientId == clientId);
+            bookingPartner.RegistrationKey = key;
+            bookingPartner.RegistrationKeyValidUntil = DateTime.Now.AddDays(2);
+
+            return View("BookingPartnerEdit", await BuildBookingPartnerViewModelAsync(clientId));
+        }
+
+        /// <summary>
+        /// Handle postback to generate a registration key, and a new client secret
+        /// </summary>
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> RegenerateAllKeys(string clientId)
+        {
+            var hmac = new HMACSHA256();
+            var registrationKey = Convert.ToBase64String(hmac.Key);
+
+            var hmacSecret = new HMACSHA256();
+            var clientSecret = Convert.ToBase64String(hmacSecret.Key);
+
+            var bookingPartner = FakeBookingSystem.Database.BookingPartners.FirstOrDefault(t => t.ClientId == clientId);
+            bookingPartner.RegistrationKey = registrationKey;
+            bookingPartner.RegistrationKeyValidUntil = DateTime.Now.AddDays(2);
+            bookingPartner.ClientSecret = clientSecret;
+
+            var client = await _clients.FindClientByIdAsync(clientId);
+            client.ClientSecrets = new List<Secret>() { new Secret(clientSecret.Sha256()) };
+
+            return View("BookingPartnerEdit", await BuildBookingPartnerViewModelAsync(clientId));
+        }
+
+        private async Task<BookingPartnerModel> BuildBookingPartnerViewModelAsync(string clientId)
+        {
+            var client = await _clients.FindClientByIdAsync(clientId);
+            var bookingPartner = FakeBookingSystem.Database.BookingPartners.FirstOrDefault(t => t.ClientId == clientId);
+
+            return new BookingPartnerModel()
+            {
+                ClientId = client.ClientId,
+                ClientName = client.ClientName ?? client.ClientId,
+                ClientLogoUrl = bookingPartner.ClientJson.LogoUri,
+                ClientUrl = bookingPartner.ClientJson.ClientUri,
+                BookingPartner = bookingPartner
+            };
+        }
         private async Task<BookingPartnerViewModel> BuildViewModelAsync()
         {
-            var grants = await _interaction.GetAllUserConsentsAsync();
-
+            var bookingPartners = FakeBookingSystem.Database.BookingPartners;
             var list = new List<BookingPartnerModel>();
-            foreach(var grant in grants)
+            foreach (var bookingPartner in bookingPartners)
             {
-                var client = await _clients.FindClientByIdAsync(grant.ClientId);
-                if (client != null)
+                var item = new BookingPartnerModel()
                 {
-                    var resources = await _resources.FindResourcesByScopeAsync(grant.Scopes);
-                    var bookingPartner =  FakeBookingSystem.Database.BookingPartners.FirstOrDefault(t => t.ClientId == client.ClientId);
+                    ClientId = bookingPartner.ClientId,
+                    ClientName = bookingPartner.ClientJson.ClientName ?? bookingPartner.ClientJson.ClientId,
+                    ClientLogoUrl = bookingPartner.ClientJson.LogoUri,
+                    ClientUrl = bookingPartner.ClientJson.ClientUri,
+                    BookingPartner = bookingPartner
+                };
 
-                    var item = new BookingPartnerModel()
-                    {
-                        ClientId = client.ClientId,
-                        ClientName = client.ClientName ?? client.ClientId,
-                        ClientLogoUrl = bookingPartner.ClientJson.LogoUri,
-                        ClientUrl = bookingPartner.ClientJson.ClientUri,
-                        Created = grant.CreationTime,
-                        Expires = grant.Expiration,
-                        IdentityGrantNames = resources.IdentityResources.Select(x => x.DisplayName ?? x.Name).ToArray(),
-                        ApiGrantNames = resources.ApiResources.Select(x => x.DisplayName ?? x.Name).ToArray(),
-                        BookingPartner = bookingPartner
-                    };
-
-                    list.Add(item);
-                }
+                list.Add(item);
             }
 
             return new BookingPartnerViewModel

@@ -83,12 +83,17 @@ namespace IdentityServer
             bookingPartner.ClientJson.ClientUri = model.ClientUri;
             bookingPartner.ClientJson.LogoUri = model.LogoUri;
             bookingPartner.ClientJson.GrantTypes = model.GrantTypes;
-            bookingPartner.ClientJson.GrantTypes = model.GrantTypes;
             bookingPartner.ClientJson.Scope = model.Scope;
             bookingPartner.ClientSecret = key;
 
             var client = await _clients.FindClientByIdAsync(model.ClientId);
             client.Enabled = true;
+            client.ClientName = model.ClientName;
+            client.ClientUri = model.ClientUri;
+            client.LogoUri = model.LogoUri;
+            client.AllowedGrantTypes = model.GrantTypes.ToList();
+            client.AllowedScopes = model.Scope.Split(' ').ToList();
+            client.ClientSecrets = new List<Secret>() { new Secret(key.Sha256()) };
 
             var response = new ClientRegistrationResponse
             {

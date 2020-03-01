@@ -396,7 +396,7 @@ namespace OpenActive.FakeDatabase.NET
             
             BookingPartners.AddRange(new List<BookingPartnerTable>
             {
-                new BookingPartnerTable { ClientId = "clientid_123", SellerId = "abcd", ClientSecret = "secret", Registered = false, CreatedDate = DateTime.Now, BookingsSuspended = false,
+                new BookingPartnerTable { ClientId = "clientid_123", SellerId = "abcd", ClientSecret = "secret", Email="acme@health.com", Registered = false, RegistrationKey = "12345xaq", RegistrationKeyValidUntil = DateTime.Now.AddDays(1), CreatedDate = DateTime.Now, BookingsSuspended = false,
                     ClientJson = new ClientRegistrationModel {
                         ClientId = "clientid_123",
                         ClientName = "Acme Health",
@@ -406,7 +406,7 @@ namespace OpenActive.FakeDatabase.NET
                         LogoUri = "http://example.com/logo.jpg"
                     }
                 },
-                new BookingPartnerTable { ClientId = "clientid_456", SellerId = "abcd", ClientSecret = "secret", Registered = true, CreatedDate = DateTime.Now, BookingsSuspended = true,
+                new BookingPartnerTable { ClientId = "clientid_456", SellerId = "abcd", ClientSecret = "secret", Email="sports@sportsengland.com", Registered = true, RegistrationKey = "12345", RegistrationKeyValidUntil = DateTime.Now.AddDays(1), CreatedDate = DateTime.Now, BookingsSuspended = true,
                     ClientJson = new ClientRegistrationModel {
                         ClientId = "clientid_456",
                         ClientName = "Sports England",
@@ -416,7 +416,7 @@ namespace OpenActive.FakeDatabase.NET
                         LogoUri = "http://example.com/logo.jpg"
                     }
                 },
-                new BookingPartnerTable { ClientId = "clientid_789", SellerId = "abcd", ClientSecret = "secret", Registered = true, CreatedDate = DateTime.Now, BookingsSuspended = false,
+                new BookingPartnerTable { ClientId = "clientid_789", SellerId = "abcd", ClientSecret = "secret", Email="garden@health.com", Registered = true, RegistrationKey = "98765", RegistrationKeyValidUntil = DateTime.Now.AddDays(-1), CreatedDate = DateTime.Now, BookingsSuspended = false,
                     ClientJson = new ClientRegistrationModel {
                         ClientId = "clientid_789",
                         ClientName = "Garden Athletics",

@@ -88,6 +88,7 @@ namespace OpenActive.FakeDatabase.NET
         public string RegistrationKey { get; set; }
         public DateTime RegistrationKeyValidUntil { get; set; }
         public bool BookingsSuspended { get; set; }
+        public string Email { get; set; }
     }
 
     public class Grant
