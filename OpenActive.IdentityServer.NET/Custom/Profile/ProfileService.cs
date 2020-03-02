@@ -22,14 +22,14 @@ namespace IdentityServer
         /// <summary>
         /// The users
         /// </summary>
-        protected readonly TestUserStore Users;
+        protected readonly IUserRepository Users;
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="TestUserProfileService"/> class.
+        /// Initializes a new instance of the <see cref="ProfileService"/> class.
         /// </summary>
         /// <param name="users">The users.</param>
         /// <param name="logger">The logger.</param>
-        public ProfileService(TestUserStore users, ILogger<TestUserProfileService> logger)
+        public ProfileService(IUserRepository users, ILogger<ProfileService> logger)
         {
             Users = users;
             Logger = logger;

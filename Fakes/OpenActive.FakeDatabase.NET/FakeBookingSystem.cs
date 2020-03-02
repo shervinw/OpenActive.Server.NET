@@ -7,6 +7,7 @@ using System.Text;
 using System.Linq;
 using Bogus;
 using System.Threading.Tasks;
+using System.Security.Claims;
 
 namespace OpenActive.FakeDatabase.NET
 {
@@ -348,8 +349,8 @@ namespace OpenActive.FakeDatabase.NET
         public List<OrderTable> Orders { get; set; } = new List<OrderTable>();
         public List<SellerTable> Sellers { get; set; } = new List<SellerTable>();
         public List<Grant> Grants { get; set; } = new List<Grant>();
-
         public List<BookingPartnerTable> BookingPartners { get; set; } = new List<BookingPartnerTable>();
+        public List<BookingPartnerAdministratorTable> BookingPartnerAdministrators { get; set; } = new List<BookingPartnerAdministratorTable>();
 
         public static FakeDatabase GetPrepopulatedFakeDatabase()
         {
@@ -433,7 +434,7 @@ namespace OpenActive.FakeDatabase.NET
                 {
                     Key = "8vJ5rH7eSj7HL4TD5Tlaeyfa+U6WkFc/ofBdkVuM/RY=",
                     Type = "user_consent",
-                    SubjectId = "818727",
+                    SubjectId = "TestSubjectId",
                     ClientId = "clientid_123",
                     CreationTime = DateTime.Now,
                     Data = "{\"SubjectId\":\"818727\",\"ClientId\":\"clientid_123\",\"Scopes\":[\"openid\",\"profile\",\"openactive-identity\",\"openactive-openbooking\",\"oauth-dymamic-client-update\",\"offline_access\"],\"CreationTime\":\"2020-03-01T13:17:57Z\",\"Expiration\":null}"
@@ -442,7 +443,7 @@ namespace OpenActive.FakeDatabase.NET
                 {
                     Key = "7vJ5rH7eSj7HL4TD5Tlaeyfa+U6WkFc/ofBdkVuM/RY=",
                     Type = "user_consent",
-                    SubjectId = "818727",
+                    SubjectId = "TestSubjectId",
                     ClientId = "clientid_456",
                     CreationTime = DateTime.Now,
                     Data = "{\"SubjectId\":\"818727\",\"ClientId\":\"clientid_456\",\"Scopes\":[\"openid\",\"profile\",\"openactive-identity\",\"openactive-openbooking\",\"oauth-dymamic-client-update\",\"offline_access\"],\"CreationTime\":\"2020-03-01T13:17:57Z\",\"Expiration\":null}"
@@ -451,11 +452,22 @@ namespace OpenActive.FakeDatabase.NET
                 {
                     Key = "9vJ5rH7eSj7HL4TD5Tlaeyfa+U6WkFc/ofBdkVuM/RY=",
                     Type = "user_consent",
-                    SubjectId = "818727",
+                    SubjectId = "TestSubjectId",
                     ClientId = "clientid_789",
                     CreationTime = DateTime.Now,
                     Data = "{\"SubjectId\":\"818727\",\"ClientId\":\"clientid_789\",\"Scopes\":[\"openid\",\"profile\",\"openactive-identity\",\"openactive-openbooking\",\"oauth-dymamic-client-update\",\"offline_access\"],\"CreationTime\":\"2020-03-01T13:17:57Z\",\"Expiration\":null}"
                 },
+            });
+            BookingPartnerAdministrators.Add(new BookingPartnerAdministratorTable() { Username = "test", Password = "test", SubjectId = "TestSubjectId",
+                Claims =
+                {
+                    new Claim("https://openactive.io/sellerName", "Example Seller"),
+                    new Claim("https://openactive.io/sellerId", "Example Seller Id_asdfiosjudg"),
+                    new Claim("https://openactive.io/sellerUrl", "http://abc.com"),
+                    new Claim("https://openactive.io/sellerLogo", "http://abc.com/logo.jpg"),
+                    new Claim("https://openactive.io/bookingServiceName", "Example Sellers Booking Service"),
+                    new Claim("https://openactive.io/bookingServiceUrl", "http://abc.com/booking-service")
+                }
             });
         }
 
