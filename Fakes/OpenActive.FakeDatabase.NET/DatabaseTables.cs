@@ -19,6 +19,7 @@ namespace OpenActive.FakeDatabase.NET
 
     public class ClassTable : Table
     {
+        public string TestDatasetIdentifier { get; set; }
         public string Title { get; set; }
         public long SellerId { get; set; }
         public decimal? Price { get; set; }
@@ -28,6 +29,7 @@ namespace OpenActive.FakeDatabase.NET
 
     public class OccurrenceTable : Table
     {
+        public string TestDatasetIdentifier { get; set; }
         public long ClassId { get; set; }
         public DateTime Start { get; set; }
         public DateTime End { get; set; }

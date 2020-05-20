@@ -30,8 +30,9 @@ namespace OpenActive.Server.NET
         ResponseContent ProcessOrderUpdate(string clientId, Uri sellerId, string uuid, string orderJson);
 
         // These endpoints are authenticated by client credentials (OAuth Client Credentials Grant)
-        ResponseContent CreateTestData(string opportunityType, string eventJson);
-        ResponseContent DeleteTestData(string opportunityType, string id);
+        ResponseContent InsertTestOpportunity(string testDatasetIdentifier, string eventJson);
+        ResponseContent DeleteTestDataset(string testDatasetIdentifier);
+        ResponseContent TriggerTestAction(string actionJson);
         ResponseContent GetOrdersRPDEPageForFeed(string clientId, string afterTimestamp, string afterId, string afterChangeNumber);
         ResponseContent GetOrdersRPDEPageForFeed(string clientId, long? afterTimestamp, string afterId, long? afterChangeNumber);
     }

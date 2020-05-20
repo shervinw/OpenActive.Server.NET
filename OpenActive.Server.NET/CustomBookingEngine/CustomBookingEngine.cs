@@ -288,6 +288,17 @@ namespace OpenActive.Server.NET.CustomBooking
                 .FirstOrDefault();
         }
 
+        // Note this is not a helper as it relies on engine settings state
+        protected IBookableIdComponents ResolveOpportunityID(string opportunityTypeString, Uri opportunityId)
+        {
+            // Return the first matching ID combination for the opportunityId and offerId provided.
+            // TODO: Make this more efficient?
+            return this.idConfigurationLookup[opportunityTypeString]
+                .Select(x => x.GetOpportunityBookableIdComponents(opportunityId))
+                .Where(x => x != null)
+                .FirstOrDefault();
+        }
+
         public ResponseContent ProcessCheckpoint1(string clientId, Uri sellerId, string uuid, string orderQuoteJson)
         {
             return ProcessCheckpoint(clientId, sellerId, uuid, orderQuoteJson, FlowStage.C1, OrderType.OrderQuote);
@@ -387,15 +398,74 @@ namespace OpenActive.Server.NET.CustomBooking
 
         public abstract void ProcessCustomerCancellation(OrderIdComponents orderId, SellerIdComponents sellerId, OrderIdTemplate orderIdTemplate, List<OrderIdComponents> orderItemIds);
 
-        // Note opportunityType is required here to facilitate routing to the correct store to handle the request
-        public ResponseContent CreateTestData(string opportunityType, string eventJson)
+        ResponseContent IBookingEngine.InsertTestOpportunity(string testDatasetIdentifier, string eventJson)
         {
-            Event @event = OpenActiveSerializer.Deserialize<ScheduledSession>(eventJson);
+            Event genericEvent = OpenActiveSerializer.Deserialize<ScheduledSession>(eventJson);
+
+            // Note opportunityType is required here to facilitate routing to the correct store to handle the request
+            OpportunityType? opportunityType = null;
+
+            switch (genericEvent) {
+                case ScheduledSession scheduledSession:
+                    switch (scheduledSession.SuperEvent.Value)
+                    {
+                        case SessionSeries _:
+                            opportunityType = OpportunityType.ScheduledSession;
+                            break;
+                        default:
+                           throw new OpenBookingException(new OpenBookingError(), "ScheduledSession must have superEvent of SessionSeries");
+                    }
+                    break;
+                case Slot slot:
+                    switch (slot.FacilityUse.Value)
+                    {
+                        case IndividualFacilityUse _:
+                            opportunityType = OpportunityType.IndividualFacilityUseSlot;
+                            break;
+                        case FacilityUse _:
+                            opportunityType = OpportunityType.FacilityUseSlot;
+                            break;
+                        default:
+                            throw new OpenBookingException(new OpenBookingError(), "Slot must have facilityUse of FacilityUse or IndividualFacilityUse");
+                    }
+                    break;
+                case CourseInstance _:
+                    opportunityType = OpportunityType.CourseInstance;
+                    break;
+                case HeadlineEvent _:
+                    opportunityType = OpportunityType.HeadlineEvent;
+                    break;
+                case Event @event:
+                    switch (@event.SuperEvent) {
+                        case HeadlineEvent _:
+                            opportunityType = OpportunityType.HeadlineEventSubEvent;
+                            break;
+                        case CourseInstance _:
+                            opportunityType = OpportunityType.CourseInstanceSubEvent;
+                            break;
+                        case EventSeries _:
+                        case null:
+                            opportunityType = OpportunityType.Event;
+                            break;
+                        default:
+                            throw new OpenBookingException(new OpenBookingError(), "Event has unrecognised @type of superEvent");
+                    }
+                    break;
+                default:
+                    throw new OpenBookingException(new OpenBookingError(), "Only bookable opportunities are permitted in the test interface");
+
+                    // TODO: add this error class to the library
+            }
+
+            if (!genericEvent.TestOpportunityCriteria.HasValue)
+            {
+                throw new OpenBookingException(new OpenBookingError(), "test:testOpportunityCriteria must be supplied.");
+            }
 
             // Returns a matching Event subclass that will only include "@type" and "@id" properties
-            var createdEvent = this.CreateTestDataItem((OpportunityType)Enum.Parse(typeof(OpportunityType), opportunityType, true), @event);
+            var createdEvent = this.InsertTestOpportunity(testDatasetIdentifier, opportunityType.Value, genericEvent.TestOpportunityCriteria.Value);
 
-            if (createdEvent.Type != @event.Type)
+            if (createdEvent.Type != genericEvent.Type)
             {
                 throw new OpenBookingException(new OpenBookingError(), "Type of created test Event does not match type of requested Event");
             }
@@ -403,24 +473,37 @@ namespace OpenActive.Server.NET.CustomBooking
             return ResponseContent.OpenBookingResponse(OpenActiveSerializer.Serialize(createdEvent), HttpStatusCode.OK);
         }
 
-        protected abstract Event CreateTestDataItem(OpportunityType opportunityType, Event @event);
+        protected abstract Event InsertTestOpportunity(string testDatasetIdentifier, OpportunityType opportunityType, TestOpportunityCriteriaEnumeration criteria);
 
-        // Note opportunityType is required here to facilitate routing to the correct store to handle the request
-        public ResponseContent DeleteTestData(string opportunityType, string id)
+        ResponseContent IBookingEngine.DeleteTestDataset(string testDatasetIdentifier)
         {
-            if (Uri.TryCreate(id, UriKind.Absolute, out Uri jsonLdId))
-            {
-                this.DeleteTestDataItem((OpportunityType)Enum.Parse(typeof(OpportunityType), opportunityType, true), jsonLdId);
-            }
-            else
-            {
-                throw new OpenBookingException(new OpenBookingError(), "Invalid ID provided");
-            }   
+            this.DeleteTestDataset(testDatasetIdentifier);
             
             return ResponseContent.OpenBookingNoContentResponse();
         }
 
-        protected abstract void DeleteTestDataItem(OpportunityType opportunityType, Uri id);
+        protected abstract void DeleteTestDataset(string testDatasetIdentifier);
+
+        ResponseContent IBookingEngine.TriggerTestAction(string actionJson)
+        {
+            OpenBookingSimulateAction action = OpenActiveSerializer.Deserialize<OpenBookingSimulateAction>(actionJson);
+
+            if (action == null)
+            {
+                throw new OpenBookingException(new OpenBookingError(), "Invalid type specified. Type must subclass OpenBookingSimulateAction.");
+            }
+
+            if (action.Object == null || action.Object.Id == null)
+            {
+                throw new OpenBookingException(new OpenBookingError(), "Invalid OpenBookingSimulateAction object specified.");
+            }
+
+            this.TriggerTestAction(action);
+
+            return ResponseContent.OpenBookingNoContentResponse();
+        }
+
+        protected abstract void TriggerTestAction(OpenBookingSimulateAction simulateAction);
 
 
         //TODO: Should we move Seller into the Abstract level? Perhaps too much complexity

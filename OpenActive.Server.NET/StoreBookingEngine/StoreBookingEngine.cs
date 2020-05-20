@@ -165,23 +165,44 @@ namespace OpenActive.Server.NET.StoreBooking
         private readonly Dictionary<OpportunityType, IOpportunityStore> storeRouting;
         private readonly StoreBookingEngineSettings storeBookingEngineSettings;
         
-        protected override Event CreateTestDataItem(OpportunityType opportunityType, Event @event)
+        protected override Event InsertTestOpportunity(string testDatasetIdentifier, OpportunityType opportunityType, TestOpportunityCriteriaEnumeration criteria)
         {
             if (!storeRouting.ContainsKey(opportunityType))
                 throw new EngineConfigurationException("Specified opportunity type is not configured as bookable in the StoreBookingEngine constructor.");
 
-            //TODO: This forces the cast into the Store. Perhaps best to move the cast here to simplify the store?
-            return storeRouting[opportunityType].CreateTestDataItemEvent(opportunityType, @event);
+            return storeRouting[opportunityType].CreateOpportunityWithinTestDataset(testDatasetIdentifier, opportunityType, criteria);
         }
 
-        protected override void DeleteTestDataItem(OpportunityType opportunityType, Uri id)
+        protected override void DeleteTestDataset(string testDatasetIdentifier)
         {
-            if (!storeRouting.ContainsKey(opportunityType))
-                throw new EngineConfigurationException("Specified opportunity type is not configured as bookable in the StoreBookingEngine constructor.");
-
-            storeRouting[opportunityType].DeleteTestDataItemEvent(opportunityType, id);
+            foreach(var store in storeRouting.Values)
+            {
+                store.DeleteTestDataset(testDatasetIdentifier);
+            }
         }
 
+        protected override void TriggerTestAction(OpenBookingSimulateAction simulateAction)
+        {
+            var idComponents = base.ResolveOpportunityID(simulateAction.Object.Type, simulateAction.Object.Id);
+
+            if (idComponents == null)
+            {
+                throw new OpenBookingException(new InvalidOpportunityOrOfferIdError(), $"Opportunity ID is not the expected format for a '{simulateAction.Object.Type}': '{simulateAction.Object.Id}'");
+            }
+
+            if (idComponents.OpportunityType == null)
+            {
+                throw new EngineConfigurationException("OpportunityType must be configured for each IdComponent entry in the settings.");
+            }
+
+            var store = storeRouting[idComponents.OpportunityType.Value];
+            if (store == null)
+            {
+                throw new EngineConfigurationException($"Store is not defined for {idComponents.OpportunityType.Value}");
+            }
+
+            store.TriggerTestAction(simulateAction, idComponents);
+        }
 
 
         public override void ProcessCustomerCancellation(OrderIdComponents orderId, SellerIdComponents sellerId, OrderIdTemplate orderIdTemplate, List<OrderIdComponents> orderItemIds)

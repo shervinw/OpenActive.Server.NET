@@ -12,44 +12,44 @@ namespace BookingSystem
     class SessionStore : OpportunityStore<SessionOpportunity, OrderTransaction, OrderStateContext>
     {
 
-        protected override SessionOpportunity CreateTestDataItem(OpportunityType opportunityType, Event @event)
+        protected override SessionOpportunity CreateOpportunityWithinTestDataset(string testDatasetIdentifier, OpportunityType opportunityType, TestOpportunityCriteriaEnumeration criteria)
         {
-            // Note assume that if it's been routed here, it will be possible to cast it to type Event
             switch (opportunityType)
             {
                 case OpportunityType.ScheduledSession:
-                    var session = (ScheduledSession)@event;
-                    var superEvent = (SessionSeries)session.SuperEvent.GetClass<Event>();
-                    var (classId, occurrenceId) = FakeBookingSystem.Database.AddClass(superEvent.Name, superEvent.Offers?.FirstOrDefault()?.Price, session.StartDate.GetPrimative<DateTimeOffset>() ?? default, session.EndDate.GetPrimative<DateTimeOffset>() ?? default, session.MaximumAttendeeCapacity.Value);
-                    return new SessionOpportunity { 
-                        OpportunityType = opportunityType,
-                        SessionSeriesId = classId,
-                        ScheduledSessionId = occurrenceId
-                    };
+                    switch (criteria)
+                    {
+                        case TestOpportunityCriteriaEnumeration.TestOpportunityBookable:
+                            var (classId, occurrenceId) = FakeBookingSystem.Database.AddClass(testDatasetIdentifier, "[OPEN BOOKING API TEST INTERFACE] Bookable Event", 14.99M, DateTimeOffset.Now.AddDays(1), DateTimeOffset.Now.AddDays(1).AddHours(1), 10);
+                            return new SessionOpportunity
+                            {
+                                OpportunityType = opportunityType,
+                                SessionSeriesId = classId,
+                                ScheduledSessionId = occurrenceId
+                            };
+                        default:
+                            throw new OpenBookingException(new OpenBookingError(), "testOpportunityCriteria value not supported");
+                    }
+
+
                 default:
                     throw new OpenBookingException(new OpenBookingError(), "Opportunity Type not supported");
             }
-            
         }
 
-        protected override void DeleteTestDataItem(OpportunityType opportunityType, SessionOpportunity sessionOpportunity)
+        protected override void DeleteTestDataset(string testDatasetIdentifier)
         {
-            if (!sessionOpportunity.SessionSeriesId.HasValue || !sessionOpportunity.ScheduledSessionId.HasValue)
-                throw new OpenBookingException(new OpenBookingError(), "Invalid Session Id");
+            FakeBookingSystem.Database.DeleteTestClassesFromDataset(testDatasetIdentifier);
+        }
 
-            // Note assume that if it's been routed here, it will be possible to cast it to type Event
-            switch (opportunityType)
-                {
-                    case OpportunityType.ScheduledSession:
-                        FakeBookingSystem.Database.DeleteClass(sessionOpportunity.SessionSeriesId.Value, sessionOpportunity.ScheduledSessionId.Value);
-                        break;
-                }
-            
+        protected override void TriggerTestAction(OpenBookingSimulateAction simulateAction, SessionOpportunity idComponents)
+        {
+            throw new NotImplementedException();
         }
 
 
         // Similar to the RPDE logic, this needs to render and return an new hypothetical OrderItem from the database based on the supplied opportunity IDs
-        protected override void GetOrderItem(List<OrderItemContext<SessionOpportunity>> orderItemContexts, StoreBookingFlowContext flowContext, OrderStateContext stateContext)
+        protected override void GetOrderItems(List<OrderItemContext<SessionOpportunity>> orderItemContexts, StoreBookingFlowContext flowContext, OrderStateContext stateContext)
         {
 
             // Note the implementation of this method must also check that this OrderItem is from the Seller specified by context.SellerIdComponents (this is not required if using a Single Seller)
@@ -157,7 +157,7 @@ namespace BookingSystem
 
         }
 
-        protected override void LeaseOrderItem(Lease lease, List<OrderItemContext<SessionOpportunity>> orderItemContexts, StoreBookingFlowContext flowContext, OrderStateContext stateContext, OrderTransaction databaseTransaction)
+        protected override void LeaseOrderItems(Lease lease, List<OrderItemContext<SessionOpportunity>> orderItemContexts, StoreBookingFlowContext flowContext, OrderStateContext stateContext, OrderTransaction databaseTransaction)
         {
             // Check that there are no conflicts between the supplied opportunities
             // Also take into account spaces requested across OrderItems against total spaces in each opportunity
@@ -189,7 +189,7 @@ namespace BookingSystem
         }
 
         //TODO: This should reuse code of LeaseOrderItem
-        protected override void BookOrderItem(List<OrderItemContext<SessionOpportunity>> orderItemContexts, StoreBookingFlowContext flowContext, OrderStateContext stateContext, OrderTransaction databaseTransaction)
+        protected override void BookOrderItems(List<OrderItemContext<SessionOpportunity>> orderItemContexts, StoreBookingFlowContext flowContext, OrderStateContext stateContext, OrderTransaction databaseTransaction)
         {
             // Check that there are no conflicts between the supplied opportunities
             // Also take into account spaces requested across OrderItems against total spaces in each opportunity
@@ -220,6 +220,7 @@ namespace BookingSystem
                 }
             }
         }
+
     }
 
 }

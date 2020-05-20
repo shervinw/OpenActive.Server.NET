@@ -176,6 +176,8 @@ namespace BookingSystem
                     BackgroundImageUrl = "https://data.better.org.uk/images/bg.jpg".ParseUrlOrNull(),
                     DateFirstPublished = new DateTimeOffset(new DateTime(2019, 01, 14)),
                     OpenBookingAPIBaseUrl = (baseUrl + "api/openbooking/").ParseUrlOrNull(),
+                    OpenBookingAPIRegistrationUrl = new Uri("https://example.com/api-landing-page"),
+                    OpenBookingAPITermsOfServiceUrl = new Uri("https://example.com/api-terms-page")
                 },
                 new StoreBookingEngineSettings
                 {

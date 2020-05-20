@@ -399,13 +399,14 @@ namespace OpenActive.FakeDatabase.NET
             });
         }
 
-        public ( int, int ) AddClass(string title, decimal? price, DateTimeOffset startTime, DateTimeOffset endTime, long totalSpaces)
+        public ( int, int ) AddClass(string testDatasetIdentifier, string title, decimal? price, DateTimeOffset startTime, DateTimeOffset endTime, long totalSpaces)
         {
             var classId = nextId++;
             var occurrenceId = nextId++;
 
             Classes.Add(new ClassTable
             {
+                TestDatasetIdentifier = testDatasetIdentifier,
                 Id = classId,
                 Deleted = false,
                 Title = title,
@@ -415,6 +416,7 @@ namespace OpenActive.FakeDatabase.NET
 
             Occurrences.Add(new OccurrenceTable
             {
+                TestDatasetIdentifier = testDatasetIdentifier,
                 Id = occurrenceId,
                 Deleted = false,
                 ClassId = classId,
@@ -427,9 +429,9 @@ namespace OpenActive.FakeDatabase.NET
             return ( classId, occurrenceId );
         }
 
-        public void DeleteClass(long classId, long occurrenceId)
+        public void DeleteTestClassesFromDataset(string testDatasetIdentifier)
         {
-            foreach (ClassTable @class in Classes.Where(x => x.Id == classId))
+            foreach (ClassTable @class in Classes.Where(x => x.TestDatasetIdentifier == testDatasetIdentifier))
             {
                 if (!@class.Deleted)
                 {
@@ -438,7 +440,7 @@ namespace OpenActive.FakeDatabase.NET
                 }
             }
 
-            foreach (OccurrenceTable occurrence in Occurrences.Where(x => x.Id == occurrenceId))
+            foreach (OccurrenceTable occurrence in Occurrences.Where(x => x.TestDatasetIdentifier == testDatasetIdentifier))
             {
                 if (!occurrence.Deleted)
                 {
