@@ -520,7 +520,7 @@ namespace OpenActive.Server.NET.OpenBookingHelper
                         var newValue = (binding.Value.Value as string).ParseUrlOrNull();
                         if (newValue != this.RequiredBaseUrl)
                         {
-                            throw new RequiredBaseUrlMismatchException("Base Url of the supplied Ids do not match expected default");
+                            throw new RequiredBaseUrlMismatchException($"Base Url ('{newValue}') of the supplied Ids does not match expected default ('{this.RequiredBaseUrl}')");
                         }
                     }
                     else if (componentsType.GetProperty(binding.Key) == null)
