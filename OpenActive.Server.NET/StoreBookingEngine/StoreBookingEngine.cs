@@ -100,7 +100,7 @@ namespace OpenActive.Server.NET.StoreBooking
             };
         }
 
-        public void SetResponseOrderItem(OrderItem item)
+        public void SetResponseOrderItem(OrderItem item, SellerIdComponents sellerId, StoreBookingFlowContext flowContext)
         {
             if (item == null) throw new ArgumentNullException(nameof(item));
             if (item?.OrderedItem?.Id != RequestOrderItem?.OrderedItem?.Id)
@@ -111,6 +111,12 @@ namespace OpenActive.Server.NET.StoreBooking
             {
                 throw new ArgumentException("The Offer ID within the response OrderItem must match the request OrderItem");
             }
+
+            if (sellerId != flowContext.SellerId)
+            {
+                throw new OpenBookingException(new SellerMismatchError(), $"OrderItem at position {RequestOrderItem.Position} did not match the specified SellerId");
+            }
+
             item.Position = RequestOrderItem?.Position;
             ResponseOrderItem = item;
         }
@@ -165,12 +171,12 @@ namespace OpenActive.Server.NET.StoreBooking
         private readonly Dictionary<OpportunityType, IOpportunityStore> storeRouting;
         private readonly StoreBookingEngineSettings storeBookingEngineSettings;
         
-        protected override Event InsertTestOpportunity(string testDatasetIdentifier, OpportunityType opportunityType, TestOpportunityCriteriaEnumeration criteria)
+        protected override Event InsertTestOpportunity(string testDatasetIdentifier, OpportunityType opportunityType, TestOpportunityCriteriaEnumeration criteria, SellerIdComponents seller)
         {
             if (!storeRouting.ContainsKey(opportunityType))
                 throw new EngineConfigurationException("Specified opportunity type is not configured as bookable in the StoreBookingEngine constructor.");
 
-            return storeRouting[opportunityType].CreateOpportunityWithinTestDataset(testDatasetIdentifier, opportunityType, criteria);
+            return storeRouting[opportunityType].CreateOpportunityWithinTestDataset(testDatasetIdentifier, opportunityType, criteria, seller);
         }
 
         protected override void DeleteTestDataset(string testDatasetIdentifier)

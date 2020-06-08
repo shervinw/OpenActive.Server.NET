@@ -368,7 +368,7 @@ namespace OpenActive.FakeDatabase.NET
             .Select(n => new {
                 Id = n,
                 StartDate = faker.Date.Soon(10).Truncate(TimeSpan.FromSeconds(1)),
-                TotalSpaces = faker.Random.Int(0,30)
+                TotalSpaces = faker.Random.Int(0,50)
             })
             .Select(x => new OccurrenceTable
             {
@@ -376,7 +376,7 @@ namespace OpenActive.FakeDatabase.NET
                 Id = x.Id,
                 Deleted = false,
                 Start = x.StartDate,
-                End = x.StartDate + TimeSpan.FromMinutes(faker.Random.Int(0, 360)),
+                End = x.StartDate + TimeSpan.FromMinutes(faker.Random.Int(30, 360)),
                 TotalSpaces = x.TotalSpaces,
                 RemainingSpaces = x.TotalSpaces
             })
@@ -388,7 +388,7 @@ namespace OpenActive.FakeDatabase.NET
                 Id = id,
                 Deleted = false,
                 Title = faker.Commerce.ProductMaterial() + " " + faker.PickRandomParam("Yoga", "Zumba", "Walking", "Cycling", "Running", "Jumping"),
-                Price = Decimal.Parse(faker.Commerce.Price(0, 20)),
+                Price = Decimal.Parse(faker.Random.Bool() ? "0.00" : faker.Commerce.Price(0, 20)),
                 SellerId = faker.Random.Long(0, 1)
             })
             .ToList();
@@ -399,7 +399,7 @@ namespace OpenActive.FakeDatabase.NET
             });
         }
 
-        public ( int, int ) AddClass(string testDatasetIdentifier, string title, decimal? price, DateTimeOffset startTime, DateTimeOffset endTime, long totalSpaces)
+        public ( int, int ) AddClass(string testDatasetIdentifier, long seller, string title, decimal? price, DateTimeOffset startTime, DateTimeOffset endTime, long totalSpaces)
         {
             var classId = nextId++;
             var occurrenceId = nextId++;
@@ -411,7 +411,7 @@ namespace OpenActive.FakeDatabase.NET
                 Deleted = false,
                 Title = title,
                 Price = price,
-                SellerId = faker.Random.Long(0, 1)
+                SellerId = seller
             });
 
             Occurrences.Add(new OccurrenceTable

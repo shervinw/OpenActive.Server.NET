@@ -16,7 +16,7 @@ namespace OpenActive.Server.NET.StoreBooking
         void LeaseOrderItems(Lease lease, List<IOrderItemContext> orderItemContexts, StoreBookingFlowContext flowContext, IStateContext stateContext, IDatabaseTransaction databaseTransactionContext);
         void BookOrderItems(List<IOrderItemContext> orderItemContexts, StoreBookingFlowContext flowContext, IStateContext stateContext, IDatabaseTransaction databaseTransactionContext);
 
-        Event CreateOpportunityWithinTestDataset(string testDatasetIdentifier, OpportunityType opportunityType, TestOpportunityCriteriaEnumeration criteria);
+        Event CreateOpportunityWithinTestDataset(string testDatasetIdentifier, OpportunityType opportunityType, TestOpportunityCriteriaEnumeration criteria, SellerIdComponents seller);
         void DeleteTestDataset(string testDatasetIdentifier);
         void TriggerTestAction(OpenBookingSimulateAction simulateAction, IBookableIdComponents idComponents);
     }
@@ -55,9 +55,9 @@ namespace OpenActive.Server.NET.StoreBooking
         }
 
 
-        Event IOpportunityStore.CreateOpportunityWithinTestDataset(string testDatasetIdentifier, OpportunityType opportunityType, TestOpportunityCriteriaEnumeration criteria)
+        Event IOpportunityStore.CreateOpportunityWithinTestDataset(string testDatasetIdentifier, OpportunityType opportunityType, TestOpportunityCriteriaEnumeration criteria, SellerIdComponents seller)
         {
-            var components = CreateOpportunityWithinTestDataset(testDatasetIdentifier, opportunityType, criteria);
+            var components = CreateOpportunityWithinTestDataset(testDatasetIdentifier, opportunityType, criteria, seller);
             return OrderCalculations.RenderOpportunityWithOnlyId(RenderOpportunityJsonLdType(components), RenderOpportunityId(components));
         }
 
@@ -99,7 +99,7 @@ namespace OpenActive.Server.NET.StoreBooking
         /// </summary>
         protected abstract void BookOrderItems(List<OrderItemContext<TComponents>> orderItemContexts, StoreBookingFlowContext flowContext, TStateContext stateContext, TDatabaseTransaction databaseTransactionContext);
 
-        protected abstract TComponents CreateOpportunityWithinTestDataset(string testDatasetIdentifier, OpportunityType opportunityType, TestOpportunityCriteriaEnumeration criteria);
+        protected abstract TComponents CreateOpportunityWithinTestDataset(string testDatasetIdentifier, OpportunityType opportunityType, TestOpportunityCriteriaEnumeration criteria, SellerIdComponents seller);
         protected abstract void DeleteTestDataset(string testDatasetIdentifier);
         protected abstract void TriggerTestAction(OpenBookingSimulateAction simulateAction, TComponents idComponents);
 
