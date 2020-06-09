@@ -19,7 +19,16 @@ namespace BookingSystem
                 {
                     Id = this.RenderSingleSellerId(),
                     Name = "Test Seller",
-                    TaxMode = TaxMode.TaxGross
+                    TaxMode = TaxMode.TaxGross,
+                    LegalName = "Test Seller Ltd",
+                    Address = new PostalAddress
+                    {
+                        StreetAddress = "1 Hidden Gem",
+                        AddressLocality = "Another town",
+                        AddressRegion = "Oxfordshire",
+                        PostalCode = "OX1 1AA",
+                        AddressCountry = "GB"
+                    }
                 };
 
             }
