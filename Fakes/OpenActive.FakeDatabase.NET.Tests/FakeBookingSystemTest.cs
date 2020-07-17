@@ -1,10 +1,9 @@
-﻿
-using Xunit;
+﻿using Xunit;
 using System.Linq;
 using Xunit.Abstractions;
 using OpenActive.FakeDatabase.NET;
 
-namespace OpenActive.Server.NET.Tests
+namespace OpenActive.FakeDatabase.NET.Test
 {
     public class FakeBookingSystemTest
     {
