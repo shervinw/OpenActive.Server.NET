@@ -2,8 +2,6 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
-using System.Net.Http;
-using System.Text;
 using OpenActive.DatasetSite.NET;
 using OpenActive.NET;
 using OpenActive.NET.Rpde.Version1;
@@ -64,7 +62,7 @@ namespace OpenActive.Server.NET.CustomBooking
             foreach (var idConfiguration in settings.IdConfiguration) {
                 idConfiguration.RequiredBaseUrl = settings.JsonLdIdBaseUrl;
             }
-            settings.OrderIdTemplate.RequiredBaseUrl = settings.OrderBaseUrl;
+            settings.OrderIdTemplate.RequiredBaseUrl = openBookingAPIBaseUrl;
             settings.SellerIdTemplate.RequiredBaseUrl = settings.JsonLdIdBaseUrl;
 
             // Create a lookup of each IdTemplate to pass into the appropriate RpdeGenerator
@@ -90,7 +88,9 @@ namespace OpenActive.Server.NET.CustomBooking
                 kv.Value.SetConfiguration(OpportunityTypes.Configurations[kv.Key], settings.JsonLdIdBaseUrl, settings.RPDEPageSize, this.feedAssignedTemplates[kv.Key], settings.SellerIdTemplate, openDataFeedBaseUrl);
             }
 
-            settings.OrderFeedGenerator.SetConfiguration(settings.RPDEPageSize, settings.OrderIdTemplate, settings.SellerIdTemplate, settings.OrdersFeedUrl);
+            // Note that this library does not currently support custom Orders Feed URLs
+            var ordersFeedUrl = new Uri(openBookingAPIBaseUrl.ToString() + "orders-rpde");
+            settings.OrderFeedGenerator.SetConfiguration(settings.RPDEPageSize, settings.OrderIdTemplate, settings.SellerIdTemplate, ordersFeedUrl);
 
             settings.SellerStore.SetConfiguration(settings.SellerIdTemplate);
 
@@ -220,7 +220,7 @@ namespace OpenActive.Server.NET.CustomBooking
         /// Designed to be used on a single controller method with a "feedname" parameter,
         /// for uses in situations where the framework does not automatically validate numeric values
         /// </summary>
-        /// <param name="authtoken">Token designating the specific authenticated party for which the feed is intended</param>
+        /// <param name="clientId">Token designating the specific authenticated party for which the feed is intended</param>
         /// <param name="afterTimestamp">The "afterTimestamp" parameter from the URL</param>
         /// <param name="afterId">The "afterId" parameter from the URL</param>
         /// <param name="afterChangeNumber">The "afterChangeNumber" parameter from the URL</param>
@@ -240,7 +240,7 @@ namespace OpenActive.Server.NET.CustomBooking
         /// Handler for an Orders RPDE endpoint (separate to the open data endpoint for security)
         /// For uses in situations where the framework does not automatically validate numeric values
         /// </summary>
-        /// <param name="authtoken">Token designating the specific authenticated party for which the feed is intended</param>
+        /// <param name="clientId">Token designating the specific authenticated party for which the feed is intended</param>
         /// <param name="afterTimestamp">The "afterTimestamp" parameter from the URL</param>
         /// <param name="afterId">The "afterId" parameter from the URL</param>
         /// <param name="afterChangeNumber">The "afterChangeNumber" parameter from the URL</param>
@@ -253,7 +253,7 @@ namespace OpenActive.Server.NET.CustomBooking
         /// <summary>
         /// Handler for Orders RPDE endpoint
         /// </summary>
-        /// <param name="authtoken">Token designating the specific authenticated party for which the feed is intended</param>
+        /// <param name="clientId">Token designating the specific authenticated party for which the feed is intended</param>
         /// <param name="afterTimestamp">The "afterTimestamp" parameter from the URL</param>
         /// <param name="afterId">The "afterId" parameter from the URL</param>
         /// <param name="afterChangeNumber">The "afterChangeNumber" parameter from the URL</param>
@@ -262,7 +262,7 @@ namespace OpenActive.Server.NET.CustomBooking
         {
             if (settings.OrderFeedGenerator != null)
             {
-                // Add lookup against authtoken and pass this into generator?
+                // Add lookup against clientId and pass this into generator?
                 return settings.OrderFeedGenerator.GetRPDEPage(clientId, afterTimestamp, afterId, afterChangeNumber);
             }
             else
@@ -288,6 +288,17 @@ namespace OpenActive.Server.NET.CustomBooking
                 .FirstOrDefault();
         }
 
+        // Note this is not a helper as it relies on engine settings state
+        protected IBookableIdComponents ResolveOpportunityID(string opportunityTypeString, Uri opportunityId)
+        {
+            // Return the first matching ID combination for the opportunityId and offerId provided.
+            // TODO: Make this more efficient?
+            return this.idConfigurationLookup[opportunityTypeString]
+                .Select(x => x.GetOpportunityBookableIdComponents(opportunityId))
+                .Where(x => x != null)
+                .FirstOrDefault();
+        }
+
         public ResponseContent ProcessCheckpoint1(string clientId, Uri sellerId, string uuid, string orderQuoteJson)
         {
             return ProcessCheckpoint(clientId, sellerId, uuid, orderQuoteJson, FlowStage.C1, OrderType.OrderQuote);
@@ -301,7 +312,7 @@ namespace OpenActive.Server.NET.CustomBooking
             OrderQuote orderQuote = OpenActiveSerializer.Deserialize<OrderQuote>(orderQuoteJson);
             if (orderQuote == null || orderQuote.GetType() != typeof(OrderQuote))
             {
-                throw new OpenBookingException(new OpenBookingError(), "OrderQuote is required for C1 and C2");
+                throw new OpenBookingException(new UnexpectedOrderTypeError(), "OrderQuote is required for C1 and C2");
             }
             var orderResponse = ValidateFlowRequest<OrderQuote>(clientId, sellerId, flowStage, uuid, orderType, orderQuote);
             // Return a 409 status code if any OrderItem level errors exist
@@ -315,7 +326,7 @@ namespace OpenActive.Server.NET.CustomBooking
             Order order = OpenActiveSerializer.Deserialize<Order>(orderJson);
             if (order == null || order.GetType() != typeof(Order))
             {
-                throw new OpenBookingException(new OpenBookingError(), "Order is required for B");
+                throw new OpenBookingException(new UnexpectedOrderTypeError(), "Order is required for B");
             }
             return ResponseContent.OpenBookingResponse(OpenActiveSerializer.Serialize(ValidateFlowRequest<Order>(clientId, sellerId, FlowStage.B, uuid, OrderType.Order, order)), HttpStatusCode.OK);
         }
@@ -357,13 +368,13 @@ namespace OpenActive.Server.NET.CustomBooking
                 OrderedItem = order.OrderedItem.Select(x => new OrderItem { Id = x.Id, OrderItemStatus = x.OrderItemStatus }).ToList()
             };
             if (OpenActiveSerializer.Serialize<Order>(order) != OpenActiveSerializer.Serialize<Order>(orderWithOnlyAllowedProperties)) {
-                throw new OpenBookingException(new PatchContainsExcessiveProperties());
+                throw new OpenBookingException(new PatchContainsExcessivePropertiesError());
             }
 
             // Check for PatchNotAllowedOnProperty
             if (!order.OrderedItem.TrueForAll(x => x.OrderItemStatus == OrderItemStatus.CustomerCancelled))
             {
-                throw new OpenBookingException(new PatchNotAllowedOnProperty(), "Only 'https://openactive.io/CustomerCancelled' is permitted for this property.");
+                throw new OpenBookingException(new PatchNotAllowedOnPropertyError(), "Only 'https://openactive.io/CustomerCancelled' is permitted for this property.");
             }
 
             var orderItemIds = order.OrderedItem.Select(x => settings.OrderIdTemplate.GetOrderItemIdComponents(clientId, x.Id)).ToList();
@@ -371,13 +382,13 @@ namespace OpenActive.Server.NET.CustomBooking
             // Check for mismatching UUIDs
             if (!orderItemIds.TrueForAll(x => x != null))
             {
-                throw new OpenBookingException(new OpenBookingError(), "Invalid OrderItem Id supplied.");
+                throw new OpenBookingException(new OrderItemIdInvalidError());
             }
 
             // Check for mismatching UUIDs
             if (!orderItemIds.TrueForAll(x => x.OrderType == OrderType.Order && x.uuid == uuid))
             {
-                throw new OpenBookingException(new OpenBookingError(), "The UUID for each OrderItem specified must match the UUID of the Order being PATCHed.");
+                throw new OpenBookingException(new OrderItemNotWithinOrderError());
             }
 
             ProcessCustomerCancellation(new OrderIdComponents { ClientId = clientId, OrderType = OrderType.Order, uuid = uuid }, sellerIdComponents, settings.OrderIdTemplate, orderItemIds);
@@ -387,25 +398,143 @@ namespace OpenActive.Server.NET.CustomBooking
 
         public abstract void ProcessCustomerCancellation(OrderIdComponents orderId, SellerIdComponents sellerId, OrderIdTemplate orderIdTemplate, List<OrderIdComponents> orderItemIds);
 
-        // Note opportunityType is required here to facilitate routing to the correct store to handle the request
-        public ResponseContent CreateTestData(string opportunityType, string eventJson)
+        ResponseContent IBookingEngine.InsertTestOpportunity(string testDatasetIdentifier, string eventJson)
         {
-            // Temporary hack while waiting for OpenActive.NET to deserialize subclasses correctly
-            ScheduledSession @event = OpenActiveSerializer.Deserialize<ScheduledSession>(eventJson);
-            this.CreateTestDataItem((OpportunityType)Enum.Parse(typeof(OpportunityType), opportunityType, true), @event);
+            Event genericEvent = OpenActiveSerializer.Deserialize<ScheduledSession>(eventJson);
+
+            // Note opportunityType is required here to facilitate routing to the correct store to handle the request
+            OpportunityType? opportunityType = null;
+            ILegalEntity seller = null;
+
+            switch (genericEvent) {
+                case ScheduledSession scheduledSession:
+                    switch (scheduledSession.SuperEvent.Value)
+                    {
+                        case SessionSeries sessionSeries:
+                            opportunityType = OpportunityType.ScheduledSession;
+                            seller = sessionSeries.Organizer;
+                            break;
+                        default:
+                           throw new OpenBookingException(new OpenBookingError(), "ScheduledSession must have superEvent of SessionSeries");
+                    }
+                    break;
+                case Slot slot:
+                    switch (slot.FacilityUse.Value)
+                    {
+                        case IndividualFacilityUse individualFacilityUse:
+                            opportunityType = OpportunityType.IndividualFacilityUseSlot;
+                            seller = individualFacilityUse.Provider;
+                            break;
+                        case FacilityUse facilityUse:
+                            opportunityType = OpportunityType.FacilityUseSlot;
+                            seller = facilityUse.Provider;
+                            break;
+                        default:
+                            throw new OpenBookingException(new OpenBookingError(), "Slot must have facilityUse of FacilityUse or IndividualFacilityUse");
+                    }
+                    break;
+                case CourseInstance courseInstance:
+                    opportunityType = OpportunityType.CourseInstance;
+                    seller = courseInstance.Organizer;
+                    break;
+                case HeadlineEvent headlineEvent:
+                    opportunityType = OpportunityType.HeadlineEvent;
+                    seller = headlineEvent.Organizer;
+                    break;
+                case OnDemandEvent onDemandEvent:
+                    switch (onDemandEvent.SuperEvent)
+                    {
+                        case EventSeries eventSeries:
+                            opportunityType = OpportunityType.OnDemandEvent;
+                            seller = eventSeries.Organizer;
+                            break;
+                        case null:
+                            opportunityType = OpportunityType.OnDemandEvent;
+                            seller = onDemandEvent.Organizer;
+                            break;
+                        default:
+                            throw new OpenBookingException(new OpenBookingError(), "OnDemandEvent has unrecognised @type of superEvent");
+                    }
+                    break;
+                case Event @event:
+                    switch (@event.SuperEvent) {
+                        case HeadlineEvent headlineEvent:
+                            opportunityType = OpportunityType.HeadlineEventSubEvent;
+                            seller = headlineEvent.Organizer;
+                            break;
+                        case CourseInstance courseInstance:
+                            opportunityType = OpportunityType.CourseInstanceSubEvent;
+                            seller = courseInstance.Organizer;
+                            break;
+                        case EventSeries eventSeries:
+                            opportunityType = OpportunityType.Event;
+                            seller = eventSeries.Organizer;
+                            break;
+                        case null:
+                            opportunityType = OpportunityType.Event;
+                            seller = @event.Organizer;
+                            break;
+                        default:
+                            throw new OpenBookingException(new OpenBookingError(), "Event has unrecognised @type of superEvent");
+                    }
+                    break;
+                default:
+                    throw new OpenBookingException(new OpenBookingError(), "Only bookable opportunities are permitted in the test interface");
+
+                    // TODO: add this error class to the library
+            }
+
+            if (!genericEvent.TestOpportunityCriteria.HasValue)
+            {
+                throw new OpenBookingException(new OpenBookingError(), "test:testOpportunityCriteria must be supplied.");
+            }
+
+            if (seller?.Id == null) throw new OpenBookingException(new SellerMismatchError(), "No seller ID was specified");
+            var sellerIdComponents = settings.SellerIdTemplate.GetIdComponents(seller.Id);
+            if (sellerIdComponents == null) throw new OpenBookingException(new SellerMismatchError(), "Seller ID format was invalid");
+
+            // Returns a matching Event subclass that will only include "@type" and "@id" properties
+            var createdEvent = this.InsertTestOpportunity(testDatasetIdentifier, opportunityType.Value, genericEvent.TestOpportunityCriteria.Value, sellerIdComponents);
+
+            if (createdEvent.Type != genericEvent.Type)
+            {
+                throw new OpenBookingException(new OpenBookingError(), "Type of created test Event does not match type of requested Event");
+            }
+
+            return ResponseContent.OpenBookingResponse(OpenActiveSerializer.Serialize(createdEvent), HttpStatusCode.OK);
+        }
+
+        protected abstract Event InsertTestOpportunity(string testDatasetIdentifier, OpportunityType opportunityType, TestOpportunityCriteriaEnumeration criteria, SellerIdComponents seller);
+
+        ResponseContent IBookingEngine.DeleteTestDataset(string testDatasetIdentifier)
+        {
+            this.DeleteTestDataset(testDatasetIdentifier);
+            
             return ResponseContent.OpenBookingNoContentResponse();
         }
 
-        protected abstract void CreateTestDataItem(OpportunityType opportunityType, Event @event);
+        protected abstract void DeleteTestDataset(string testDatasetIdentifier);
 
-        // Note opportunityType is required here to facilitate routing to the correct store to handle the request
-        public ResponseContent DeleteTestData(string opportunityType, string name)
+        ResponseContent IBookingEngine.TriggerTestAction(string actionJson)
         {
-            this.DeleteTestDataItem((OpportunityType)Enum.Parse(typeof(OpportunityType), opportunityType, true), name);
+            OpenBookingSimulateAction action = OpenActiveSerializer.Deserialize<OpenBookingSimulateAction>(actionJson);
+
+            if (action == null)
+            {
+                throw new OpenBookingException(new OpenBookingError(), "Invalid type specified. Type must subclass OpenBookingSimulateAction.");
+            }
+
+            if (action.Object == null || action.Object.Id == null)
+            {
+                throw new OpenBookingException(new OpenBookingError(), "Invalid OpenBookingSimulateAction object specified.");
+            }
+
+            this.TriggerTestAction(action);
+
             return ResponseContent.OpenBookingNoContentResponse();
         }
 
-        protected abstract void DeleteTestDataItem(OpportunityType opportunityType, string name);
+        protected abstract void TriggerTestAction(OpenBookingSimulateAction simulateAction);
 
 
         //TODO: Should we move Seller into the Abstract level? Perhaps too much complexity
@@ -426,20 +555,18 @@ namespace OpenActive.Server.NET.CustomBooking
 
             if (seller == null)
             {
-                // TODO: Update data model to throw actual error for all occurances of OpenBookingError
-                throw new OpenBookingException(new OpenBookingError(), "SellerNotFound");
+                throw new OpenBookingException(new SellerNotFoundError());
             }
             
             if (orderQuote?.Seller?.Id != null && seller?.Id != orderQuote?.Seller?.Id)
             {
-                // TODO: Update data model to throw actual error for all occurances of OpenBookingError
-                throw new OpenBookingException(new OpenBookingError(), "SellerIdMismatch");
+                throw new OpenBookingException(new SellerMismatchError());
             }
 
             // Check that taxMode is set in Seller
             if (!(seller?.TaxMode == TaxMode.TaxGross || seller?.TaxMode == TaxMode.TaxNet))
             {
-                throw new OpenBookingException(new OpenBookingError(), "taxMode must always be set in the Seller");
+                throw new EngineConfigurationException("taxMode must always be set in the Seller");
             }
 
             // Default to BusinessToConsumer if no customer provided

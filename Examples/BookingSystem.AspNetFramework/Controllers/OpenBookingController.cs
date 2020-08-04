@@ -155,14 +155,14 @@ namespace BookingSystem.AspNetFramework.Controllers
             }
         }
 
-        // POST api/openbooking/test-interface/scheduledsession
+        // POST api/openbooking/test-interface/datasets/uat-ci/opportunities
         [HttpPost]
-        [Route("test-interface/{type}")]
-        public HttpResponseMessage Post(string type, [FromBody] string @event)
+        [Route("test-interface/datasets/{testDatasetIdentifier}/opportunities")]
+        public HttpResponseMessage TestInterfaceDatasetInsert(string testDatasetIdentifier, [FromBody] string @event)
         {
             try
             {
-                return _bookingEngine.CreateTestData(type, @event).GetContentResult();
+                return _bookingEngine.InsertTestOpportunity(testDatasetIdentifier, @event).GetContentResult();
             }
             catch (OpenBookingException obe)
             {
@@ -170,14 +170,14 @@ namespace BookingSystem.AspNetFramework.Controllers
             }
         }
 
-        // DELETE api/openbooking/test-interface/scheduled-sessions/{name}
+        // DELETE api/openbooking/test-interface/datasets/uat-ci
         [HttpDelete]
-        [Route("test-interface/{type}/{name}")]
-        public HttpResponseMessage Delete(string type, string name)
+        [Route("test-interface/datasets/{testDatasetIdentifier}")]
+        public HttpResponseMessage TestInterfaceDatasetDelete(string testDatasetIdentifier)
         {
             try
             {
-                return _bookingEngine.DeleteTestData(type, name).GetContentResult();
+                return _bookingEngine.DeleteTestDataset(testDatasetIdentifier).GetContentResult();
             }
             catch (OpenBookingException obe)
             {
@@ -185,5 +185,20 @@ namespace BookingSystem.AspNetFramework.Controllers
             }
         }
 
+
+        // POST api/openbooking/test-interface/actions
+        [HttpPost]
+        [Route("test-interface/actions")]
+        public HttpResponseMessage TestInterfaceAction([FromBody] string action)
+        {
+            try
+            {
+                return _bookingEngine.TriggerTestAction(action).GetContentResult();
+            }
+            catch (OpenBookingException obe)
+            {
+                return obe.ErrorResponseContent.GetContentResult();
+            }
+        }
     }
 }

@@ -11,25 +11,21 @@ namespace OpenActive.Server.NET.StoreBooking
     public interface IOpportunityStore
     {
         void SetConfiguration(IBookablePairIdTemplate template, SingleIdTemplate<SellerIdComponents> sellerTemplate);
-        
-        /*
-         * TODO: Implement GetOrderItem
-        OrderItem GetOrderItem(IBookableIdComponents opportunityOfferId, ISingleIdTemplate sellerId);
-        */
 
-        void GetOrderItems(List<IOrderItemContext> orderItemContexts, StoreBookingFlowContext flowContext);
-        void LeaseOrderItems(Lease lease, List<IOrderItemContext> orderItemContexts, StoreBookingFlowContext flowContext, IDatabaseTransaction databaseTransactionContext);
-        void BookOrderItems(List<IOrderItemContext> orderItemContexts, StoreBookingFlowContext flowContext, IDatabaseTransaction databaseTransactionContext);
+        void GetOrderItems(List<IOrderItemContext> orderItemContexts, StoreBookingFlowContext flowContext, IStateContext stateContext);
+        void LeaseOrderItems(Lease lease, List<IOrderItemContext> orderItemContexts, StoreBookingFlowContext flowContext, IStateContext stateContext, IDatabaseTransaction databaseTransactionContext);
+        void BookOrderItems(List<IOrderItemContext> orderItemContexts, StoreBookingFlowContext flowContext, IStateContext stateContext, IDatabaseTransaction databaseTransactionContext);
 
-        void CreateTestDataItem(OpportunityType opportunityType, Event @event);
-        void DeleteTestDataItem(OpportunityType opportunityType, string name);
+        Event CreateOpportunityWithinTestDataset(string testDatasetIdentifier, OpportunityType opportunityType, TestOpportunityCriteriaEnumeration criteria, SellerIdComponents seller);
+        void DeleteTestDataset(string testDatasetIdentifier);
+        void TriggerTestAction(OpenBookingSimulateAction simulateAction, IBookableIdComponents idComponents);
     }
 
 
     //TODO: Remove duplication between this and RpdeBase if possible as they are using the same pattern?
-    public abstract class OpportunityStore<TComponents, TDatabaseTransaction> : ModelSupport<TComponents>, IOpportunityStore where TComponents : class, IBookableIdComponents, new() where TDatabaseTransaction : IDatabaseTransaction
+    public abstract class OpportunityStore<TComponents, TDatabaseTransaction, TStateContext> : ModelSupport<TComponents>, IOpportunityStore where TComponents : class, IBookableIdComponents, new() where TDatabaseTransaction : IDatabaseTransaction where TStateContext : IStateContext
     {
-        public void SetConfiguration(IBookablePairIdTemplate template, SingleIdTemplate<SellerIdComponents> sellerTemplate)
+        void IOpportunityStore.SetConfiguration(IBookablePairIdTemplate template, SingleIdTemplate<SellerIdComponents> sellerTemplate)
         {
             if (template as BookablePairIdTemplate<TComponents> == null)
             {
@@ -40,38 +36,45 @@ namespace OpenActive.Server.NET.StoreBooking
         }
 
 
-        public void GetOrderItems(List<IOrderItemContext> orderItemContexts, StoreBookingFlowContext flowContext)
+        void IOpportunityStore.GetOrderItems(List<IOrderItemContext> orderItemContexts, StoreBookingFlowContext flowContext, IStateContext stateContext)
         {
             // TODO: Include validation on the OrderItem created, to ensure it includes all the required fields
-            GetOrderItem(ConvertToSpecificComponents(orderItemContexts), flowContext);
+            GetOrderItems(ConvertToSpecificComponents(orderItemContexts), flowContext, (TStateContext)stateContext);
         }
 
-        public void LeaseOrderItems(Lease lease, List<IOrderItemContext> orderItemContexts, StoreBookingFlowContext flowContext, IDatabaseTransaction databaseTransactionContext)
+        void IOpportunityStore.LeaseOrderItems(Lease lease, List<IOrderItemContext> orderItemContexts, StoreBookingFlowContext flowContext, IStateContext stateContext, IDatabaseTransaction databaseTransactionContext)
         {
             // TODO: Include validation on the OrderItem created, to ensure it includes all the required fields
-            LeaseOrderItem(lease, ConvertToSpecificComponents(orderItemContexts), flowContext, (TDatabaseTransaction)databaseTransactionContext);
+            LeaseOrderItems(lease, ConvertToSpecificComponents(orderItemContexts), flowContext, (TStateContext)stateContext, (TDatabaseTransaction)databaseTransactionContext);
         }
 
-        public void BookOrderItems(List<IOrderItemContext> orderItemContexts, StoreBookingFlowContext flowContext, IDatabaseTransaction databaseTransactionContext)
+        void IOpportunityStore.BookOrderItems(List<IOrderItemContext> orderItemContexts, StoreBookingFlowContext flowContext, IStateContext stateContext, IDatabaseTransaction databaseTransactionContext)
         {
             // TODO: Include validation on the OrderItem created, to ensure it includes all the required fields
-            BookOrderItem(ConvertToSpecificComponents(orderItemContexts), flowContext, (TDatabaseTransaction)databaseTransactionContext);
+            BookOrderItems(ConvertToSpecificComponents(orderItemContexts), flowContext, (TStateContext)stateContext, (TDatabaseTransaction)databaseTransactionContext);
         }
 
-        protected abstract void GetOrderItem(List<OrderItemContext<TComponents>> orderItemContexts, StoreBookingFlowContext flowContext);
 
-        /// <summary>
-        /// BookOrderItem will always succeed or throw an error on failure.
-        /// Note that responseOrderItems provided by GetOrderItems are supplied for cases where Sales Invoices or other audit records
-        /// need to be written that require prices. As GetOrderItems occurs outside of the transaction.
-        /// 
-        /// </summary>
-        protected abstract void BookOrderItem(List<OrderItemContext<TComponents>> orderItemContexts, StoreBookingFlowContext flowContext, TDatabaseTransaction databaseTransactionContext);
+        Event IOpportunityStore.CreateOpportunityWithinTestDataset(string testDatasetIdentifier, OpportunityType opportunityType, TestOpportunityCriteriaEnumeration criteria, SellerIdComponents seller)
+        {
+            var components = CreateOpportunityWithinTestDataset(testDatasetIdentifier, opportunityType, criteria, seller);
+            return OrderCalculations.RenderOpportunityWithOnlyId(RenderOpportunityJsonLdType(components), RenderOpportunityId(components));
+        }
 
-        protected abstract void LeaseOrderItem(Lease lease, List<OrderItemContext<TComponents>> orderItemContexts, StoreBookingFlowContext flowContext, TDatabaseTransaction databaseTransactionContext);
+        void IOpportunityStore.DeleteTestDataset(string testDatasetIdentifier)
+        {
+            DeleteTestDataset(testDatasetIdentifier);
+        }
 
-        public abstract void CreateTestDataItem(OpportunityType opportunityType, Event @event);
-        public abstract void DeleteTestDataItem(OpportunityType opportunityType, string name);
+        void IOpportunityStore.TriggerTestAction(OpenBookingSimulateAction simulateAction, IBookableIdComponents idComponents)
+        {
+            if (!(idComponents.GetType() == typeof(TComponents)))
+            {
+                throw new NotSupportedException($"OpportunityIdComponents does not match {typeof(BookablePairIdTemplate<TComponents>).ToString()}. All types of IBookableIdComponents (T) used for BookablePairIdTemplate<T> assigned to feeds via settings.IdConfiguration must match those used by the stores in storeSettings.OpenBookingStoreRouting.");
+            }
+
+            TriggerTestAction(simulateAction, (TComponents)idComponents);
+        }
 
 
         private List<OrderItemContext<TComponents>> ConvertToSpecificComponents(List<IOrderItemContext> orderItemContexts)
@@ -85,6 +88,20 @@ namespace OpenActive.Server.NET.StoreBooking
 
             return orderItemContexts.ConvertAll<OrderItemContext<TComponents>>(x => (OrderItemContext<TComponents>)x);
         }
+
+
+        protected abstract void GetOrderItems(List<OrderItemContext<TComponents>> orderItemContexts, StoreBookingFlowContext flowContext, TStateContext stateContext);
+        protected abstract void LeaseOrderItems(Lease lease, List<OrderItemContext<TComponents>> orderItemContexts, StoreBookingFlowContext flowContext, TStateContext stateContext, TDatabaseTransaction databaseTransactionContext);
+        /// <summary>
+        /// BookOrderItem will always succeed or throw an error on failure.
+        /// Note that responseOrderItems provided by GetOrderItems are supplied for cases where Sales Invoices or other audit records
+        /// need to be written that require prices. As GetOrderItems occurs outside of the transaction.
+        /// </summary>
+        protected abstract void BookOrderItems(List<OrderItemContext<TComponents>> orderItemContexts, StoreBookingFlowContext flowContext, TStateContext stateContext, TDatabaseTransaction databaseTransactionContext);
+
+        protected abstract TComponents CreateOpportunityWithinTestDataset(string testDatasetIdentifier, OpportunityType opportunityType, TestOpportunityCriteriaEnumeration criteria, SellerIdComponents seller);
+        protected abstract void DeleteTestDataset(string testDatasetIdentifier);
+        protected abstract void TriggerTestAction(OpenBookingSimulateAction simulateAction, TComponents idComponents);
 
     }
 }

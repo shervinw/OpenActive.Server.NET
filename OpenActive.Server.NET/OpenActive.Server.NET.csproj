@@ -12,16 +12,17 @@
     <PackageTags>OpenActive booking</PackageTags>
     <PackageRequireLicenseAcceptance>false</PackageRequireLicenseAcceptance>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
-    <Version>0.5.4</Version>
-    <Description>NOTICE: This library is not yet ready for production use
-
-.NET server library for OpenActive implementation</Description>
+    <Version>0.9.1</Version>
+    <Description>.NET server library for OpenActive implementation</Description>
     <PackageId>OpenActive.Server.NET</PackageId>
   </PropertyGroup>
 
-  <PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Debug|netstandard2.0|AnyCPU'">
-    <DocumentationFile>bin\Release\OpenActive.Server.NET.xml</DocumentationFile>
-    <OutputPath>bin\Release\</OutputPath>
+  <PropertyGroup>
+    <DefineConstants>TRACE</DefineConstants>
+    <DebugType>portable</DebugType>
+    <DebugSymbols>true</DebugSymbols>
+    <DocumentationFile>bin\$(Configuration)\$(TargetFramework)\OpenActive.Server.NET.xml</DocumentationFile>
+    <OutputPath></OutputPath>
   </PropertyGroup>
 
   <ItemGroup>
@@ -29,13 +30,9 @@
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
-    <PackageReference Include="OpenActive.DatasetSite.NET" Version="3.0.3" />
-    <PackageReference Include="OpenActive.NET" Version="8.5.4" />
+    <PackageReference Include="OpenActive.DatasetSite.NET" Version="3.4.0" />
+    <PackageReference Include="OpenActive.NET" Version="12.4.1" />
     <PackageReference Include="UriTemplate.Core" Version="1.0.2" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <Folder Include="CustomBookingEngine\OrderContext\" />
   </ItemGroup>
 
 </Project>

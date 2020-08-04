@@ -13,7 +13,7 @@ namespace BookingSystem
 
         protected override List<RpdeItem<FacilityUse>> GetRPDEItems(long? afterTimestamp, long? afterId)
         {
-            throw new NotImplementedException();    
+            throw new OpenBookingException(new NotFoundError());    
         }
     }
 
@@ -23,7 +23,7 @@ namespace BookingSystem
 
         protected override List<RpdeItem<Slot>> GetRPDEItems(long? afterTimestamp, long? afterId)
         {
-            throw new NotImplementedException();
+            throw new OpenBookingException(new NotFoundError());
         }
     }
 

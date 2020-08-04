@@ -1,6 +1,0 @@
-{
-  "tests": {
-    "bookingApiBase": "https://localhost:44307/api/openbooking/",
-    "microserviceApiBase": "http://localhost:3000/"
-  }
-}

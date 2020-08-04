@@ -16,11 +16,14 @@ namespace BookingSystem
         protected override List<RpdeItem<ScheduledSession>> GetRPDEItems(long? afterTimestamp, long? afterId)
         {
             var query = from occurances in FakeBookingSystem.Database.Occurrences
-                        orderby occurances.Modified, occurances.Id
+                        orderby occurances.Modified.ToUnixTimeMilliseconds(), occurances.Id
                         where !afterTimestamp.HasValue && !afterId.HasValue ||
                               occurances.Modified.ToUnixTimeMilliseconds() > afterTimestamp ||  
                               (occurances.Modified.ToUnixTimeMilliseconds() == afterTimestamp && occurances.Id > afterId)
-                        
+                              // Ensure the RPDE endpoint filters out all items with a "modified" date after 2 seconds in the past, to delay items appearing in the feed
+                              // https://app.gitbook.com/@openactive/s/openactive-developer/publishing-data/data-feeds/implementing-rpde-feeds
+                              && occurances.Modified < DateTimeOffset.UtcNow - new TimeSpan(0, 0, 2)
+
                         select new RpdeItem<ScheduledSession>
                         {
                             Kind = RpdeKind.ScheduledSession,
@@ -44,10 +47,26 @@ namespace BookingSystem
                                     SessionSeriesId = occurances.ClassId
                                 }),
                                 StartDate = (DateTimeOffset)occurances.Start,
-                                EndDate = (DateTimeOffset)occurances.End
+                                EndDate = (DateTimeOffset)occurances.End,
+                                Duration = occurances.End - occurances.Start,
+                                RemainingAttendeeCapacity  = occurances.RemainingSpaces,
+                                MaximumAttendeeCapacity = occurances.TotalSpaces
                             }
                         };
-            return query.Take(this.RPDEPageSize).ToList();
+
+            // Note there's a race condition in the in-memory database that allows records to be returned from the above query out of order when modified at the same time. The below ensures the correct order is returned.
+            var items = query.ToList().Take(this.RPDEPageSize).ToList();
+
+            /*
+            // Filter out any that were updated while the query was running
+            var lastItemModified = items.LastOrDefault()?.Modified;
+
+            if (lastItemModified != null)
+            {
+                items = items.Where(x => x.Modified <= lastItemModified).ToList(); //.OrderBy(x => x.Modified).ThenBy(x => x.Id)
+            }
+            */
+            return items;
         }
     }
 
@@ -57,10 +76,13 @@ namespace BookingSystem
         {
             var query = from @class in FakeBookingSystem.Database.Classes
                         join seller in FakeBookingSystem.Database.Sellers on @class.SellerId equals seller.Id
-                        orderby @class.Modified, @class.Id
+                        orderby @class.Modified.ToUnixTimeMilliseconds(), @class.Id
                         where !afterTimestamp.HasValue && !afterId.HasValue ||
                               @class.Modified.ToUnixTimeMilliseconds() > afterTimestamp ||
                               (@class.Modified.ToUnixTimeMilliseconds() == afterTimestamp && @class.Id > afterId)
+                              // Ensure the RPDE endpoint filters out all items with a "modified" date after 2 seconds in the past, to delay items appearing in the feed
+                              // https://app.gitbook.com/@openactive/s/openactive-developer/publishing-data/data-feeds/implementing-rpde-feeds
+                              && @class.Modified < DateTimeOffset.UtcNow - new TimeSpan(0, 0, 2)
 
                         select new RpdeItem<SessionSeries>
                         {
@@ -98,12 +120,55 @@ namespace BookingSystem
                                             SessionSeriesId = @class.Id,
                                             OfferId = 0
                                         }),
-                                        Price = @class.Price
+                                        Price = @class.Price,
+                                        PriceCurrency = "GBP",
+                                        AvailableChannel = new List<AvailableChannelType>
+                                        {
+                                            AvailableChannelType.OpenBookingPrepayment
+                                        }
                                     } 
+                                },
+                                Location = new Place
+                                {
+                                    Name = "Fake Pond",
+                                    Address = new PostalAddress
+                                    {
+                                        StreetAddress = "1 Fake Park",
+                                        AddressLocality = "Another town",
+                                        AddressRegion = "Oxfordshire",
+                                        PostalCode = "OX1 1AA",
+                                        AddressCountry = "GB"
+                                    },
+                                    Geo = new GeoCoordinates
+                                    {
+                                        Latitude = 0.1m,
+                                        Longitude = 0.1m
+                                    }
+                                },
+                                Url = new Uri("https://www.example.com/a-session-age"),
+                                Activity = new List<Concept> {
+                                    new Concept
+                                    {
+                                        Id = new Uri("https://openactive.io/activity-list#c07d63a0-8eb9-4602-8bcc-23be6deb8f83"),
+                                        PrefLabel = "Jet Skiing",
+                                        InScheme = new Uri("https://openactive.io/activity-list")
+                                    }
                                 }
                             }
                         };
-            var items = query.Take(this.RPDEPageSize).ToList();
+
+            // Note there's a race condition in the in-memory database that allows records to be returned from the above query out of order when modified at the same time. The below ensures the correct order is returned.
+            var items = query.ToList().Take(this.RPDEPageSize).ToList();
+
+            /*
+            // Filter out any that were updated while the query was running
+            var lastItemModified = items.LastOrDefault()?.Modified;
+
+            if (lastItemModified != null)
+            {
+                items = items.Where(x => x.Modified <= lastItemModified).ToList(); //.OrderBy(x => x.Modified).ThenBy(x => x.Id)
+            }
+            */
             return items;
         }
     }

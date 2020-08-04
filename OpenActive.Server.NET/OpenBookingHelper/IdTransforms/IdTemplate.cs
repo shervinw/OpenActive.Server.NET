@@ -11,6 +11,14 @@ using System.Runtime.Serialization;
 
 namespace OpenActive.Server.NET.OpenBookingHelper
 {
+    /// <summary>
+    /// Class to represent unrecognised OrderItems
+    /// </summary>
+    public class NullBookableIdComponents : IBookableIdComponents
+    {
+        public OpportunityType? OpportunityType { get => null; set => throw new NotImplementedException(); }
+    }
+
     public interface IBookableIdComponents
     {
         OpportunityType? OpportunityType { get; set; }
@@ -63,6 +71,7 @@ namespace OpenActive.Server.NET.OpenBookingHelper
         List<OpportunityIdConfiguration> IdConfigurations { get; }
 
         IBookableIdComponents GetOpportunityReference(Uri opportunityId, Uri offerId);
+        IBookableIdComponents GetOpportunityBookableIdComponents(Uri opportunityId);
 
         Uri RequiredBaseUrl { get; set; }
 
@@ -111,6 +120,7 @@ namespace OpenActive.Server.NET.OpenBookingHelper
             return GetIdComponentsWithOpportunityTypeAndInheritanceExt(this.OpportunityIdConfiguration.OpportunityType, this.OpportunityIdConfiguration.OpportunityType, opportunityId, offerId, null, null)
             ?? GetIdComponentsWithOpportunityTypeAndInheritanceExt(this.OpportunityIdConfiguration.OpportunityType, this.ParentIdConfiguration?.OpportunityType, opportunityId, null, null, offerId);
         }
+
 
         // Note this method exists just for type conversion to work as this is not C# 8.0
         private IBookableIdComponents GetIdComponentsWithOpportunityTypeAndInheritanceExt(OpportunityType? opportunityType, OpportunityType? orderOpportunityType, params Uri[] ids)
@@ -217,7 +227,40 @@ namespace OpenActive.Server.NET.OpenBookingHelper
                 ?? GetIdComponentsWithOpportunityTypeExt(this.ParentIdConfiguration?.OpportunityType, null, null, opportunityId, offerId);
         }
 
-        // Note this method exists just for type conversion to work as this is not C# 8.0
+        /// <summary>
+        /// This is used by the booking engine to resolve a bookable Opportunity ID to its components
+        /// </summary>
+        /// <param name="opportunityId"></param>
+        /// <returns>Null if the ID does not match the template</returns>
+        public TBookableIdComponents GetOpportunityBookableIdComponents(Uri opportunityId)
+        {
+            // Require opportunityId to not be null
+            if (opportunityId == null) throw new ArgumentNullException(nameof(opportunityId));
+
+            // This method not effected by inheritance, and will return the Opportunity or _parent_ Opportunity, if either are bookable
+            // Note that if any URL templates to be used for one of the checks below are null, the result for that check will be null
+            // Note the grandparent is never bookable
+
+            return 
+                (
+                this.OpportunityIdConfiguration.Bookable && OpportunityTypes.Configurations[this.OpportunityIdConfiguration.OpportunityType].Bookable ?
+                    GetIdComponentsWithOpportunityType(this.OpportunityIdConfiguration.OpportunityType, opportunityId, null, null, null) : null
+                    )
+                ?? (
+                this.ParentIdConfiguration.HasValue && this.ParentIdConfiguration.Value.Bookable && OpportunityTypes.Configurations[this.ParentIdConfiguration.Value.OpportunityType].Bookable ?
+                    GetIdComponentsWithOpportunityType(this.ParentIdConfiguration?.OpportunityType, null, null, opportunityId, null) : null
+                    )
+                ;
+        }
+
+        IBookableIdComponents IBookablePairIdTemplate.GetOpportunityBookableIdComponents(Uri opportunityId)
+        {
+            return GetOpportunityBookableIdComponents(opportunityId);
+        }
+
+
+
+        // Note this method exists just for type conversion (from TBookableIdComponents to IBookableIdComponents) to work as this is not C# 8.0
         private IBookableIdComponents GetIdComponentsWithOpportunityTypeExt(OpportunityType? opportunityType, params Uri[] ids)
         {
             return this.GetIdComponentsWithOpportunityType(opportunityType, ids);
@@ -238,6 +281,10 @@ namespace OpenActive.Server.NET.OpenBookingHelper
             }
         }
 
+        public TBookableIdComponents GetIdComponents(Uri opportunityId)
+        {
+            return base.GetIdComponents(nameof(GetIdComponents), opportunityId);
+        }
         public TBookableIdComponents GetIdComponents(Uri opportunityId, Uri offerId)
         {
             return base.GetIdComponents(nameof(GetIdComponents), opportunityId, offerId);
@@ -336,7 +383,7 @@ namespace OpenActive.Server.NET.OpenBookingHelper
             return RenderOfferId(opportunityType, (T)components);
         }
         */
-        
+
     }
 
     public class OrderIdTemplate : IdTemplate<OrderIdComponents>
@@ -350,13 +397,13 @@ namespace OpenActive.Server.NET.OpenBookingHelper
         public OrderIdComponents GetOrderIdComponents(string clientId, Uri id)
         {
             var orderId = base.GetIdComponents(nameof(GetIdComponents), id, null);
-            orderId.ClientId = clientId;
+            if (orderId != null) orderId.ClientId = clientId;
             return orderId;
         }
         public OrderIdComponents GetOrderItemIdComponents(string clientId, Uri id)
         {
             var orderId = base.GetIdComponents(nameof(GetIdComponents), null, id);
-            orderId.ClientId = clientId;
+            if (orderId != null) orderId.ClientId = clientId;
             return orderId;
         }
 
@@ -473,7 +520,7 @@ namespace OpenActive.Server.NET.OpenBookingHelper
                         var newValue = (binding.Value.Value as string).ParseUrlOrNull();
                         if (newValue != this.RequiredBaseUrl)
                         {
-                            throw new RequiredBaseUrlMismatchException("Base Url of the supplied Ids do not match expected default");
+                            throw new RequiredBaseUrlMismatchException($"Base Url ('{newValue}') of the supplied Ids does not match expected default ('{this.RequiredBaseUrl}')");
                         }
                     }
                     else if (componentsType.GetProperty(binding.Key) == null)
