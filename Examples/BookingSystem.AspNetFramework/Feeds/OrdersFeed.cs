@@ -43,7 +43,8 @@ namespace BookingSystem
                                 OrderedItem = thisOrder.Select(orderItem => new OrderItem
                                 {
                                     Id = this.RenderOrderItemId(OrderType.Order, thisOrder.Key.orders.Id, orderItem.Id),
-                                    AcceptedOffer = new Offer { 
+                                    AcceptedOffer = new Offer
+                                    {
                                         Id = new Uri(orderItem.OfferJsonLdId),
                                         Price = orderItem.Price,
                                         PriceCurrency = "GBP"

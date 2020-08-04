@@ -1,6 +1,7 @@
 ﻿using OpenActive.FakeDatabase.NET;
 using OpenActive.NET;
 using OpenActive.Server.NET.OpenBookingHelper;
+using ServiceStack.OrmLite;
 using System.Linq;
 
 namespace BookingSystem
@@ -36,7 +37,12 @@ namespace BookingSystem
             {
 
                 // Otherwise it may be looked up based on supplied sellerIdComponents which are extacted from the sellerId.
-                var seller = FakeBookingSystem.Database.Sellers.SingleOrDefault(x => x.Id == sellerIdComponents.SellerIdLong);
+                SellerTable seller;
+                using (var db = FakeBookingSystem.Database.Mem.Database.Open())
+                {
+                    seller = db.Single<SellerTable>(x => x.Id == sellerIdComponents.SellerIdLong);
+                }
+
                 if (seller != null)
                 {
                     return seller.IsIndividual ? (ILegalEntity)new Person
