@@ -123,7 +123,7 @@ namespace src
         }
 
         /// <summary>
-        /// Handle postback to revoke a client
+        /// Handle postback to suspend a client
         /// </summary>
         [HttpPost]
         [ValidateAntiForgeryToken]
