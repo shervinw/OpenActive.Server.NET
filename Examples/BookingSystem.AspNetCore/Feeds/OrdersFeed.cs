@@ -24,7 +24,7 @@ namespace BookingSystem
                 .OrderBy(x => x.Modified)
                 .OrderBy(x => x.Id)
                 .Where(x => x.VisibleInFeed && x.ClientId == clientId && (!afterTimestamp.HasValue || x.Modified > afterTimestamp ||
-                        (x.Modified == afterTimestamp && x.OrderId.CompareTo(afterId) > 0)) && x.Modified < (DateTimeOffset.UtcNow - new TimeSpan(0, 0, 2)).UtcTicks);
+                        (x.Modified == afterTimestamp &&  string.Compare(afterId, x.OrderId) <= 0)) && x.Modified < (DateTimeOffset.UtcNow - new TimeSpan(0, 0, 2)).UtcTicks);
 
                 var query = db
                     .SelectMulti<OrderTable, SellerTable, OrderItemsTable>(q)

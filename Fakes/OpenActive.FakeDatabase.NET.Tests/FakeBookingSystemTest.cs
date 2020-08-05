@@ -52,28 +52,28 @@ namespace OpenActive.FakeDatabase.NET.Test
         [Fact]
         public void Transaction_Effective()
         {
-            //var db = FakeBookingSystem.Database.Mem.Database;
-            //db.Execute("SELECT * FROM SellerTable");
+            var testSeller = new SellerTable() { Modified = 2, Name = "Test" };
 
-            //var testSeller = new SellerTable() { Modified = 2, Name = "Test" };
+            using (var db = FakeBookingSystem.Database.Mem.Database.Open())
+            {
+                using (var transaction = db.OpenTransaction())
+                {
+                    db.Insert(testSeller);
+                    //transaction.Complete();
+                    transaction.Dispose();
+                }
 
-            //using (var transaction = db.GetTransaction())
-            //{
-            //    db.Insert(testSeller);
-            //    //transaction.Complete();
-            //    transaction.Dispose();
-            //}
+                var count = db.Select<SellerTable>().Where(x => x.Id == testSeller.Id).Count();
 
-            //var count = db.Query<SellerTable>().Where(x => x.Id == testSeller.Id).Count();
+                // As transaction did not succeed the record should not have been written
+                Assert.Equal(0, count);
 
-            //// As transaction did not succeed the record should not have been written
-            //Assert.Equal(0, count);
+                // Without transaction should be able to get what was written
+                var testSellerId = db.Insert(testSeller, true);
+                SellerTable seller = db.SingleById<SellerTable>(testSellerId);
 
-            //// Without transaction should be able to get what was written
-            //db.Insert(testSeller);
-            //SellerTable seller = db.SingleById<SellerTable>(testSeller.Id);
-
-            //Assert.Equal("Test", seller.Name);
+                Assert.Equal("Test", seller.Name);
+            }   
         }
 
         [Fact]
@@ -84,9 +84,9 @@ namespace OpenActive.FakeDatabase.NET.Test
                 var now = DateTime.Now; // Note date must be stored as local time, not UTC
                 var testOccurrence = new OccurrenceTable() { Start = now };
 
-                db.Insert(testOccurrence);
+                var testOccurrenceId = db.Insert(testOccurrence, true);
 
-                OccurrenceTable occurrence = db.SingleById<OccurrenceTable>(testOccurrence.Id);
+                OccurrenceTable occurrence = db.SingleById<OccurrenceTable>(testOccurrenceId);
 
                 Assert.Equal(now, occurrence.Start);
             }
@@ -100,9 +100,9 @@ namespace OpenActive.FakeDatabase.NET.Test
                 var status = BookingStatus.CustomerCancelled;
                 var testOrderItem = new OrderItemsTable() { Status = status };
 
-                db.Insert(testOrderItem);
+                var testOrderItemId = db.Insert(testOrderItem, true);
 
-                OrderItemsTable orderItem = db.SingleById<OrderItemsTable>(testOrderItem.Id);
+                OrderItemsTable orderItem = db.SingleById<OrderItemsTable>(testOrderItemId);
 
                 Assert.Equal(status, orderItem.Status);
             }    
@@ -116,9 +116,9 @@ namespace OpenActive.FakeDatabase.NET.Test
                 decimal price = 1.3M;
                 var testOrder = new OrderTable() { OrderId = "8265ab72-d458-40aa-a460-a9619e13192c", TotalOrderPrice = price };
 
-                db.Insert(testOrder);
+                var testOrderId = db.Insert(testOrder, true);
 
-                OrderTable order = db.SingleById<OrderTable>(testOrder.Id);
+                OrderTable order = db.SingleById<OrderTable>(testOrderId);
 
                 Assert.Equal(price, order.TotalOrderPrice);
             }

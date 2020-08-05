@@ -17,6 +17,7 @@ namespace OpenActive.FakeDatabase.NET
     public abstract class Table
     {
         [PrimaryKey]
+        [AutoIncrement]
         [Alias("RpdeId")]
         public long Id { get; set; }
         public bool Deleted { get; set; } = false;
