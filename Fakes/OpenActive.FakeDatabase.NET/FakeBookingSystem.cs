@@ -267,7 +267,6 @@ namespace OpenActive.FakeDatabase.NET
                             db.Insert(new OrderItemsTable
                             {
                                 ClientId = clientId,
-                                Id = nextId++,
                                 Deleted = false,
                                 OrderId = uuid,
                                 OccurrenceId = occurrenceId
@@ -317,12 +316,9 @@ namespace OpenActive.FakeDatabase.NET
                         var OrderItemIds = new List<long>();
                         for (int i = 0; i < numberOfSpaces; i++)
                         {
-                            var orderItemId = nextId++;
-                            OrderItemIds.Add(orderItemId);
-                            db.Insert(new OrderItemsTable
+                            var orderItemId = db.Insert(new OrderItemsTable
                             {
                                 ClientId = clientId,
-                                Id = orderItemId,
                                 Deleted = false,
                                 OrderId = uuid,
                                 Status = BookingStatus.Confirmed,
@@ -332,7 +328,8 @@ namespace OpenActive.FakeDatabase.NET
                                 OfferJsonLdId = offerJsonLdId,
                                 // Include the price locked into the OrderItem as the opportunity price may change
                                 Price = thisClass.Price.Value
-                            });
+                            }, true);
+                            OrderItemIds.Add(orderItemId);
                         }
 
                         RecalculateSpaces(occurrenceId);
@@ -454,13 +451,13 @@ namespace OpenActive.FakeDatabase.NET
                 Deleted = false,
                 Title = faker.Commerce.ProductMaterial() + " " + faker.PickRandomParam("Yoga", "Zumba", "Walking", "Cycling", "Running", "Jumping"),
                 Price = Decimal.Parse(faker.Random.Bool() ? "0.00" : faker.Commerce.Price(0, 20)),
-                SellerId = faker.Random.Long(0, 1)
+                SellerId = faker.Random.Long(1, 2)
             })
             .ToList();
 
             var sellers = new List<SellerTable> {
-                new SellerTable { Id = 0, Name = "Acme Fitness Ltd", IsIndividual = false },
-                new SellerTable { Id = 1, Name = "Jane Smith", IsIndividual = true }
+                new SellerTable { Id = 1, Name = "Acme Fitness Ltd", IsIndividual = false },
+                new SellerTable { Id = 2, Name = "Jane Smith", IsIndividual = true }
             };
 
             using (var db = Mem.Database.Open())

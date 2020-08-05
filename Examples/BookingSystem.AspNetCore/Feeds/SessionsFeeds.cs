@@ -20,7 +20,7 @@ namespace BookingSystem
             {
                 var query = db.Select<OccurrenceTable>()
                 .OrderBy(x => x.Modified)
-                .OrderBy(x => x.Id)
+                .ThenBy(x => x.Id)
                 .Where(x => !afterTimestamp.HasValue && !afterId.HasValue ||
                     x.Modified > afterTimestamp ||
                     (x.Modified == afterTimestamp && x.Id > afterId) &&
@@ -81,7 +81,7 @@ namespace BookingSystem
                 var q = db.From<ClassTable>()
                 .Join<SellerTable>()
                 .OrderBy(x => x.Modified)
-                .OrderBy(x => x.Id)
+                .ThenBy(x => x.Id)
                 .Where(x => !afterTimestamp.HasValue && !afterId.HasValue ||
                     x.Modified > afterTimestamp ||
                     (x.Modified == afterTimestamp && x.Id > afterId) &&
