@@ -3,6 +3,8 @@ using System.Linq;
 using Xunit.Abstractions;
 using OpenActive.FakeDatabase.NET;
 using System;
+using ServiceStack.OrmLite;
+using System.Collections.Generic;
 
 namespace OpenActive.FakeDatabase.NET.Test
 {
@@ -18,30 +20,33 @@ namespace OpenActive.FakeDatabase.NET.Test
         [Fact]
         public void FakeDatabase_Exists()
         {
-            var test = FakeBookingSystem.Database;
-            test.RecalculateSpaces(6);
-            //var query = from classes in FakeBookingSystem.Database.Classes
-            //            join occurances in FakeBookingSystem.Database.Occurrences
-            //            on classes.Id equals occurances.ClassId
-            //            select new
-            //            {
-            //                title = classes.Title,
-            //                startDate = occurances.Start,
-            //            };
+            using (var db = FakeBookingSystem.Database.Mem.Database.Open())
+            {
+                var q = db.From<ClassTable>()
+                            .Join<OccurrenceTable>();
 
-            //var list = query.ToList();
+                var query = db
+                    .SelectMulti<ClassTable, OccurrenceTable>(q)
+                    .Select(item => new
+                    {
+                        title = item.Item1.Title,
+                        startDate = item.Item2.Start,
+                    });
 
-            //foreach (var result in list)
-            //{
-            //    output.WriteLine(result.title + " " + result.startDate.ToString());
-            //}
+                var list = query.ToList();
 
-            ////var components = template.GetIdComponents(new Uri("https://example.com/api/session-series/asdf/events/123"));
+                foreach (var result in list)
+                {
+                    output.WriteLine(result.title + " " + result.startDate.ToString());
+                }
 
-            //Assert.True(list.Count > 0);
-            ////Assert.Equal("session-series", components.EventType);
-            ////Assert.Equal("asdf", components.SessionSeriesId);
-            ////Assert.Equal(123, components.ScheduledSessionId);
+                //var components = template.GetIdComponents(new Uri("https://example.com/api/session-series/asdf/events/123"));
+
+                Assert.True(list.Count > 0);
+                //Assert.Equal("session-series", components.EventType);
+                //Assert.Equal("asdf", components.SessionSeriesId);
+                //Assert.Equal(123, components.ScheduledSessionId);
+            }         
         }
 
         [Fact]
@@ -74,49 +79,51 @@ namespace OpenActive.FakeDatabase.NET.Test
         [Fact]
         public void ReadWrite_DateTime()
         {
-            //var db = FakeBookingSystem.Database.Mem.Database;
-            //db.Execute("SELECT * FROM OccurrenceTable");
+            using (var db = FakeBookingSystem.Database.Mem.Database.Open())
+            {
+                var now = DateTime.Now; // Note date must be stored as local time, not UTC
+                var testOccurrence = new OccurrenceTable() { Start = now };
 
-            //var now = DateTime.Now; // Note date must be stored as local time, not UTC
-            //var testOccurrence = new OccurrenceTable() { Start = now };
+                db.Insert(testOccurrence);
 
-            //db.Insert(testOccurrence);
+                OccurrenceTable occurrence = db.SingleById<OccurrenceTable>(testOccurrence.Id);
 
-            //OccurrenceTable occurrence = db.SingleById<OccurrenceTable>(testOccurrence.Id);
-
-            //Assert.Equal(now, occurrence.Start);
+                Assert.Equal(now, occurrence.Start);
+            }
         }
 
         [Fact]
         public void ReadWrite_Enum()
         {
-            //var db = FakeBookingSystem.Database.Mem.Database;
-            //db.Execute("SELECT * FROM OrderItemsTable");
+            using (var db = FakeBookingSystem.Database.Mem.Database.Open())
+            {
+                var status = BookingStatus.CustomerCancelled;
+                var testOrderItem = new OrderItemsTable() { Status = status };
 
-            //var status = BookingStatus.CustomerCancelled;
-            //var testOrderItem = new OrderItemsTable() { Status = status };
+                db.Insert(testOrderItem);
 
-            //db.Insert(testOrderItem);
+                OrderItemsTable orderItem = db.SingleById<OrderItemsTable>(testOrderItem.Id);
 
-            //OrderItemsTable orderItem = db.SingleById<OrderItemsTable>(testOrderItem.Id);
-
-            //Assert.Equal(status, orderItem.Status);
+                Assert.Equal(status, orderItem.Status);
+            }    
         }
 
         [Fact]
         public void ReadWrite_OrderWithPrice()
         {
-            //var db = FakeBookingSystem.Database.Mem.Database;
-            //db.Execute("SELECT * FROM OrderTable");
+            using (var db = FakeBookingSystem.Database.Mem.Database.Open())
+            {
+                decimal price = 1.3M;
+                var testOrder = new OrderTable() { OrderId = "8265ab72-d458-40aa-a460-a9619e13192c", TotalOrderPrice = price };
 
-            //decimal price = 1.3M;
-            //var testOrder = new OrderTable() { OrderId = "8265ab72-d458-40aa-a460-a9619e13192c", TotalOrderPrice = price };
+                db.Insert(testOrder);
 
-            //db.Insert(testOrder);
+                OrderTable order = db.SingleById<OrderTable>(testOrder.Id);
 
-            //OrderTable order = db.SingleById<OrderTable>(testOrder.Id);
+                Assert.Equal(price, order.TotalOrderPrice);
+            }
 
-            //Assert.Equal(price, order.TotalOrderPrice);
+            
         }
     }
 }

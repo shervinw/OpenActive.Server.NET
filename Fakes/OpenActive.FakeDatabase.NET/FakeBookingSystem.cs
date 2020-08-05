@@ -70,14 +70,6 @@ namespace OpenActive.FakeDatabase.NET
     {
         public InMemorySQLite Mem = new InMemorySQLite();
 
-        // TODO: Swap all references to the Lists below with NPoco queries against the InMemorySQLite.Database instance declared above
-        public List<ClassTable> Classes { get; set; } = new List<ClassTable>();
-        public List<OccurrenceTable> Occurrences { get; set; } = new List<OccurrenceTable>();
-        public List<OrderItemsTable> OrderItems { get; set; } = new List<OrderItemsTable>();
-        public List<OrderTable> Orders { get; set; } = new List<OrderTable>();
-        public List<SellerTable> Sellers { get; set; } = new List<SellerTable>();
-
-
         private static readonly Faker faker = new Faker("en");
 
         // A database-wide auto-incrementing id is used for simplicity
@@ -94,7 +86,7 @@ namespace OpenActive.FakeDatabase.NET
 
                 foreach (OrderTable order in db.Select<OrderTable>(x => x.LeaseExpires < DateTimeOffset.Now))
                 {
-                    occurrenceIds.AddRange(OrderItems.Where(x => x.OrderId == order.OrderId).Select(x => x.OccurrenceId));
+                    occurrenceIds.AddRange(db.Select<OrderItemsTable>(x => x.OrderId == order.OrderId).Select(x => x.OccurrenceId));
                     db.Delete<OrderItemsTable>(x => x.OrderId == order.OrderId);
                     db.Delete<OrderTable>(x => x.OrderId == order.OrderId);
                 }
