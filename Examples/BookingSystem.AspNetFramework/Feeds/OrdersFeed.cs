@@ -20,7 +20,7 @@ namespace BookingSystem
             {
                 var q = db.From<OrderTable>()
                 .Join<SellerTable>()
-                .Join<OrderItemsTable>()
+                .Join<OrderTable, OrderItemsTable>((orders, items) => orders.OrderId == items.OrderId)
                 .OrderBy(x => x.Modified)
                 .OrderBy(x => x.Id)
                 .Where(x => x.VisibleInFeed && x.ClientId == clientId && (!afterTimestamp.HasValue || x.Modified > afterTimestamp ||
