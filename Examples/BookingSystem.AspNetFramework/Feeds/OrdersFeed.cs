@@ -24,7 +24,8 @@ namespace BookingSystem
                 .OrderBy(x => x.Modified)
                 .OrderBy(x => x.Id)
                 .Where(x => x.VisibleInFeed && x.ClientId == clientId && (!afterTimestamp.HasValue || x.Modified > afterTimestamp ||
-                        (x.Modified == afterTimestamp && x.OrderId.CompareTo(afterId) > 0)) && x.Modified < (DateTimeOffset.UtcNow - new TimeSpan(0, 0, 2)).UtcTicks);
+                        (x.Modified == afterTimestamp && x.OrderId.CompareTo(afterId) > 0)) && x.Modified < (DateTimeOffset.UtcNow - new TimeSpan(0, 0, 2)).UtcTicks)
+                .Take(this.RPDEPageSize);
 
                 var query = db
                     .SelectMulti<OrderTable, SellerTable, OrderItemsTable>(q)
@@ -70,19 +71,7 @@ namespace BookingSystem
                         }
                     });
 
-                // Note there's a race condition in the in-memory database that allows records to be returned from the above query out of order when modified at the same time. The below ensures the correct order is returned.
-                var items = query.ToList().Take(this.RPDEPageSize).ToList();
-
-                /*
-                // Filter out any that were updated while the query was running
-                var lastItemModified = items.LastOrDefault()?.Modified;
-
-                if (lastItemModified != null)
-                {
-                    items = items.Where(x => x.Modified <= lastItemModified).ToList(); //.OrderBy(x => x.Modified).ThenBy(x => x.Id)
-                }
-                */
-                return items;
+                return query.ToList();
             }
         }
     }

@@ -36,29 +36,11 @@ namespace OpenActive.FakeDatabase.NET
     public class InMemorySQLite {
         public OrmLiteConnectionFactory Database;
 
-        // Master database connection
-        private System.Data.Common.DbConnection PersistentConnection;
-
         public InMemorySQLite()
         {
-            // Using a name and a shared cache allows multiple connections to access the same
-            // in-memory database
-            //const string ConnectionString = "Data Source=/Users/nick/repos/openactive/openactive-test-suite/testsuite.db;Version=3;";
-            //const string ConnectionString = "Data Source=InMemoryDatabase;Mode=Memory;Cache=Shared;Version=3;";
+            // ServiceStack registers a memory cache client by default <see href="https://docs.servicestack.net/caching">https://docs.servicestack.net/caching</see>
             const string ConnectionString = ":memory:";
-            //const string ConnectionString = "Data Source=:memory:";
-
-            // The in-memory database only persists while a connection is open to it. To manage
-            // its lifetime, keep one open master connection around for as long as needed.
-            // In this case, for the lifetime of the application.
-            PersistentConnection = SQLiteFactory.Instance.CreateConnection();
-            PersistentConnection.ConnectionString = ConnectionString;
-            // PersistentConnection.Open();
-
-            // By default NPoco will open and close a database connection around each query
-            //Database = new NPoco.Database(PersistentConnection, NPoco.DatabaseType.SQLite);
-            // Database = new NPoco.Database(ConnectionString, NPoco.DatabaseType.SQLite, SQLiteFactory.Instance, IsolationLevel.Serializable);
-            Database = new OrmLiteConnectionFactory(ConnectionString, SqliteDialect.Provider);
+            this.Database = new OrmLiteConnectionFactory(ConnectionString, SqliteDialect.Provider);
 
             // Create empty tables
             DatabaseCreator.CreateTables(Database);
@@ -71,9 +53,6 @@ namespace OpenActive.FakeDatabase.NET
         public InMemorySQLite Mem = new InMemorySQLite();
 
         private static readonly Faker faker = new Faker("en");
-
-        // A database-wide auto-incrementing id is used for simplicity
-        private static int nextId = 100000;
 
         /// <summary>
         /// TODO: Call this on a schedule from both .NET Core and .NET Framework reference implementations
@@ -470,35 +449,30 @@ namespace OpenActive.FakeDatabase.NET
 
         public ( int, int ) AddClass(string testDatasetIdentifier, long seller, string title, decimal? price, DateTimeOffset startTime, DateTimeOffset endTime, long totalSpaces)
         {
-            var classId = nextId++;
-            var occurrenceId = nextId++;
-
             using (var db = Mem.Database.Open())
             {
-                db.Insert(new ClassTable
+                var classId = db.Insert(new ClassTable
                 {
                     TestDatasetIdentifier = testDatasetIdentifier,
-                    Id = classId,
                     Deleted = false,
                     Title = title,
                     Price = price,
                     SellerId = seller
-                });
+                }, true);
 
-                db.Insert(new OccurrenceTable
+                var occurrenceId = db.Insert(new OccurrenceTable
                 {
                     TestDatasetIdentifier = testDatasetIdentifier,
-                    Id = occurrenceId,
                     Deleted = false,
                     ClassId = classId,
                     Start = startTime.DateTime,
                     End = endTime.DateTime,
                     TotalSpaces = totalSpaces,
                     RemainingSpaces = totalSpaces
-                });
-            }
+                }, true);
 
-            return ( classId, occurrenceId );
+                return ((int)classId, (int)occurrenceId);
+            }   
         }
 
         public void DeleteTestClassesFromDataset(string testDatasetIdentifier)
